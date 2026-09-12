@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# OS
+.DS_Store
+
+# Logs that are regenerated on every run are kept small on purpose;
+# ignore only editor/IDE noise:
+.idea/
+.vscode/
+*.swp

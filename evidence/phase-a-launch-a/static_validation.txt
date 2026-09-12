@@ -1,0 +1,81 @@
+LunaBot V4 - Phase A - static validation report
+date: 2026-09-12T15:37:15Z
+============================================================
+[PASS] world SDF XML well-formed
+[PASS] world name == lunar_world - got lunar_world
+[PASS] lunar gravity (0 0 -1.62) - got ['0', '0', '-1.62']
+[PASS] world plugin Physics
+[PASS] world plugin SceneBroadcaster
+[PASS] world plugin UserCommands
+[PASS] world plugin Sensors
+[PASS] world plugin Contact
+[PASS] terrain model present
+[PASS] terrain static
+[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
+[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
+[PASS] horizon catch-plane present
+[PASS] GUI camera configured
+[PASS] model SDF XML well-formed
+[PASS] model name == lunabot_v4
+[PASS] 6 wheel joints - ['left_front_wheel_joint', 'left_middle_wheel_joint', 'left_rear_wheel_joint', 'right_front_wheel_joint', 'right_middle_wheel_joint', 'right_rear_wheel_joint']
+[PASS] all joint parent/child resolve to links - []
+[PASS] key links present - set()
+[PASS] sensor rgb_camera (type camera)
+[PASS] sensor rgb_camera topic /lunabot/camera/image_raw - /lunabot/camera/image_raw
+[PASS] sensor depth_camera (type depth_camera)
+[PASS] sensor depth_camera topic /lunabot/depth/image_raw - /lunabot/depth/image_raw
+[PASS] sensor lidar (type gpu_lidar)
+[PASS] sensor lidar topic /lunabot/lidar/scan - /lunabot/lidar/scan
+[PASS] sensor imu (type imu)
+[PASS] sensor imu topic /lunabot/imu - /lunabot/imu
+[PASS] DiffDrive joints all exist - []
+[PASS] DiffDrive odom topic /lunabot/odom
+[PASS] DiffDrive tf frames odom/chassis
+[PASS] DiffDrive cmd topic /cmd_vel
+[PASS] steer/mast controllers reference real joints - []
+[PASS] joint-state publisher references real joints - []
+[PASS] bridge maps /lunabot/camera/image_raw (gazebo->ros)
+[PASS] bridge maps /lunabot/depth/image_raw (gazebo->ros)
+[PASS] bridge maps /lunabot/imu (gazebo->ros)
+[PASS] bridge maps /lunabot/lidar/scan (gazebo->ros)
+[PASS] bridge maps /cmd_vel (ros->gazebo)
+[PASS] bridge maps /tf Pose_V -> TFMessage
+[PASS] SPAWN_Z matches terrain stats (h0 + 0.48) - launch=-2.308 h0=-2.788
+[PASS] lunar_terrain.obj: has vertices - 102400
+[PASS] lunar_terrain.obj: vertex count square grid - 102400
+[PASS] lunar_terrain.obj: normals for all vertices - vn=102400 v=102400
+[PASS] lunar_terrain.obj: color vertices expected=True - c=102400
+[PASS] lunar_terrain.obj: face indices in bounds - 102400
+[PASS] lunar_terrain.obj: extent ~400x400 m - [398.8, 398.8, 14.4]
+[PASS] lunar_terrain.obj: relief within [-12, +10] m - z=[-9.39, 4.97]
+[PASS] lunar_terrain_collision.obj: has vertices - 10000
+[PASS] lunar_terrain_collision.obj: vertex count square grid - 10000
+[PASS] lunar_terrain_collision.obj: normals for all vertices - vn=10000 v=10000
+[PASS] lunar_terrain_collision.obj: color vertices expected=False - c=0
+[PASS] lunar_terrain_collision.obj: face indices in bounds - 10000
+[PASS] lunar_terrain_collision.obj: extent ~400x400 m - [396.0, 396.0, 14.2]
+[PASS] lunar_terrain_collision.obj: relief within [-12, +10] m - z=[-9.32, 4.92]
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: evidence/phase-a-launch-a/collect_evidence.sh
+[PASS] python compile: scripts/wasd_teleop.py
+[PASS] python compile: tools/generate_lunar_terrain.py
+[PASS] python compile: tools/plot_lidar_scan.py
+[PASS] executable: scripts/launch-a.sh
+[PASS] executable: launch-a
+[PASS] rviz config exists
+[PASS] rviz fixed frame odom
+[PASS] rviz displays LaserScan topic
+[PASS] rviz displays Image topic
+[PASS] rviz TF display
+[PASS] docs/phase-a-launch-a.md exists
+[PASS] docs section ## 1. Objective
+[PASS] docs section ## 11. Launch Command
+[PASS] docs section ## 16. Success Criteria
+[PASS] docs section ## 22. Evidence
+[PASS] docs section ## 23. Known Limitations
+[PASS] terrain stats file
+[PASS] evidence README
+[PASS] verification checklist
+============================================================
+RESULT: 76/76 checks passed

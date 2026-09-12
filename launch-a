@@ -1,0 +1,14 @@
+#!/bin/bash
+# ============================================================
+#  LunaBot V4 - Phase A entry point
+#  Canonical command:  ~/launch-a
+#
+#  ln -s ~/lunabot-v4/launch-a ~/launch-a
+#
+#  Options (env vars):
+#    HEADLESS=1  no Gazebo GUI / RViz2
+#    DEMO=1      automated drive test (forward + turn)
+#    EVIDENCE=1  record topics/TF/odom/LiDAR evidence
+# ============================================================
+SCRIPT="$(readlink -f "${BASH_SOURCE[0]}")"
+exec "$(cd "$(dirname "$SCRIPT")" && pwd)/scripts/launch-a.sh" "$@"

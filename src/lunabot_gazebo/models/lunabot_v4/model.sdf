@@ -148,7 +148,7 @@
       </visual>
     </link>
 
-    <!-- ---- LEFT FRONT (steerable) ---- -->
+    <!-- ========== LEFT FRONT (steerable) ========== -->
     <joint name="left_front_steer_joint" type="revolute">
       <pose relative_to="left_bogie">0.20 0 -0.18 0 0 0</pose>
       <parent>left_bogie</parent><child>left_front_knuckle</child>
@@ -182,7 +182,7 @@
       <visual name="wheel_visual"><geometry><cylinder><radius>0.17</radius><length>0.13</length></cylinder></geometry><material><ambient>0.05 0.05 0.055 1</ambient></material></visual>
     </link>
 
-    <!-- ---- RIGHT FRONT (steerable) ---- -->
+    <!-- ========== RIGHT FRONT (steerable) ========== -->
     <joint name="right_front_steer_joint" type="revolute">
       <pose relative_to="right_bogie">0.20 0 -0.18 0 0 0</pose>
       <parent>right_bogie</parent><child>right_front_knuckle</child>
@@ -216,7 +216,7 @@
       <visual name="wheel_visual"><geometry><cylinder><radius>0.17</radius><length>0.13</length></cylinder></geometry><material><ambient>0.05 0.05 0.055 1</ambient></material></visual>
     </link>
 
-    <!-- ---- LEFT REAR (steerable) ---- -->
+    <!-- ========== LEFT REAR (steerable) ========== -->
     <joint name="left_rear_steer_joint" type="revolute">
       <pose relative_to="left_rocker">-0.40 0 -0.18 0 0 0</pose>
       <parent>left_rocker</parent><child>left_rear_knuckle</child>
@@ -250,7 +250,7 @@
       <visual name="wheel_visual"><geometry><cylinder><radius>0.17</radius><length>0.13</length></cylinder></geometry><material><ambient>0.05 0.05 0.055 1</ambient></material></visual>
     </link>
 
-    <!-- ---- RIGHT REAR (steerable) ---- -->
+    <!-- ========== RIGHT REAR (steerable) ========== -->
     <joint name="right_rear_steer_joint" type="revolute">
       <pose relative_to="right_rocker">-0.40 0 -0.18 0 0 0</pose>
       <parent>right_rocker</parent><child>right_rear_knuckle</child>
@@ -284,7 +284,7 @@
       <visual name="wheel_visual"><geometry><cylinder><radius>0.17</radius><length>0.13</length></cylinder></geometry><material><ambient>0.05 0.05 0.055 1</ambient></material></visual>
     </link>
 
-    <!-- ---- MIDDLE WHEELS (fixed spin, no steering) ---- -->
+    <!-- ========== MIDDLE WHEELS (fixed spin, no steering) ========== -->
     <joint name="left_middle_wheel_joint" type="revolute">
       <pose relative_to="left_bogie">-0.20 0 -0.18 0 0 0</pose>
       <parent>left_bogie</parent><child>left_middle_wheel</child>
@@ -340,7 +340,7 @@
     </link>
     <joint name="sensor_mast_joint" type="fixed"><parent>chassis</parent><child>sensor_mast</child></joint>
 
-    <!-- ---- PAN LINK ---- -->
+    <!-- ========== PAN LINK ========== -->
     <joint name="mast_pan_joint" type="revolute">
       <pose relative_to="sensor_mast">0 0 0.28 0 0 0</pose>
       <parent>sensor_mast</parent><child>mast_pan_link</child>
@@ -352,7 +352,7 @@
       <visual name="pan_visual"><geometry><cylinder><radius>0.04</radius><length>0.05</length></cylinder></geometry><material><ambient>0.5 0.5 0.52 1</ambient></material></visual>
     </link>
 
-    <!-- ---- TILT + SENSOR HEAD ---- -->
+    <!-- ========== TILT + SENSOR HEAD ========== -->
     <joint name="mast_tilt_joint" type="revolute">
       <pose relative_to="mast_pan_link">0 0 0.03 0 0 0</pose>
       <parent>mast_pan_link</parent><child>sensor_head</child>
