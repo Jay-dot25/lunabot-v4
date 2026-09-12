@@ -133,7 +133,11 @@ if [ ! -f /opt/ros/humble/setup.bash ]; then
   exit 2
 fi
 # shellcheck disable=SC1091
+# ROS 2's setup.bash references variables unguarded (e.g. AMENT_TRACE_SETUP_FILES),
+# which aborts under `set -u` - suspend nounset while sourcing.
+set +u
 source /opt/ros/humble/setup.bash
+set -u
 
 if ! command -v ros2 >/dev/null 2>&1; then
   echo "      ERROR: ros2 CLI not found after sourcing."
