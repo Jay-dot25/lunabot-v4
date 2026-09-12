@@ -28,7 +28,10 @@ None. Phase A is the first phase. It reuses the existing repository assets
 | TF | Replaced the single approximate `chassis→lidar` static TF with an accurate 4-frame static tree taken from the model SDF (`chassis→sensor_head→{rgb_camera, depth_camera, lidar}`). |
 | Entry point | `launch-a` at the repo root (canonical `~/launch-a`), works from any directory. |
 | RViz | New `rviz/phase_a.rviz` config: Grid + TF + LaserScan + Camera image, fixed frame `odom` (previously RViz started with an empty default display). |
-| Teleop | `scripts/wasd_teleop.py`: same WASD/Space/Q controls, speeds corrected to the DiffDrive plugin limits (0.45 m/s / 1.0 rad/s — the old 2.0 m/s request was silently clamped), plus `--demo` automated drive test for headless validation. |
+| Teleop | `scripts/wasd_teleop.py`: same WASD/Space/Q controls, speeds corrected to the DiffDrive plugin limits (0.45 m/s / 1.0 rad/s — the old 2.0 m/s request was silently clamped), plus `--demo` automated drive test for headless validation. Teleop runs **in the foreground** (a backgrounded process loses its terminal — first version of the fix made WASD unusable). |
+| Sim time | `/clock` added to the bridge (standard Gazebo sim-time topic). The demo drive test now measures **simulation time**, not wall clock, so results are valid even when rendering/physics run slower than real-time (e.g. GPU shader warm-up with the large terrain). |
+| Drive diagnostics | Demo records `evidence/phase-a-launch-a/diag_drive.csv`: per-sample commanded vs measured velocity, rover pose, and **actual wheel joint velocities** — separates wheel slip/traction problems from sim-time lag. |
+| Traction tuning (model) | Wheel joint damping 0.8 → 3.0 and wheel-ground friction μ 2.2 → 4.0 in `model.sdf`. Why: under lunar gravity (1/6 g) each wheel loads only ~8 N; the DiffDrive plugin drives wheels via joint-velocity commands whose control authority in DART comes from joint damping, and traction scales with normal force. Geometry, joints, sensors, masses, plugin parameters are otherwise **unchanged**. |
 | Docs + evidence | This document, `evidence/phase-a-launch-a/` (terrain previews, stats, static validation, runtime evidence collector). |
 
 ## 4. Inputs
@@ -93,6 +96,7 @@ systems + per-model `DiffDrive`, `JointPositionController` (×6),
 | Topic | Type | Dir | Hz | Notes |
 |---|---|---|---|---|
 | `/cmd_vel` | `geometry_msgs/Twist` | in | user | drive command (clamped by DiffDrive: 0.45 m/s, 1.0 rad/s) |
+| `/clock` | `rosgraph_msgs/Clock` | out | 100 | simulation time (used by the demo drive test and later phases) |
 | `/lunabot/odom` | `nav_msgs/Odometry` | out | 30 | wheel odometry, frame `odom` |
 | `/lunabot/camera/image_raw` | `sensor_msgs/Image` | out | 20 | RGB 640×480 |
 | `/lunabot/depth/image_raw` | `sensor_msgs/Image` | out | 15 | depth 640×480 |
@@ -314,6 +318,7 @@ evidence/phase-a-launch-a/                # terrain previews, stats, validation,
 | `scripts/launch-a.sh` | rewritten: staged output, real runtime validation, 15-mapping bridge, accurate static TF, resource-path export, `HEADLESS/DEMO/EVIDENCE`, trap-based clean shutdown + orphan guard, evidence logging, corrected spawn `z=-2.308` (was `z=80.2`, which assumed the missing mesh's coordinate system) |
 | `scripts/wasd_teleop.py` | speeds corrected to DiffDrive limits; `--demo` headless drive test; graceful handling of non-TTY; same WASD controls preserved |
 | `src/lunabot_gazebo/worlds/lunar_world.sdf` | collision/visual mesh separation; horizon catch-plane; stale "missing plugin" comment replaced (plugin kept); gravity/plugins/GUI camera unchanged |
+| `src/lunabot_gazebo/models/lunabot_v4/model.sdf` | (1) invalid XML comments fixed (double hyphens are illegal inside XML comments) — required for strict SDF parsing; (2) traction tuning for lunar gravity: 6 wheel joints damping 0.8→3.0 (velocity-control authority), wheel friction μ 2.2→4.0. Everything else (geometry, masses, sensors, plugin params) untouched |
 | `docs/phase-1-launch-a.md` → `docs/phase-a-launch-a.md` | renamed to master-prompt naming convention; content written |
 
 ## 20. Files Reused
@@ -347,7 +352,7 @@ evidence/phase-a-launch-a/                # terrain previews, stats, validation,
 | `terrain_stats.txt` | generated (extent, relief, craters, spawn height) |
 | `static_validation.txt` | generated (SDF/mesh/script cross-checks) |
 | `last_run.log`, `gazebo.log`, `bridge.log` | produced by every launch run |
-| `topics.txt`, `topic_info.txt`, `tf_odom_chassis.txt`, `odom_sample.txt`, `lidar_scan_sample.yaml`, `lidar_scan_preview.png`, `demo_drive_result.txt` | produced by `EVIDENCE=1 DEMO=1 ~/launch-a` **on a machine with ROS 2 + Gazebo** (this development sandbox has no ROS 2/Gazebo and no access to their package mirrors — see §23) |
+| `topics.txt`, `topic_info.txt`, `tf_odom_chassis.txt`, `odom_sample.txt`, `lidar_scan_sample.yaml`, `lidar_scan_preview.png`, `demo_drive_result.txt`, `diag_drive.csv` | produced by `EVIDENCE=1 DEMO=1 ~/launch-a` **on a machine with ROS 2 + Gazebo** (this development sandbox has no ROS 2/Gazebo and no access to their package mirrors — see §23). The LiDAR PNG additionally needs `matplotlib`+`pyyaml` in the system python (`sudo apt install python3-matplotlib python3-yaml`). |
 | `verification_checklist.md` | visual acceptance checklist (user gatekeeper) |
 | `collect_evidence.sh` | one command to regenerate all runtime evidence |
 
@@ -375,6 +380,12 @@ evidence/phase-a-launch-a/                # terrain previews, stats, validation,
    rocker-bogie joints are free but uncontrolled in Phase A (they react
    to contact). Steering/mast joint controllers exist and are bridged but
    not used until control is implemented (Phase B).
+5. **Drive performance under lunar gravity is tuned, not yet
+   re-verified**: wheel damping/friction were raised for 1/6 g traction
+   and the demo now measures sim time + records `diag_drive.csv`.
+   Efficiency numbers from the workstation demo run (expected ≥ ~70% of
+   ideal; the CSV shows commanded vs actual wheel speeds to catch any
+   remaining slip) are the acceptance data for this limitation.
 5. If the rover is driven more than ~50 m beyond the 400 m × 400 m
    terrain edge it falls onto the horizon catch-plane ~12 m below the
    crater-field surface (flat grey, drivable). This is a safety net, not

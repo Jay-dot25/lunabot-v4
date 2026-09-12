@@ -32,8 +32,9 @@ This produces, in this directory:
 | `tf_odom_chassis.txt` | first `odom → chassis` transforms (tf2_echo) |
 | `odom_sample.txt` | one odometry message (YAML) |
 | `lidar_scan_sample.yaml` | one LiDAR scan (YAML) |
-| `lidar_scan_preview.png` | top-down plot of the scan (crater field around rover) |
-| `demo_drive_result.txt` | automated drive test: distance driven + yaw change (PASS/FAIL) |
+| `lidar_scan_preview.png` | top-down plot of the scan (crater field around rover) — needs `sudo apt install python3-matplotlib python3-yaml` |
+| `demo_drive_result.txt` | automated drive test (sim-time based): distance driven + yaw change + efficiency vs ideal (PASS/FAIL) |
+| `diag_drive.csv` | per-sample drive diagnostics: sim time, commanded vs measured velocity, rover pose, actual wheel joint velocities (left/right averages) — the key data for separating wheel slip/traction from sim-time lag |
 
 ## Why there are no Gazebo/RViz screenshots in this directory yet
 

@@ -250,6 +250,7 @@ echo "[6/10] Starting ROS 2 <-> Gazebo bridge............"
 : > "$EVIDENCE_DIR/bridge.log"
 setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
   "/cmd_vel@geometry_msgs/msg/Twist]$MSGNS.Twist" \
+  "/clock@rosgraph_msgs/msg/Clock[$MSGNS.Clock" \
   "/lunabot/camera/image_raw@sensor_msgs/msg/Image[$MSGNS.Image" \
   "/lunabot/depth/image_raw@sensor_msgs/msg/Image[$MSGNS.Image" \
   "/lunabot/lidar/scan@sensor_msgs/msg/LaserScan[$MSGNS.LaserScan" \
@@ -272,7 +273,7 @@ if ! kill -0 "$BRIDGE_PID" 2>/dev/null; then
   kill -KILL -"$GAZEBO_PID" 2>/dev/null
   exit 1
 fi
-echo "      bridge running (PID $BRIDGE_PID), 15 topic mappings"
+echo "      bridge running (PID $BRIDGE_PID), 16 topic mappings"
 log "[6/10] bridge OK (pid $BRIDGE_PID)"
 
 # ------------------------------------------------------------
@@ -393,7 +394,7 @@ echo "------------------------------------------------------------"
 printf "Environment       : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "RUNNING (headless)" || echo "RUNNING" )"
 echo "LunaBot           : RUNNING"
 echo "Sensors           : RUNNING (camera, depth, lidar, imu)"
-echo "Bridge            : RUNNING (15 mappings)"
+echo "Bridge            : RUNNING (16 mappings)"
 echo "TF                : RUNNING (odom->chassis + 4 static)"
 echo "Phase Component   : RUNNING"
 printf "RViz2             : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "skipped (headless)" || echo "RUNNING" )"
@@ -403,6 +404,7 @@ echo "AVAILABLE OUTPUTS"
 echo "------------------------------------------------------------"
 echo "Topics (ROS 2):"
 echo "  /cmd_vel                      geometry_msgs/Twist        (INPUT - drive)"
+echo "  /clock                        rosgraph_msgs/Clock        (sim time)"
 echo "  /lunabot/odom                 nav_msgs/Odometry"
 echo "  /lunabot/camera/image_raw     sensor_msgs/Image          (RGB 640x480 @20Hz)"
 echo "  /lunabot/depth/image_raw      sensor_msgs/Image          (depth @15Hz)"
@@ -461,8 +463,8 @@ else
   echo ""
   echo " Press Ctrl+C to stop LunaBot safely."
   echo "============================================================"
-  python3 "$WASD_PATH" &
-  TELEOP_PID=$!
-  wait "$TELEOP_PID" 2>/dev/null
+  # Foreground on purpose: the teleop needs the terminal (stdin).
+  # Ctrl+C reaches it via the process group; Q exits it normally.
+  python3 "$WASD_PATH"
   shutdown
 fi

@@ -9,9 +9,16 @@ Interactive mode (default):
 
 Demo mode (headless / automated validation):
     python3 wasd_teleop.py --demo [evidence_dir]
-    Sequence: forward 3 s -> stop -> turn left 3 s -> stop
-    Reports the odometry delta (distance driven, yaw change) and writes
-    <evidence_dir>/demo_drive_result.txt. Exit code 0 = movement verified.
+    Sequence (SIMULATION time, via /clock - robust to slow rendering):
+        forward 3 s -> stop 0.5 s -> turn left 3 s -> stop 0.5 s
+    Reports odometry deltas and writes to <evidence_dir>:
+        demo_drive_result.txt   summary + PASS/FAIL
+        diag_drive.csv          per-sample diagnostics:
+                                sim time, commanded vs measured velocity,
+                                rover pose, actual wheel joint velocities
+                                (used to separate wheel slip / traction
+                                issues from simulation-time lag)
+    Exit code 0 = movement verified.
 
 Speeds respect the DiffDrive plugin limits in model.sdf
 (max_linear_velocity 0.45 m/s, max_angular_velocity 1.0 rad/s).
@@ -27,9 +34,16 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import JointState
+from rosgraph_msgs.msg import Clock
 
 MAX_LINEAR = 0.45   # m/s  (DiffDrive plugin limit in model.sdf)
 MAX_ANGULAR = 1.0   # rad/s
+WHEEL_R = 0.17      # m (model.sdf)
+WHEEL_JOINTS = (
+    'left_front_wheel_joint', 'left_middle_wheel_joint', 'left_rear_wheel_joint',
+    'right_front_wheel_joint', 'right_middle_wheel_joint', 'right_rear_wheel_joint',
+)
 
 
 def yaw_from_quaternion(q):
@@ -42,77 +56,140 @@ class TeleopNode(Node):
         super().__init__('wasd_teleop')
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.odom = None
+        self.joint_vel = {}
+        self.sim_t = None
+        self.cmd = (0.0, 0.0)          # last commanded (v, wz)
         self.create_subscription(Odometry, '/lunabot/odom', self._odom_cb, 10)
+        self.create_subscription(JointState, '/lunabot/joint_states',
+                                 self._js_cb, 10)
+        self.create_subscription(Clock, '/clock', self._clock_cb, 10)
 
     def _odom_cb(self, msg):
         self.odom = msg
 
+    def _js_cb(self, msg):
+        for name, vel in zip(msg.name, msg.velocity):
+            if name in WHEEL_JOINTS:
+                self.joint_vel[name] = vel
+
+    def _clock_cb(self, msg):
+        self.sim_t = msg.clock.sec + msg.clock.nanosec * 1e-9
+
+    def cmd_of(self, v, wz):
+        self.cmd = (v, wz)
+        msg = Twist()
+        msg.linear.x = v
+        msg.angular.z = wz
+        self.pub.publish(msg)
+
     def snapshot(self):
-        """Return (x, y, yaw, t) from the latest odometry, or None."""
+        """(x, y, yaw, odom_v, odom_wz, mean left wheel omega, mean right)"""
         if self.odom is None:
             return None
         p = self.odom.pose.pose.position
         q = self.odom.pose.pose.orientation
-        return (p.x, p.y, yaw_from_quaternion(q), time.time())
-
-
-def drive(node, lin, ang, duration):
-    msg = Twist()
-    msg.linear.x = lin
-    msg.angular.z = ang
-    t0 = time.time()
-    while time.time() - t0 < duration:
-        node.pub.publish(msg)
-        time.sleep(0.05)
-    node.pub.publish(Twist())          # brake
-    time.sleep(0.3)
+        t = self.odom.twist
+        lv = [self.joint_vel[j] for j in WHEEL_JOINTS[:3] if j in self.joint_vel]
+        rv = [self.joint_vel[j] for j in WHEEL_JOINTS[3:] if j in self.joint_vel]
+        return (p.x, p.y, yaw_from_quaternion(q),
+                t.linear.x, t.angular.z,
+                sum(lv) / len(lv) if lv else 0.0,
+                sum(rv) / len(rv) if rv else 0.0)
 
 
 def run_demo(node, evidence_dir):
     import threading
 
+    stop = threading.Event()
+
     def spinner():
-        while rclpy.ok():
+        while not stop.is_set():
             rclpy.spin_once(node, timeout_sec=0.02)
 
-    threading.Thread(target=spinner, daemon=True).start()
+    thread = threading.Thread(target=spinner, daemon=True)
+    thread.start()
 
-    print("Waiting for first /lunabot/odom message ...")
+    print("Waiting for /lunabot/odom and /clock ...", flush=True)
     t0 = time.time()
-    while node.odom is None and time.time() - t0 < 15:
+    while (node.odom is None or node.sim_t is None) and time.time() - t0 < 15:
         time.sleep(0.1)
-    if node.odom is None:
-        print("DEMO FAIL: no odometry received within 15 s")
+    if node.odom is None or node.sim_t is None:
+        print("DEMO FAIL: odom/clock not received within 15 s", flush=True)
+        stop.set()
+        thread.join(timeout=2.0)
         return 1
-    print("Odometry received. Starting drive test.")
+    print("Odometry + sim time received. Starting drive test (sim-time based).",
+          flush=True)
+
+    csv_path = os.path.join(evidence_dir, "diag_drive.csv") if evidence_dir else None
+    csv = open(csv_path, "w") if csv_path else None
+    if csv:
+        csv.write("t_wall,t_sim,cmd_v,cmd_wz,odom_v,odom_wz,"
+                  "x,y,yaw,wheel_omega_left,wheel_omega_right\n")
+
+    def sample(phase):
+        s = node.snapshot()
+        if s and csv:
+            csv.write(f"{time.time():.2f},{node.sim_t:.3f},"
+                      f"{node.cmd[0]:.3f},{node.cmd[1]:.3f},"
+                      f"{s[3]:.3f},{s[4]:.3f},{s[0]:.3f},{s[1]:.3f},{s[2]:.3f},"
+                      f"{s[5]:.3f},{s[6]:.3f}\n")
+            csv.flush()
+
+    def drive(v, wz, sim_dur):
+        """Drive until SIMULATION time advances by sim_dur seconds."""
+        start = node.sim_t
+        while (node.sim_t is None or node.sim_t - start < sim_dur) \
+                and time.time() - t0 < 120:
+            node.cmd_of(v, wz)
+            sample('drive')
+            time.sleep(0.05)
+        node.cmd_of(0.0, 0.0)
 
     s0 = node.snapshot()
-    drive(node, MAX_LINEAR, 0.0, 3.0)
+    drive(MAX_LINEAR, 0.0, 3.0)
     s1 = node.snapshot()
-    drive(node, 0.0, 0.6, 3.0)
+    drive(0.0, 0.0, 0.5)
+    drive(0.0, 0.6, 3.0)
     s2 = node.snapshot()
+    drive(0.0, 0.0, 0.5)
+    if csv:
+        csv.close()
 
     dist = math.hypot(s1[0] - s0[0], s1[1] - s0[1])
     dyaw = math.atan2(math.sin(s2[2] - s1[2]), math.cos(s2[2] - s1[2]))
-    ok = dist > 0.3 and abs(dyaw) > 0.3
+    # efficiency vs ideal (accel ramp included: ~1.10 m and ~1.54 rad)
+    eff_lin = dist / 1.10
+    eff_ang = abs(dyaw) / 1.54
+    # traction check: expected wheel omega for the commanded forward speed
+    wheel_slip = abs(s0[5] - MAX_LINEAR / WHEEL_R) if s0 else float('nan')
+    ok = dist > 0.6 and abs(dyaw) > 0.8
 
     lines = [
         "LunaBot V4 - Phase A - automated demo drive result",
         "====================================================",
         f"time                 : {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}",
-        f"forward 3 s @ {MAX_LINEAR} m/s : distance = {dist:.3f} m (expect > 0.3 m)",
-        f"turn 3 s @ 0.6 rad/s  : yaw delta  = {dyaw:+.3f} rad (expect > 0.3 rad)",
+        f"forward 3 s(sim) @ {MAX_LINEAR} m/s : distance = {dist:.3f} m (expect > 0.6 m)",
+        f"turn 3 s(sim) @ 0.6 rad/s          : yaw delta  = {dyaw:+.3f} rad (expect > 0.8 rad)",
+        f"forward efficiency : {eff_lin * 100:.0f}% of ideal",
+        f"turn efficiency    : {eff_ang * 100:.0f}% of ideal",
         f"start pose (x,y,yaw)  : {s0[0]:.3f}, {s0[1]:.3f}, {s0[2]:.3f}",
         f"after forward         : {s1[0]:.3f}, {s1[1]:.3f}, {s1[2]:.3f}",
         f"after turn            : {s2[0]:.3f}, {s2[1]:.3f}, {s2[2]:.3f}",
+        f"diag csv             : {csv_path or '(none)'}",
         f"result                : {'PASS' if ok else 'FAIL'}",
     ]
     for line in lines:
-        print(line)
+        print(line, flush=True)
     if evidence_dir:
         os.makedirs(evidence_dir, exist_ok=True)
         with open(os.path.join(evidence_dir, "demo_drive_result.txt"), "w") as fh:
             fh.write("\n".join(lines) + "\n")
+
+    # Clean teardown: stop the spin thread BEFORE rclpy shutdown
+    # (destroying the node with an active spin thread aborts C++).
+    stop.set()
+    thread.join(timeout=2.0)
     return 0 if ok else 1
 
 
@@ -136,30 +213,30 @@ def run_interactive(node):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
         return key
 
-    print("WASD to drive, Space to stop, Q to quit")
+    print("WASD to drive, Space to stop, Q to quit", flush=True)
     try:
         while True:
             key = get_key()
             msg = Twist()
             if key == 'w':
                 msg.linear.x = speed
-                print("Moving forward")
+                print("Moving forward", flush=True)
             elif key == 's':
                 msg.linear.x = -speed
-                print("Moving backward")
+                print("Moving backward", flush=True)
             elif key == 'a':
                 msg.angular.z = turn
-                print("Turning left")
+                print("Turning left", flush=True)
             elif key == 'd':
                 msg.angular.z = -turn
-                print("Turning right")
+                print("Turning right", flush=True)
             elif key == ' ':
-                print("Stopping")
+                print("Stopping", flush=True)
             elif key in ('q', 'Q', '\x03'):
                 break
             node.pub.publish(msg)
     except Exception as e:
-        print(e)
+        print(e, flush=True)
     finally:
         node.pub.publish(Twist())     # always stop on exit
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
