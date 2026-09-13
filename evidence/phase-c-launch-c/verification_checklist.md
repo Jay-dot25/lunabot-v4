@@ -16,6 +16,7 @@ EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-c
 - [ ] `/map` receives a real OccupancyGrid.
 - [ ] `map -> odom` lookup passes from slam_toolbox.
 - [ ] `odom -> chassis` and sensor-frame lookups pass.
+- [ ] `sensor_head -> lunabot_v4/sensor_head/lidar` passes for the Gazebo scan frame.
 - [ ] `live map updates during rover motion: PASS`.
 - [ ] `demo_drive_result.txt` reports `result : PASS`.
 - [ ] `odometry_report.txt` reports quality PASS and real samples.

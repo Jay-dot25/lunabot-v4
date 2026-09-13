@@ -346,6 +346,9 @@ TF_SPECS=(
   "sensor_head|rgb_camera|0.14 0 0 0 0 0"
   "sensor_head|depth_camera|0.14 0 -0.04 0 0 0"
   "sensor_head|lidar|0.02 0 0.09 0 0.5 0"
+  # Gazebo Fortress scopes the LaserScan frame in the message. Keep the
+  # Phase B unscoped alias and add the exact frame used by slam_toolbox.
+  "sensor_head|lunabot_v4/sensor_head/lidar|0.02 0 0.09 0 0.5 0"
 )
 for spec in "${TF_SPECS[@]}"; do
   IFS='|' read -r parent child xyzrpy <<< "$spec"
@@ -354,7 +357,7 @@ for spec in "${TF_SPECS[@]}"; do
     >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
   TF_PIDS+=("$!")
 done
-echo "      4 static transforms published (chassis -> sensor frames)"
+echo "      5 static transforms published (including scoped Gazebo LaserScan frame)"
 log "[7/13] static TF OK"
 
 # ------------------------------------------------------------
@@ -504,6 +507,7 @@ topic_ok "topic /lunabot/lidar/scan"          "/lunabot/lidar/scan"
 topic_ok "topic /lunabot/imu"                 "/lunabot/imu"
 tf_ok "TF odom -> chassis" "odom" "chassis"
 tf_ok "TF chassis -> sensor_head" "chassis" "sensor_head"
+tf_ok "TF sensor_head -> scoped LaserScan frame" "sensor_head" "lunabot_v4/sensor_head/lidar"
 
 if [ "$EVIDENCE" = "1" ]; then
   echo ""
@@ -521,6 +525,8 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/tf_odom_chassis.txt" || true
   timeout 25 ros2 run tf2_ros tf2_echo map odom 2>/dev/null \
     > "$EVIDENCE_DIR/tf_map_odom.txt" || true
+  timeout 25 ros2 run tf2_ros tf2_echo sensor_head lunabot_v4/sensor_head/lidar 2>/dev/null \
+    > "$EVIDENCE_DIR/tf_lidar_scoped.txt" || true
   timeout 20 ros2 topic echo /map --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/map_sample.txt"
   if [ "$MAP_SAVER_AVAILABLE" = "1" ]; then
@@ -551,7 +557,7 @@ echo "Watchdog          : RUNNING (0.5 s timeout)"
 echo "Odometry          : RUNNING (/lunabot/odom monitor)"
 echo "Sensors           : RUNNING (camera, depth, lidar, imu)"
 echo "Bridge            : RUNNING (16 mappings)"
-echo "TF                : RUNNING (odom->chassis + 4 static)"
+echo "TF                : RUNNING (odom->chassis + 5 static)"
 printf "RViz2             : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "skipped (headless)" || echo "RUNNING" )"
 echo ""
 echo "------------------------------------------------------------"

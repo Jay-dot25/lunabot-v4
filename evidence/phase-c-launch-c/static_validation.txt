@@ -88,6 +88,7 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] bridge includes preserved odometry
 [PASS] static TF includes chassis to sensor head
 [PASS] static TF includes sensor head to lidar
+[PASS] static TF includes exact Gazebo LaserScan frame
 [PASS] control input boundary is preserved
 [PASS] control output boundary is preserved
 [PASS] watchdog remains configured
@@ -108,6 +109,7 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] IMU topic is runtime-validated
 [PASS] IMU failure diagnostics are preserved
 [PASS] sensor-frame TF is runtime-validated
+[PASS] scoped LaserScan TF is runtime-validated
 [PASS] map motion has before and after samples
 [PASS] map motion gate compares real samples
 [PASS] demo failures propagate to process exit
@@ -135,4 +137,4 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] docs contain Phase D gate
 [PASS] validator states that static checks are not runtime acceptance
 
-RESULT: 131/131 checks passed
+RESULT: 133/133 checks passed

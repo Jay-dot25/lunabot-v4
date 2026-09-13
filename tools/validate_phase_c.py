@@ -162,6 +162,7 @@ check("bridge includes explicit IMU", '"/lunabot/imu@sensor_msgs/msg/Imu' in lau
 check("bridge includes preserved odometry", '"/lunabot/odom@nav_msgs/msg/Odometry' in launch)
 check("static TF includes chassis to sensor head", '"chassis|sensor_head|' in launch)
 check("static TF includes sensor head to lidar", '"sensor_head|lidar|' in launch)
+check("static TF includes exact Gazebo LaserScan frame", '"sensor_head|lunabot_v4/sensor_head/lidar|' in launch)
 check("control input boundary is preserved", "--input-topic /cmd_vel_in" in launch)
 check("control output boundary is preserved", "--output-topic /cmd_vel" in launch)
 check("watchdog remains configured", "--watchdog-sec 0.5" in launch)
@@ -190,6 +191,8 @@ check("IMU topic is runtime-validated", 'topic_ok "topic /lunabot/imu"' in launc
 check("IMU failure diagnostics are preserved", "imu_gazebo_topics.txt" in launch and
       "imu_topic_info.txt" in launch and "imu_diagnostics.txt" in launch)
 check("sensor-frame TF is runtime-validated", 'tf_ok "TF chassis -> sensor_head"' in launch)
+check("scoped LaserScan TF is runtime-validated", 'tf_ok "TF sensor_head -> scoped LaserScan frame"' in launch and
+      "lunabot_v4/sensor_head/lidar" in launch)
 check("map motion has before and after samples", "map_before_motion.txt" in launch and
       "map_after_motion.txt" in launch)
 check("map motion gate compares real samples", "cmp -s" in launch and

@@ -29,8 +29,12 @@ odom -> chassis TF + scan          ▼
 
 `slam_toolbox` is configured with simulated time, `map` as its map frame,
 `odom` as its odometry frame, `chassis` as its base frame, and the explicit
-scan topic `/lunabot/lidar/scan`. `/lunabot/odom` remains the motion source;
-Phase C does not add a second odometry or localization stack.
+scan topic `/lunabot/lidar/scan`. Gazebo Fortress reports that scan with the
+frame `lunabot_v4/sensor_head/lidar`; Phase C publishes the exact scoped TF
+in addition to the preserved Phase B `sensor_head -> lidar` alias. This avoids
+the Phase B-style sensor-frame mismatch without changing the sensor interface.
+`/lunabot/odom` remains the motion source; Phase C does not add a second
+odometry or localization stack.
 
 ## 3. Ubuntu 22.04 installation
 
@@ -167,6 +171,7 @@ The launcher writes runtime evidence under
 | `map_before_motion.txt` / `map_after_motion.txt` | motion update gate samples |
 | `tf_map_odom.txt` | real `map -> odom` lookup |
 | `tf_odom_chassis.txt` | real `odom -> chassis` lookup |
+| `tf_lidar_scoped.txt` | real `sensor_head -> lunabot_v4/sensor_head/lidar` lookup |
 | `odom_sample.txt` / `imu_sample.txt` | real motion and IMU messages |
 | `odometry_samples.csv` / `odometry_report.txt` | Phase B odometry evidence |
 | `demo_drive_result.txt` / `diag_drive.csv` | real control-chain demo evidence |
