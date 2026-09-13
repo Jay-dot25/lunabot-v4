@@ -84,6 +84,8 @@ check('control watchdog stops stale input',
       'WATCHDOG_STOP' in control and 'watchdog_sec' in control)
 check('control status topic', '/lunabot/control/status' in control)
 check('control publishes Twist output', 'self.cmd_pub.publish(out)' in control)
+check('control guards shutdown publish',
+      'if rclpy.ok()' in control and 'publisher context is still valid' in control)
 
 # Odometry monitor contract.
 monitor = text(ROOT / 'scripts/odometry_monitor.py')
@@ -126,6 +128,14 @@ check('launch-b starts controller', 'control_odometry.py' in launch and 'CONTROL
 check('launch-b starts odometry monitor', 'odometry_monitor.py' in launch and 'ODOM_PID' in launch)
 check('launch-b separates control input/output',
       '--input-topic /cmd_vel_in' in launch and '--output-topic /cmd_vel' in launch)
+check('launch-b explicitly unpauses headless Gazebo',
+      'WorldControl' in launch and "--req 'pause: false'" in launch)
+check('launch-b uses real topic-message validation',
+      'sample="$(timeout 30 ros2 topic echo' in launch and
+      '| head -n 3' not in launch)
+check('launch-b cleans stale Phase B nodes',
+      'ros_ign_bridge.*parameter_bridge' in launch and
+      'scripts/control_odometry.py' in launch)
 check('launch-b bridges simulation clock', '"/clock@rosgraph_msgs/msg/Clock' in launch)
 check('launch-b retries dynamic TF validation',
       'for _ in 1 2 3' in launch and 'tf2_echo' in launch)

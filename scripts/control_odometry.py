@@ -132,8 +132,14 @@ def main():
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
-        stop = Twist()
-        node.cmd_pub.publish(stop)
+        # rclpy installs a SIGTERM handler which may invalidate the context
+        # before this finally block runs. Only publish the final zero command
+        # while the publisher context is still valid.
+        if rclpy.ok():
+            try:
+                node.cmd_pub.publish(Twist())
+            except Exception:
+                pass
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()

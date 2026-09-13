@@ -37,6 +37,7 @@
 [PASS] control watchdog stops stale input
 [PASS] control status topic
 [PASS] control publishes Twist output
+[PASS] control guards shutdown publish
 [PASS] monitor subscribes to DiffDrive odometry
 [PASS] monitor imports Gazebo-compatible QoS
 [PASS] monitor publishes quality status
@@ -56,6 +57,9 @@
 [PASS] launch-b starts controller
 [PASS] launch-b starts odometry monitor
 [PASS] launch-b separates control input/output
+[PASS] launch-b explicitly unpauses headless Gazebo
+[PASS] launch-b uses real topic-message validation
+[PASS] launch-b cleans stale Phase B nodes
 [PASS] launch-b bridges simulation clock
 [PASS] launch-b retries dynamic TF validation
 [PASS] launch-b has watchdog status runtime check
@@ -94,4 +98,4 @@ RESULT: 76/76 checks passed - ALL PASS
 ============================================================
 report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
 
-RESULT: 92/92 checks passed
+RESULT: 96/96 checks passed

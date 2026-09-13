@@ -27,7 +27,8 @@ invoke `launch-a`.
 | Odometry monitor | Consumes real `/lunabot/odom`, checks frame IDs, sample rate, continuity and motion, and publishes quality status |
 | Odometry evidence | Writes `odometry_samples.csv` and `odometry_report.txt` from received runtime messages |
 | Gazebo QoS compatibility | Python odometry, joint-state and `/clock` subscriptions use ROS 2 `qos_profile_sensor_data` so they match the bridge's best-effort publishers |
-| Startup robustness | Dynamic `odom → chassis` TF validation retries during cold Gazebo startup |
+| Startup robustness | Dynamic `odom → chassis` TF validation retries during cold Gazebo startup; stale Phase B child processes are cleaned before relaunch |
+| Headless simulation | `launch-b` explicitly sends `pause: false` to `/world/lunar_world/control`; server-only Gazebo otherwise starts paused |
 | Demo path | `wasd_teleop.py --topic /cmd_vel_in --demo` exercises the complete control chain |
 
 ## 4. Inputs
@@ -152,6 +153,7 @@ The standardized output has a Phase B banner and twelve stages:
 [2/12] Checking ROS 2 / Gazebo environment........
 [3/12] Checking for stale Phase A/B processes.......
 [4/12] Starting Gazebo lunar world..................
+      Gazebo simulation unpaused
 [5/12] Spawning LunaBot V4..........................
 [6/12] Starting ROS 2 <-> Gazebo bridge.............
 [7/12] Starting static TF (sensor frames)............
@@ -168,10 +170,12 @@ control chain or motion acceptance fails.
 ## 13. Expected Gazebo Output
 
 Gazebo must show the same grey, monochrome, dense crater field as Phase A.
-LunaBot V4 must spawn on the terrain at `z=-2.308 m`. The rover receives
-commands only after they pass through the Phase B controller. When the input
-stops, the controller's watchdog ramps `/cmd_vel` to zero rather than leaving
-a stale command active.
+LunaBot V4 must spawn on the terrain at `z=-2.308 m`. In headless mode,
+`launch-b` explicitly unpauses the world after Gazebo reports ready; this is
+required because server-only Gazebo starts paused. The rover receives commands
+only after they pass through the Phase B controller. When the input stops, the
+controller's watchdog ramps `/cmd_vel` to zero rather than leaving a stale
+command active.
 
 ## 14. Expected RViz Output
 

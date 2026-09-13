@@ -184,6 +184,15 @@ if [ -n "$stale" ]; then
   kill -9 $stale 2>/dev/null || true
   sleep 2
 fi
+# A prior interrupted `ros2 run` can leave its child bridge alive. Remove
+# only processes belonging to this Phase B command/node contract.
+for pattern in "ros_ign_bridge.*parameter_bridge" "ros_gz_bridge.*parameter_bridge" \
+               "scripts/control_odometry.py" "scripts/odometry_monitor.py"; do
+  for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
+    kill -TERM "$p" 2>/dev/null || true
+  done
+done
+sleep 1
 echo "      clean state: OK"
 log "[3/12] clean state OK"
 
@@ -214,8 +223,17 @@ for _ in $(seq 1 90); do
   sleep 1
 done
 [ "$ready" -eq 1 ] || abort "Gazebo did not become ready within 90 s"
+# Gazebo Sim starts paused in server-only mode. Explicitly unpause so /clock,
+# sensors, DiffDrive odometry and the Phase B demo can actually advance.
+control_resp="$(timeout 10 "$IGN" service -s "/world/$WORLD_NAME/control" \
+  --reqtype "$MSGNS.WorldControl" --reptype "$MSGNS.Boolean" \
+  --timeout 5000 --req 'pause: false' 2>>"$EVIDENCE_DIR/gazebo.log")"
+case "$control_resp" in
+  *true*) echo "      Gazebo simulation unpaused";;
+  *) abort "could not unpause Gazebo simulation: $control_resp";;
+esac
 echo "      Gazebo running (PID $GAZEBO_PID), lunar_world loaded"
-log "[4/12] gazebo OK (pid $GAZEBO_PID)"
+log "[4/12] gazebo OK and unpaused (pid $GAZEBO_PID)"
 
 # ------------------------------------------------------------
 # [5/12] Spawn LunaBot V4
@@ -336,7 +354,10 @@ fi
 # ------------------------------------------------------------
 echo "[11/12] Runtime validation.........................."
 topic_ok() {
-  if timeout 30 ros2 topic echo "$2" --once 2>/dev/null | head -n 3 >/dev/null; then
+  local sample=""
+  # Do not pipe to head: head can exit successfully before ros2 receives a
+  # message, creating a false PASS. This assignment waits for --once data.
+  if sample="$(timeout 30 ros2 topic echo "$2" --once 2>/dev/null)" && [ -n "$sample" ]; then
     echo "      $1: PASS"
     log "validation PASS: $2"
   else
