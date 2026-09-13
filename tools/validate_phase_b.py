@@ -108,6 +108,8 @@ check('teleop default preserves Phase A /cmd_vel', "topic='/cmd_vel'" in teleop)
 check('teleop supports --topic override', 'ap.add_argument("--topic"' in teleop)
 check('teleop publishes selected topic', 'create_publisher(Twist, topic' in teleop)
 check('teleop demo supports sim time', 'Clock' in teleop and 'node.sim_t' in teleop)
+check('teleop writes failure evidence',
+      'failure_reason' in teleop and 'demo_drive_result.txt' in teleop)
 check('teleop uses Gazebo-compatible QoS',
       'qos_profile_sensor_data' in teleop and
       'ExternalShutdownException' not in teleop)

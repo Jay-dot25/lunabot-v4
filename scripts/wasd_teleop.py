@@ -115,15 +115,32 @@ def run_demo(node, evidence_dir):
     thread = threading.Thread(target=spinner, daemon=True)
     thread.start()
 
+    phase_label = 'Phase B' if node.topic == '/cmd_vel_in' else 'Phase A'
+
+    def write_failure(reason):
+        lines = [
+            f"LunaBot V4 - {phase_label} - automated demo drive result",
+            "====================================================",
+            f"time                 : {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}",
+            f"failure_reason       : {reason}",
+            "result                : FAIL",
+        ]
+        for line in lines:
+            print(line, flush=True)
+        if evidence_dir:
+            os.makedirs(evidence_dir, exist_ok=True)
+            with open(os.path.join(evidence_dir, "demo_drive_result.txt"), "w") as fh:
+                fh.write("\n".join(lines) + "\n")
+        stop.set()
+        thread.join(timeout=2.0)
+        return 1
+
     print("Waiting for /lunabot/odom and /clock ...", flush=True)
     t0 = time.time()
     while (node.odom is None or node.sim_t is None) and time.time() - t0 < 15:
         time.sleep(0.1)
     if node.odom is None or node.sim_t is None:
-        print("DEMO FAIL: odom/clock not received within 15 s", flush=True)
-        stop.set()
-        thread.join(timeout=2.0)
-        return 1
+        return write_failure("odom/clock not received within 15 s")
     print("Odometry + sim time received. Starting drive test (sim-time based).",
           flush=True)
 
@@ -172,7 +189,7 @@ def run_demo(node, evidence_dir):
     ok = dist > 0.6 and abs(dyaw) > 0.8
 
     lines = [
-        "LunaBot V4 - Phase A - automated demo drive result",
+        f"LunaBot V4 - {phase_label} - automated demo drive result",
         "====================================================",
         f"time                 : {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}",
         f"forward 3 s(sim) @ {MAX_LINEAR} m/s : distance = {dist:.3f} m (expect > 0.6 m)",

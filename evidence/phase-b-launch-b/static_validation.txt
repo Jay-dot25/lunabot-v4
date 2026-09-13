@@ -48,6 +48,7 @@
 [PASS] teleop supports --topic override
 [PASS] teleop publishes selected topic
 [PASS] teleop demo supports sim time
+[PASS] teleop writes failure evidence
 [PASS] teleop uses Gazebo-compatible QoS
 [PASS] launch-b has Phase B banner
 [PASS] launch-b does not invoke launch-a
@@ -93,4 +94,4 @@ RESULT: 76/76 checks passed - ALL PASS
 ============================================================
 report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
 
-RESULT: 91/91 checks passed
+RESULT: 92/92 checks passed
