@@ -166,6 +166,12 @@ check('world enables Fortress IMU system plugin',
 check('Phase B RViz fixed frame odom', 'Fixed Frame: odom' in rviz_b)
 check('Phase B RViz displays odometry',
       'rviz_default_plugins/Odometry' in rviz_b and '/lunabot/odom' in rviz_b)
+check('Phase B RViz LaserScan topic is explicit',
+      'Value: /lunabot/lidar/scan' in rviz_b)
+check('Phase B RViz camera topic is explicit',
+      'Value: /lunabot/camera/image_raw' in rviz_b)
+check('Phase B RViz sensor QoS is best effort',
+      rviz_b.count('Reliability Policy: Best Effort') >= 2)
 for rel in ['docs/phase-b-launch-b.md']:
     p = ROOT / rel
     check(f'document exists: {rel}', p.is_file())

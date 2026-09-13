@@ -182,8 +182,10 @@ command active.
 
 RViz uses fixed frame `odom`. The Phase B configuration shows the Phase A TF,
 LiDAR and camera displays plus an Odometry display on `/lunabot/odom`. The
-odometry display is visualization only; the monitor's report is calculated
-from received messages.
+LiDAR and camera displays explicitly select `/lunabot/lidar/scan` and
+`/lunabot/camera/image_raw` and use best-effort QoS to match Gazebo sensor
+streams. The odometry display is visualization only; the monitor's report is
+calculated from received messages.
 
 ## 15. Validation Procedure
 
