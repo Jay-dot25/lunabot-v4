@@ -1,4 +1,10 @@
-#!/bin/sh
-# Canonical independent Phase B entry point.
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec "$SCRIPT_DIR/scripts/launch-b.sh" "$@"
+#!/bin/bash
+# ============================================================
+#  LunaBot V4 - Phase B entry point
+#  Canonical command:  ~/launch-b
+#
+#  The readlink resolution is required because ~/launch-b is a symlink
+#  to this repository entry point.
+# ============================================================
+SCRIPT="$(readlink -f "${BASH_SOURCE[0]}")"
+exec "$(cd "$(dirname "$SCRIPT")" && pwd)/scripts/launch-b.sh" "$@"
