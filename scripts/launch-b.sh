@@ -346,14 +346,20 @@ topic_ok() {
   fi
 }
 tf_ok() {
-  if timeout 30 ros2 run tf2_ros tf2_echo "$2" "$3" 2>/dev/null | grep -qm1 "Translation:"; then
-    echo "      $1: PASS"
-    log "validation PASS: TF $2->$3"
-  else
-    echo "      $1: FAIL"
-    log "validation FAIL: TF $2->$3"
-    OVERALL="FAIL"
-  fi
+  # Dynamic odom TF starts after DiffDrive has its first wheel update. Retry
+  # the lookup so a cold Gazebo startup is not reported as a false failure.
+  for _ in 1 2 3; do
+    if timeout 10 ros2 run tf2_ros tf2_echo "$2" "$3" 2>/dev/null | grep -qm1 "Translation:"; then
+      echo "      $1: PASS"
+      log "validation PASS: TF $2->$3"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "      $1: FAIL"
+  log "validation FAIL: TF $2->$3"
+  OVERALL="FAIL"
+  return 1
 }
 kill -0 "$GAZEBO_PID" 2>/dev/null && echo "      Gazebo process alive: PASS" || { echo "      Gazebo process alive: FAIL"; OVERALL="FAIL"; }
 topic_ok "topic /clock"                       "/clock"

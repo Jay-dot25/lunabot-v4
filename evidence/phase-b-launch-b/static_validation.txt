@@ -38,6 +38,7 @@
 [PASS] control status topic
 [PASS] control publishes Twist output
 [PASS] monitor subscribes to DiffDrive odometry
+[PASS] monitor imports Gazebo-compatible QoS
 [PASS] monitor publishes quality status
 [PASS] monitor records CSV samples
 [PASS] monitor writes report
@@ -47,6 +48,7 @@
 [PASS] teleop supports --topic override
 [PASS] teleop publishes selected topic
 [PASS] teleop demo supports sim time
+[PASS] teleop uses Gazebo-compatible QoS
 [PASS] launch-b has Phase B banner
 [PASS] launch-b does not invoke launch-a
 [PASS] launch-b uses Phase B evidence directory
@@ -54,6 +56,7 @@
 [PASS] launch-b starts odometry monitor
 [PASS] launch-b separates control input/output
 [PASS] launch-b bridges simulation clock
+[PASS] launch-b retries dynamic TF validation
 [PASS] launch-b has watchdog status runtime check
 [PASS] launch-b has odometry status runtime check
 [PASS] launch-b has clean shutdown
@@ -90,4 +93,4 @@ RESULT: 76/76 checks passed - ALL PASS
 ============================================================
 report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
 
-RESULT: 88/88 checks passed
+RESULT: 91/91 checks passed

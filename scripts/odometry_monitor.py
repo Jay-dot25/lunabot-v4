@@ -21,7 +21,9 @@ import time
 
 import rclpy
 from nav_msgs.msg import Odometry
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import String
 
 
@@ -33,7 +35,9 @@ class OdometryMonitor(Node):
             os.makedirs(evidence_dir, exist_ok=True)
         self.status_pub = self.create_publisher(
             String, '/lunabot/odometry/status', 10)
-        self.create_subscription(Odometry, '/lunabot/odom', self._odom_cb, 30)
+        # Gazebo bridge publishes odometry with sensor-style best-effort QoS.
+        self.create_subscription(Odometry, '/lunabot/odom', self._odom_cb,
+                                 qos_profile_sensor_data)
         self.samples = 0
         self.first_wall = None
         self.last_wall = None

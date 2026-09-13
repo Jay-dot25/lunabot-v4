@@ -32,6 +32,7 @@ import time
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
@@ -60,10 +61,14 @@ class TeleopNode(Node):
         self.joint_vel = {}
         self.sim_t = None
         self.cmd = (0.0, 0.0)          # last commanded (v, wz)
-        self.create_subscription(Odometry, '/lunabot/odom', self._odom_cb, 10)
+        # Gazebo bridge sensor/clock publishers use best-effort QoS.
+        # Use the ROS 2 sensor profile so Python subscribers match them.
+        self.create_subscription(Odometry, '/lunabot/odom', self._odom_cb,
+                                 qos_profile_sensor_data)
         self.create_subscription(JointState, '/lunabot/joint_states',
-                                 self._js_cb, 10)
-        self.create_subscription(Clock, '/clock', self._clock_cb, 10)
+                                 self._js_cb, qos_profile_sensor_data)
+        self.create_subscription(Clock, '/clock', self._clock_cb,
+                                 qos_profile_sensor_data)
 
     def _odom_cb(self, msg):
         self.odom = msg

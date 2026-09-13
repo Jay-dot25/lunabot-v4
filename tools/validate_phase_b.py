@@ -89,6 +89,9 @@ check('control publishes Twist output', 'self.cmd_pub.publish(out)' in control)
 monitor = text(ROOT / 'scripts/odometry_monitor.py')
 check('monitor subscribes to DiffDrive odometry',
       "'/lunabot/odom'" in monitor and 'Odometry' in monitor)
+check('monitor imports Gazebo-compatible QoS',
+      'qos_profile_sensor_data' in monitor and
+      'ExternalShutdownException' in monitor)
 check('monitor publishes quality status', '/lunabot/odometry/status' in monitor)
 check('monitor records CSV samples', 'odometry_samples.csv' in monitor and
       'csv.writer' in monitor)
@@ -105,6 +108,9 @@ check('teleop default preserves Phase A /cmd_vel', "topic='/cmd_vel'" in teleop)
 check('teleop supports --topic override', 'ap.add_argument("--topic"' in teleop)
 check('teleop publishes selected topic', 'create_publisher(Twist, topic' in teleop)
 check('teleop demo supports sim time', 'Clock' in teleop and 'node.sim_t' in teleop)
+check('teleop uses Gazebo-compatible QoS',
+      'qos_profile_sensor_data' in teleop and
+      'ExternalShutdownException' not in teleop)
 
 # Independent launch contract.
 launch = text(ROOT / 'scripts/launch-b.sh')
@@ -119,6 +125,8 @@ check('launch-b starts odometry monitor', 'odometry_monitor.py' in launch and 'O
 check('launch-b separates control input/output',
       '--input-topic /cmd_vel_in' in launch and '--output-topic /cmd_vel' in launch)
 check('launch-b bridges simulation clock', '"/clock@rosgraph_msgs/msg/Clock' in launch)
+check('launch-b retries dynamic TF validation',
+      'for _ in 1 2 3' in launch and 'tf2_echo' in launch)
 check('launch-b has watchdog status runtime check',
       '/lunabot/control/status' in launch)
 check('launch-b has odometry status runtime check',

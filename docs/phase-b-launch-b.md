@@ -26,6 +26,8 @@ invoke `launch-a`.
 | Control status | `/lunabot/control/status` reports input age, target/output values, limits and message counts |
 | Odometry monitor | Consumes real `/lunabot/odom`, checks frame IDs, sample rate, continuity and motion, and publishes quality status |
 | Odometry evidence | Writes `odometry_samples.csv` and `odometry_report.txt` from received runtime messages |
+| Gazebo QoS compatibility | Python odometry, joint-state and `/clock` subscriptions use ROS 2 `qos_profile_sensor_data` so they match the bridge's best-effort publishers |
+| Startup robustness | Dynamic `odom → chassis` TF validation retries during cold Gazebo startup |
 | Demo path | `wasd_teleop.py --topic /cmd_vel_in --demo` exercises the complete control chain |
 
 ## 4. Inputs
