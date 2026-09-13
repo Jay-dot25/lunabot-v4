@@ -364,6 +364,21 @@ topic_ok() {
     echo "      $1: FAIL"
     log "validation FAIL: $2"
     OVERALL="FAIL"
+    if [ "$2" = "/lunabot/imu" ]; then
+      timeout 10 "$IGN" topic -l 2>/dev/null \
+        | grep -iE 'imu|inertial' > "$EVIDENCE_DIR/imu_gazebo_topics.txt" || true
+      timeout 8 "$IGN" topic -e -t "/lunabot/imu" 2>/dev/null \
+        > "$EVIDENCE_DIR/imu_gazebo_sample.txt" || true
+      timeout 10 ros2 topic info /lunabot/imu --verbose 2>/dev/null \
+        > "$EVIDENCE_DIR/imu_topic_info.txt" || true
+      {
+        echo "--- bridge IMU diagnostics ---"
+        grep -iE 'imu|error|fail|warn' "$EVIDENCE_DIR/bridge.log" 2>/dev/null || true
+        echo "--- Gazebo IMU diagnostics ---"
+        grep -iE 'imu|sensor|error|fail|warn' "$EVIDENCE_DIR/gazebo.log" 2>/dev/null | tail -80 || true
+      } > "$EVIDENCE_DIR/imu_diagnostics.txt"
+      echo "      IMU diagnostics written to $EVIDENCE_DIR/imu_*"
+    fi
   fi
 }
 tf_ok() {

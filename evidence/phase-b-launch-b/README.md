@@ -21,6 +21,8 @@ EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-b
 | `odometry_status.txt` | live odometry-quality status sample |
 | `odom_sample.txt` | one real `/lunabot/odom` message |
 | `imu_sample.txt` | one real `/lunabot/imu` message using best-effort QoS |
+| `imu_gazebo_topics.txt`, `imu_gazebo_sample.txt` | Gazebo-side IMU topic discovery/sample attempt when ROS IMU validation fails |
+| `imu_topic_info.txt`, `imu_diagnostics.txt` | ROS publisher/QoS and bridge/Gazebo diagnostics for an IMU failure |
 | `tf_odom_chassis.txt` | one real dynamic odom-to-chassis TF sample |
 | `odometry_samples.csv` | every odometry message received by the monitor |
 | `odometry_report.txt` | computed rate, duration, distance, continuity and PASS/FAIL |

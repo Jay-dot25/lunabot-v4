@@ -289,6 +289,10 @@ evidence/phase-b-launch-b/odometry_status.txt
 evidence/phase-b-launch-b/odometry_samples.csv
 evidence/phase-b-launch-b/odometry_report.txt
 evidence/phase-b-launch-b/imu_sample.txt
+evidence/phase-b-launch-b/imu_gazebo_topics.txt
+evidence/phase-b-launch-b/imu_gazebo_sample.txt
+evidence/phase-b-launch-b/imu_topic_info.txt
+evidence/phase-b-launch-b/imu_diagnostics.txt
 evidence/phase-b-launch-b/demo_drive_result.txt
 evidence/phase-b-launch-b/diag_drive.csv
 ```

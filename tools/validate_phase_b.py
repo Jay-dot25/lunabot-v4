@@ -147,6 +147,10 @@ check('launch-b has watchdog status runtime check',
       '/lunabot/control/status' in launch)
 check('launch-b has odometry status runtime check',
       '/lunabot/odometry/status' in launch)
+check('launch-b records IMU diagnostics on failure',
+      'imu_gazebo_topics.txt' in launch and
+      'imu_topic_info.txt' in launch and
+      'imu_diagnostics.txt' in launch)
 check('launch-b has clean shutdown',
       'kill -TERM "$CONTROL_PID"' in launch and
       'kill -TERM "$ODOM_PID"' in launch and 'shutdown()' in launch)
