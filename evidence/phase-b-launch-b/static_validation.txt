@@ -1,0 +1,93 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: evidence/phase-a-launch-a/README.md
+[PASS] file exists: evidence/phase-b-launch-b/README.md
+[PASS] file exists: evidence/phase-b-launch-b/collect_evidence.sh
+[PASS] executable: launch-b
+[PASS] executable: scripts/launch-b.sh
+[PASS] executable: scripts/control_odometry.py
+[PASS] executable: scripts/odometry_monitor.py
+[PASS] executable: evidence/phase-b-launch-b/collect_evidence.sh
+[PASS] world SDF well-formed: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] model SDF well-formed: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] Python syntax: scripts/wasd_teleop.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/plot_lidar_scan.py
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] control node class exists
+[PASS] control input defaults to /cmd_vel_in
+[PASS] control output defaults to /cmd_vel
+[PASS] control clamps linear and angular values
+[PASS] control applies acceleration limits
+[PASS] control watchdog stops stale input
+[PASS] control status topic
+[PASS] control publishes Twist output
+[PASS] monitor subscribes to DiffDrive odometry
+[PASS] monitor publishes quality status
+[PASS] monitor records CSV samples
+[PASS] monitor writes report
+[PASS] monitor checks odom and chassis frames
+[PASS] monitor checks continuity
+[PASS] teleop default preserves Phase A /cmd_vel
+[PASS] teleop supports --topic override
+[PASS] teleop publishes selected topic
+[PASS] teleop demo supports sim time
+[PASS] launch-b has Phase B banner
+[PASS] launch-b does not invoke launch-a
+[PASS] launch-b uses Phase B evidence directory
+[PASS] launch-b starts controller
+[PASS] launch-b starts odometry monitor
+[PASS] launch-b separates control input/output
+[PASS] launch-b bridges simulation clock
+[PASS] launch-b has watchdog status runtime check
+[PASS] launch-b has odometry status runtime check
+[PASS] launch-b has clean shutdown
+[PASS] launch-b has demo nonzero exit propagation
+[PASS] Phase B RViz fixed frame odom
+[PASS] Phase B RViz displays odometry
+[PASS] document exists: docs/phase-b-launch-b.md
+[PASS] doc docs/phase-b-launch-b.md section 1
+[PASS] doc docs/phase-b-launch-b.md section 2
+[PASS] doc docs/phase-b-launch-b.md section 3
+[PASS] doc docs/phase-b-launch-b.md section 4
+[PASS] doc docs/phase-b-launch-b.md section 5
+[PASS] doc docs/phase-b-launch-b.md section 6
+[PASS] doc docs/phase-b-launch-b.md section 7
+[PASS] doc docs/phase-b-launch-b.md section 8
+[PASS] doc docs/phase-b-launch-b.md section 9
+[PASS] doc docs/phase-b-launch-b.md section 10
+[PASS] doc docs/phase-b-launch-b.md section 11
+[PASS] doc docs/phase-b-launch-b.md section 12
+[PASS] doc docs/phase-b-launch-b.md section 13
+[PASS] doc docs/phase-b-launch-b.md section 14
+[PASS] doc docs/phase-b-launch-b.md section 15
+[PASS] doc docs/phase-b-launch-b.md section 16
+[PASS] doc docs/phase-b-launch-b.md section 17
+[PASS] doc docs/phase-b-launch-b.md section 18
+[PASS] doc docs/phase-b-launch-b.md section 19
+[PASS] doc docs/phase-b-launch-b.md section 20
+[PASS] doc docs/phase-b-launch-b.md section 21
+[PASS] doc docs/phase-b-launch-b.md section 22
+[PASS] doc docs/phase-b-launch-b.md section 23
+[PASS] collector launches Phase B directly
+[PASS] Phase A static baseline remains 76/76 - =====================
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+
+RESULT: 88/88 checks passed

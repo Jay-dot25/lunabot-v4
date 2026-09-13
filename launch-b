@@ -1,0 +1,4 @@
+#!/bin/sh
+# Canonical independent Phase B entry point.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec "$SCRIPT_DIR/scripts/launch-b.sh" "$@"

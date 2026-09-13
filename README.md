@@ -9,8 +9,8 @@ earlier ones.
 
 | Phase | Launch | Scope | Status |
 |---|---|---|---|
-| A | `~/launch-a` | Simulation & rover foundation (lunar world, rover, sensors, ROS bridge, TF, RViz, teleop) | implemented, pending runtime approval |
-| B | `~/launch-b` | Control & odometry | not started |
+| A | `~/launch-a` | Simulation & rover foundation (lunar world, rover, sensors, ROS bridge, TF, RViz, teleop) | approved by user |
+| B | `~/launch-b` | Control & odometry (safe command boundary, watchdog, odometry monitor) | implemented, pending runtime validation |
 | C | `~/launch-c` | SLAM & localization | not started |
 | D | `~/launch-d` | Basic autonomous navigation (A*) | not started |
 | E | `~/launch-e` | Terrain perception (segmentation) | not started |
@@ -45,6 +45,25 @@ EVIDENCE=1 DEMO=1 ~/launch-a  # automated test + record runtime evidence
 
 WASD drive: `W` forward, `S` reverse, `A` left, `D` right, `Space` stop,
 `Q` quit. `Ctrl+C` stops everything cleanly (Gazebo, bridge, TF, RViz).
+
+## Quickstart (Phase B)
+
+Phase B is independent and keeps the Phase A world/rover baseline. It inserts
+an explicit control boundary and odometry monitor:
+
+```bash
+cd ~/lunabot-v4
+ln -s ~/lunabot-v4/launch-b ~/launch-b   # once; use ln -sf if it exists
+
+~/launch-b                              # Gazebo + RViz + interactive WASD
+HEADLESS=1 DEMO=1 ~/launch-b             # automated control-chain test
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-b  # test + odometry evidence
+```
+
+The control path is `/cmd_vel_in` → Phase B controller → `/cmd_vel` →
+Gazebo. The controller clamps commands, limits acceleration and stops after
+0.5 seconds without input. Evidence is written to
+`evidence/phase-b-launch-b/`.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.

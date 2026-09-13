@@ -52,9 +52,10 @@ def yaw_from_quaternion(q):
 
 
 class TeleopNode(Node):
-    def __init__(self):
+    def __init__(self, topic='/cmd_vel'):
         super().__init__('wasd_teleop')
-        self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.topic = topic
+        self.pub = self.create_publisher(Twist, topic, 10)
         self.odom = None
         self.joint_vel = {}
         self.sim_t = None
@@ -247,12 +248,14 @@ def main():
     ap = argparse.ArgumentParser(description="LunaBot V4 WASD teleop / demo drive")
     ap.add_argument("--demo", action="store_true",
                     help="run the automated drive test instead of interactive WASD")
+    ap.add_argument("--topic", default="/cmd_vel",
+                    help="Twist command topic (Phase A: /cmd_vel; Phase B: /cmd_vel_in)")
     ap.add_argument("evidence_dir", nargs="?", default="",
                     help="optional evidence dir for --demo results")
     args = ap.parse_args()
 
     rclpy.init()
-    node = TeleopNode()
+    node = TeleopNode(args.topic)
     rc = 1
     try:
         if args.demo:
