@@ -159,6 +159,10 @@ check('launch-b has demo nonzero exit propagation',
 
 # RViz and evidence/docs.
 rviz_b = text(ROOT / 'rviz/phase_b.rviz')
+world_sdf = text(ROOT / 'src/lunabot_gazebo/worlds/lunar_world.sdf')
+check('world enables Fortress IMU system plugin',
+      'ignition-gazebo-imu-system' in world_sdf and
+      'ignition::gazebo::systems::Imu' in world_sdf)
 check('Phase B RViz fixed frame odom', 'Fixed Frame: odom' in rviz_b)
 check('Phase B RViz displays odometry',
       'rviz_default_plugins/Odometry' in rviz_b and '/lunabot/odom' in rviz_b)

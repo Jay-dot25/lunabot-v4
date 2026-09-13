@@ -29,6 +29,7 @@ invoke `launch-a`.
 | Gazebo QoS compatibility | Python odometry, joint-state and `/clock` subscriptions use ROS 2 `qos_profile_sensor_data` so they match the bridge's best-effort publishers |
 | Startup robustness | Dynamic `odom → chassis` TF validation retries during cold Gazebo startup; stale Phase B child processes are cleaned before relaunch |
 | Headless simulation | `launch-b` explicitly sends `pause: false` to `/world/lunar_world/control`; server-only Gazebo otherwise starts paused |
+| Fortress IMU system | Adds the required `ignition-gazebo-imu-system` world plugin; the model sensor and `/lunabot/imu` contract are unchanged |
 | Demo path | `wasd_teleop.py --topic /cmd_vel_in --demo` exercises the complete control chain |
 
 ## 4. Inputs
@@ -246,15 +247,23 @@ On an Ubuntu 22.04 workstation with ROS 2 Humble and Gazebo Sim:
 
 - `scripts/wasd_teleop.py`: added `--topic`; default `/cmd_vel` is preserved
   for Phase A and Phase B passes `/cmd_vel_in`.
+- `src/lunabot_gazebo/worlds/lunar_world.sdf`: added the required Fortress
+  `ignition-gazebo-imu-system` world plugin so the existing model IMU sensor
+  actually advertises its configured topic. Gravity, terrain, spawn, camera,
+  collision and all existing plugins are unchanged.
 - `README.md`: Phase B quickstart and status updated after validation.
 - `docs/phase-b-launch-b.md`: this document.
 
-No Phase A world, terrain, rover geometry, sensor, bridge or TF values were
-changed for Phase B.
+No Phase A rover geometry, sensor definition, bridge topic name, TF or terrain
+values were changed for Phase B. The world plugin addition repairs the existing
+Phase A IMU runtime interface; it does not alter the environment or physics
+parameters beyond enabling that declared sensor system.
 
 ## 20. Files Reused
 
-- Phase A `lunar_world.sdf`, both terrain meshes and the validated `model.sdf`.
+- Phase A `lunar_world.sdf`, with only the required Fortress IMU system plugin
+  addition; terrain, gravity and existing world behavior are preserved.
+- Both terrain meshes and the validated `model.sdf`.
 - Phase A `launch-a` remains an independent baseline.
 - Phase A bridge mappings, spawn height, static TF values and teleop behavior.
 - Phase A `rviz/phase_a.rviz` as the source layout for the Phase B RViz config.

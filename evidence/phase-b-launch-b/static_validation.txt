@@ -69,6 +69,7 @@
 [PASS] launch-b records IMU diagnostics on failure
 [PASS] launch-b has clean shutdown
 [PASS] launch-b has demo nonzero exit propagation
+[PASS] world enables Fortress IMU system plugin
 [PASS] Phase B RViz fixed frame odom
 [PASS] Phase B RViz displays odometry
 [PASS] document exists: docs/phase-b-launch-b.md
@@ -101,4 +102,4 @@ RESULT: 76/76 checks passed - ALL PASS
 ============================================================
 report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
 
-RESULT: 99/99 checks passed
+RESULT: 100/100 checks passed

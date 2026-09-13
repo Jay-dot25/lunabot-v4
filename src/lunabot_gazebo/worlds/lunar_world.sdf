@@ -28,6 +28,8 @@
     <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre</render_engine>
     </plugin>
+    <!-- Fortress requires the world IMU system plugin for <sensor type="imu">. -->
+    <plugin filename="ignition-gazebo-imu-system" name="ignition::gazebo::systems::Imu"/>
     <plugin filename="ignition-gazebo-contact-system" name="ignition::gazebo::systems::Contact"/>
 
     <light type="directional" name="sun">
