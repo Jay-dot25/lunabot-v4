@@ -1,0 +1,135 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: rviz/phase_c.rviz
+[PASS] file exists: docs/phase-b-launch-b.md
+[PASS] file exists: docs/phase-3-launch-c.md
+[PASS] file exists: evidence/phase-b-launch-b/README.md
+[PASS] file exists: evidence/phase-c-launch-c/README.md
+[PASS] file exists: evidence/phase-c-launch-c/verification_checklist.md
+[PASS] file exists: evidence/phase-c-launch-c/collect_evidence.sh
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: tools/validate_phase_b.py
+[PASS] executable: launch-c
+[PASS] executable: scripts/launch-c.sh
+[PASS] executable: tools/validate_phase_c.py
+[PASS] executable: evidence/phase-c-launch-c/collect_evidence.sh
+[PASS] Python syntax: scripts/wasd_teleop.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/validate_phase_b.py
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] bash syntax: launch-c
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: scripts/launch-c.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] existing static gate remains green: tools/validate_phase_a.py - =
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+[PASS] existing static gate remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] root launch-c resolves its real path
+[PASS] root launch-c execs scripts/launch-c.sh
+[PASS] Phase C script does not invoke launch-a
+[PASS] Phase C script does not invoke launch-b
+[PASS] Phase C script uses its own evidence directory
+[PASS] Phase C has symlink-safe script directory resolution
+[PASS] Phase C evidence collector resolves the repository
+[PASS] Phase C evidence collector enables evidence and demo
+[PASS] Phase C uses clean process-group startup
+[PASS] Phase C has trap-controlled shutdown
+[PASS] Phase C shuts down slam_toolbox first
+[PASS] Phase C shuts down control and odometry
+[PASS] Phase C shuts down Gazebo process group
+[PASS] Phase C cleans stale SLAM processes
+[PASS] slam_toolbox is the selected SLAM system
+[PASS] no Cartographer configuration
+[PASS] no AMCL configuration
+[PASS] no second mapping/localization stack
+[PASS] slam toolbox launch executable is explicit
+[PASS] SLAM config path is explicit
+[PASS] slam toolbox uses simulation time
+[PASS] mapping mode is explicit
+[PASS] scan topic is explicit in config
+[PASS] map frame is explicit
+[PASS] odom frame is explicit
+[PASS] base frame is explicit
+[PASS] SLAM publishes at a map update interval
+[PASS] SLAM loop closure remains enabled
+[PASS] SLAM transform publish period is configured
+[PASS] world and rover paths are inherited
+[PASS] Phase C keeps the validated spawn height
+[PASS] headless mode is supported
+[PASS] Gazebo is explicitly unpaused
+[PASS] Gazebo waits for readiness
+[PASS] bridge detects ros_ign or ros_gz
+[PASS] bridge includes simulation clock
+[PASS] bridge includes explicit LaserScan
+[PASS] bridge includes explicit camera
+[PASS] bridge includes explicit IMU
+[PASS] bridge includes preserved odometry
+[PASS] static TF includes chassis to sensor head
+[PASS] static TF includes sensor head to lidar
+[PASS] control input boundary is preserved
+[PASS] control output boundary is preserved
+[PASS] watchdog remains configured
+[PASS] odometry monitor is started
+[PASS] IMU Fortress plugin remains enabled
+[PASS] model publishes the required odometry topic
+[PASS] model odometry frame pair is unchanged
+[PASS] runtime validation uses topic echo once
+[PASS] map message is runtime-validated
+[PASS] map type is OccupancyGrid-validated
+[PASS] map sample structure is OccupancyGrid-shaped
+[PASS] map to odom TF is runtime-validated
+[PASS] odom topic is runtime-validated
+[PASS] odom to chassis TF is runtime-validated
+[PASS] LaserScan topic is runtime-validated
+[PASS] camera topic is runtime-validated
+[PASS] IMU topic is runtime-validated
+[PASS] IMU failure diagnostics are preserved
+[PASS] sensor-frame TF is runtime-validated
+[PASS] map motion has before and after samples
+[PASS] map motion gate compares real samples
+[PASS] demo failures propagate to process exit
+[PASS] clean shutdown message is explicit
+[PASS] map saver package is detected without a false pass
+[PASS] official map_saver_cli is used
+[PASS] map saver result is recorded
+[PASS] map evidence path is documented
+[PASS] Phase C RViz fixed frame is odom
+[PASS] Phase C RViz has a map display
+[PASS] Phase C RViz map topic is explicit
+[PASS] Phase C RViz LaserScan topic is explicit
+[PASS] Phase C RViz camera topic is explicit
+[PASS] Phase C RViz sensor QoS remains best effort
+[PASS] Phase C RViz odometry topic is explicit
+[PASS] Phase C RViz TF tree includes map and odom
+[PASS] docs contain Ubuntu installation commands
+[PASS] docs contain slam toolbox package instruction
+[PASS] docs contain automated launch instruction
+[PASS] docs contain motion-map acceptance
+[PASS] docs contain map TF acceptance
+[PASS] docs contain IMU acceptance
+[PASS] docs contain relaunch instruction
+[PASS] docs contain Phase D gate
+[PASS] validator states that static checks are not runtime acceptance
+
+RESULT: 128/128 checks passed

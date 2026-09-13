@@ -11,7 +11,7 @@ earlier ones.
 |---|---|---|---|
 | A | `~/launch-a` | Simulation & rover foundation (lunar world, rover, sensors, ROS bridge, TF, RViz, teleop) | approved by user |
 | B | `~/launch-b` | Control & odometry (safe command boundary, watchdog, odometry monitor) | implemented, pending runtime validation |
-| C | `~/launch-c` | SLAM & localization | not started |
+| C | `~/launch-c` | SLAM & localization (`slam_toolbox`, map/TF, evidence) | implemented, pending runtime validation |
 | D | `~/launch-d` | Basic autonomous navigation (A*) | not started |
 | E | `~/launch-e` | Terrain perception (segmentation) | not started |
 | F | `~/launch-f` | Semantic terrain mapping | not started |
@@ -22,9 +22,9 @@ earlier ones.
 | K | `~/launch-k` | Testing & evaluation | not started |
 | L | `~/launch-l` | Final mission demonstration | not started |
 
-Each phase has a full document under `docs/` (23 sections: objective,
+Each implemented phase has a document under `docs/` covering objective,
 inputs, data flow, ROS nodes/topics/services, TF frames, launch command,
-validation procedure, success criteria, evidence, limitations).
+validation procedure, success criteria, evidence, and limitations.
 
 ## Quickstart (Phase A)
 
@@ -64,6 +64,32 @@ The control path is `/cmd_vel_in` → Phase B controller → `/cmd_vel` →
 Gazebo. The controller clamps commands, limits acceleration and stops after
 0.5 seconds without input. Evidence is written to
 `evidence/phase-b-launch-b/`.
+
+## Quickstart (Phase C)
+
+Phase C is independently launchable and adds exactly one SLAM system:
+`slam_toolbox`. It preserves the Phase B control, `/lunabot/odom`, sensor
+bridge, Fortress IMU, TF, headless unpause, and RViz QoS/topic fixes:
+
+```bash
+cd ~/lunabot-v4
+sudo apt update
+sudo apt install -y ros-humble-slam-toolbox ros-humble-nav2-map-server \
+  ros-humble-rviz2 ros-humble-tf2-tools
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-c" ~/launch-c
+
+python3 tools/validate_phase_c.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-c        # runtime/map evidence gate
+EVIDENCE=1 ~/launch-c                          # GUI + RViz validation
+```
+
+The SLAM data path is `/lunabot/lidar/scan` plus `odom → chassis` and
+`/lunabot/odom`, producing `/map` and `map → odom`. The Phase C guide is
+`docs/phase-3-launch-c.md`; runtime evidence and the workstation checklist
+are under `evidence/phase-c-launch-c/`. Phase C remains pending until the
+headless map-motion run, IMU, RViz, and clean relaunch are explicitly approved.
+Do not begin Phase D before that gate.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.

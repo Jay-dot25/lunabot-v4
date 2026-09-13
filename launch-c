@@ -1,0 +1,4 @@
+#!/bin/bash
+# Canonical independent Phase C entry point; resolves ~/launch-c symlinks.
+SCRIPT="$(readlink -f "${BASH_SOURCE[0]}")"
+exec "$(cd "$(dirname "$SCRIPT")" && pwd)/scripts/launch-c.sh" "$@"
