@@ -20,6 +20,7 @@ EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-b
 | `control_status.txt` | live controller status sample |
 | `odometry_status.txt` | live odometry-quality status sample |
 | `odom_sample.txt` | one real `/lunabot/odom` message |
+| `imu_sample.txt` | one real `/lunabot/imu` message using best-effort QoS |
 | `tf_odom_chassis.txt` | one real dynamic odom-to-chassis TF sample |
 | `odometry_samples.csv` | every odometry message received by the monitor |
 | `odometry_report.txt` | computed rate, duration, distance, continuity and PASS/FAIL |

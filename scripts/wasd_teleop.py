@@ -94,7 +94,7 @@ class TeleopNode(Node):
             return None
         p = self.odom.pose.pose.position
         q = self.odom.pose.pose.orientation
-        t = self.odom.twist
+        t = self.odom.twist.twist
         lv = [self.joint_vel[j] for j in WHEEL_JOINTS[:3] if j in self.joint_vel]
         rv = [self.joint_vel[j] for j in WHEEL_JOINTS[3:] if j in self.joint_vel]
         return (p.x, p.y, yaw_from_quaternion(q),
@@ -104,17 +104,12 @@ class TeleopNode(Node):
 
 
 def run_demo(node, evidence_dir):
-    import threading
+    """Run the controlled drive test while spinning rclpy in this thread.
 
-    stop = threading.Event()
-
-    def spinner():
-        while not stop.is_set():
-            rclpy.spin_once(node, timeout_sec=0.02)
-
-    thread = threading.Thread(target=spinner, daemon=True)
-    thread.start()
-
+    rclpy's global executor is not safe to lazily construct from a background
+    thread on ROS 2 Humble. Synchronous spin_once keeps command publication and
+    subscription callbacks in one executor context.
+    """
     phase_label = 'Phase B' if node.topic == '/cmd_vel_in' else 'Phase A'
 
     def write_failure(reason):
@@ -131,14 +126,12 @@ def run_demo(node, evidence_dir):
             os.makedirs(evidence_dir, exist_ok=True)
             with open(os.path.join(evidence_dir, "demo_drive_result.txt"), "w") as fh:
                 fh.write("\n".join(lines) + "\n")
-        stop.set()
-        thread.join(timeout=2.0)
         return 1
 
     print("Waiting for /lunabot/odom and /clock ...", flush=True)
-    t0 = time.time()
-    while (node.odom is None or node.sim_t is None) and time.time() - t0 < 15:
-        time.sleep(0.1)
+    deadline = time.monotonic() + 15.0
+    while (node.odom is None or node.sim_t is None) and time.monotonic() < deadline:
+        rclpy.spin_once(node, timeout_sec=0.05)
     if node.odom is None or node.sim_t is None:
         return write_failure("odom/clock not received within 15 s")
     print("Odometry + sim time received. Starting drive test (sim-time based).",
@@ -150,7 +143,7 @@ def run_demo(node, evidence_dir):
         csv.write("t_wall,t_sim,cmd_v,cmd_wz,odom_v,odom_wz,"
                   "x,y,yaw,wheel_omega_left,wheel_omega_right\n")
 
-    def sample(phase):
+    def sample():
         s = node.snapshot()
         if s and csv:
             csv.write(f"{time.time():.2f},{node.sim_t:.3f},"
@@ -162,18 +155,31 @@ def run_demo(node, evidence_dir):
     def drive(v, wz, sim_dur):
         """Drive until SIMULATION time advances by sim_dur seconds."""
         start = node.sim_t
-        while (node.sim_t is None or node.sim_t - start < sim_dur) \
-                and time.time() - t0 < 120:
+        deadline = time.monotonic() + 120.0
+        while (node.sim_t - start < sim_dur and
+               time.monotonic() < deadline):
             node.cmd_of(v, wz)
-            sample('drive')
-            time.sleep(0.05)
+            rclpy.spin_once(node, timeout_sec=0.02)
+            sample()
         node.cmd_of(0.0, 0.0)
+        rclpy.spin_once(node, timeout_sec=0.02)
+        return node.sim_t - start >= sim_dur
 
     s0 = node.snapshot()
-    drive(MAX_LINEAR, 0.0, 3.0)
+    if s0 is None:
+        if csv:
+            csv.close()
+        return write_failure("odometry snapshot unavailable after startup")
+    if not drive(MAX_LINEAR, 0.0, 3.0):
+        if csv:
+            csv.close()
+        return write_failure("simulation time stopped during forward phase")
     s1 = node.snapshot()
     drive(0.0, 0.0, 0.5)
-    drive(0.0, 0.6, 3.0)
+    if not drive(0.0, 0.6, 3.0):
+        if csv:
+            csv.close()
+        return write_failure("simulation time stopped during turn phase")
     s2 = node.snapshot()
     drive(0.0, 0.0, 0.5)
     if csv:
@@ -184,8 +190,6 @@ def run_demo(node, evidence_dir):
     # efficiency vs ideal (accel ramp included: ~1.10 m and ~1.54 rad)
     eff_lin = dist / 1.10
     eff_ang = abs(dyaw) / 1.54
-    # traction check: expected wheel omega for the commanded forward speed
-    wheel_slip = abs(s0[5] - MAX_LINEAR / WHEEL_R) if s0 else float('nan')
     ok = dist > 0.6 and abs(dyaw) > 0.8
 
     lines = [
@@ -208,13 +212,7 @@ def run_demo(node, evidence_dir):
         os.makedirs(evidence_dir, exist_ok=True)
         with open(os.path.join(evidence_dir, "demo_drive_result.txt"), "w") as fh:
             fh.write("\n".join(lines) + "\n")
-
-    # Clean teardown: stop the spin thread BEFORE rclpy shutdown
-    # (destroying the node with an active spin thread aborts C++).
-    stop.set()
-    thread.join(timeout=2.0)
     return 0 if ok else 1
-
 
 def run_interactive(node):
     import select

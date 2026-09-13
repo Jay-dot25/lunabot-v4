@@ -112,6 +112,10 @@ check('teleop publishes selected topic', 'create_publisher(Twist, topic' in tele
 check('teleop demo supports sim time', 'Clock' in teleop and 'node.sim_t' in teleop)
 check('teleop writes failure evidence',
       'failure_reason' in teleop and 'demo_drive_result.txt' in teleop)
+check('teleop reads ROS Odometry twist correctly',
+      'self.odom.twist.twist' in teleop)
+check('teleop demo spins in one ROS thread',
+      'Synchronous spin_once' in teleop and 'threading' not in teleop)
 check('teleop uses Gazebo-compatible QoS',
       'qos_profile_sensor_data' in teleop and
       'ExternalShutdownException' not in teleop)

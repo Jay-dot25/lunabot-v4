@@ -357,7 +357,7 @@ topic_ok() {
   local sample=""
   # Do not pipe to head: head can exit successfully before ros2 receives a
   # message, creating a false PASS. This assignment waits for --once data.
-  if sample="$(timeout 30 ros2 topic echo "$2" --once 2>/dev/null)" && [ -n "$sample" ]; then
+  if sample="$(timeout 30 ros2 topic echo "$2" --qos-reliability best_effort --once 2>/dev/null)" && [ -n "$sample" ]; then
     echo "      $1: PASS"
     log "validation PASS: $2"
   else
@@ -401,8 +401,10 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/control_status.txt"
   timeout 15 ros2 topic echo /lunabot/odometry/status --once 2>/dev/null \
     > "$EVIDENCE_DIR/odometry_status.txt"
-  timeout 25 ros2 topic echo /lunabot/odom --once 2>/dev/null \
+  timeout 25 ros2 topic echo /lunabot/odom --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/odom_sample.txt"
+  timeout 25 ros2 topic echo /lunabot/imu --qos-reliability best_effort --once 2>/dev/null \
+    > "$EVIDENCE_DIR/imu_sample.txt"
   timeout 25 ros2 run tf2_ros tf2_echo odom chassis 2>/dev/null \
     | head -12 > "$EVIDENCE_DIR/tf_odom_chassis.txt"
   echo "      evidence recording started"
