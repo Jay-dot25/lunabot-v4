@@ -55,6 +55,7 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] Phase C evidence collector enables evidence and demo
 [PASS] Phase C uses clean process-group startup
 [PASS] Phase C has trap-controlled shutdown
+[PASS] Phase C has bounded process-group shutdown
 [PASS] Phase C shuts down slam_toolbox first
 [PASS] Phase C shuts down control and odometry
 [PASS] Phase C shuts down Gazebo process group
@@ -95,6 +96,7 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] model publishes the required odometry topic
 [PASS] model odometry frame pair is unchanged
 [PASS] runtime validation uses topic echo once
+[PASS] runtime checks do not use head-based early passes
 [PASS] map message is runtime-validated
 [PASS] map type is OccupancyGrid-validated
 [PASS] map sample structure is OccupancyGrid-shaped
@@ -113,6 +115,7 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] map saver package is detected without a false pass
 [PASS] official map_saver_cli is used
 [PASS] map saver result is recorded
+[PASS] final map saves happen before SLAM shutdown
 [PASS] map evidence path is documented
 [PASS] Phase C RViz fixed frame is odom
 [PASS] Phase C RViz has a map display
@@ -132,4 +135,4 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] docs contain Phase D gate
 [PASS] validator states that static checks are not runtime acceptance
 
-RESULT: 128/128 checks passed
+RESULT: 131/131 checks passed

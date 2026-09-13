@@ -51,12 +51,47 @@ SLAM_PID=""
 TF_PIDS=()
 BRIDGE_PKG=""
 MAP_SAVER_AVAILABLE=0
+MAP_SAVE_DONE=0
 EXIT_CODE=0
 
 mkdir -p "$EVIDENCE_DIR"
 : > "$LOG_FILE"
 say() { echo "$@"; echo "$@" >> "$LOG_FILE"; }
 log() { echo "$@" >> "$LOG_FILE"; }
+
+# Terminate a launcher/node process group, wait briefly, then force-kill only
+# that group. This prevents a Phase C relaunch from inheriting old children.
+stop_group() {
+  local pid="${1:-}"
+  [ -n "$pid" ] || return 0
+  kill -TERM -"$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    kill -0 "$pid" 2>/dev/null || return 0
+    sleep 0.25
+  done
+  kill -KILL -"$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null || true
+}
+
+save_final_map() {
+  [ "$MAP_SAVE_DONE" = "1" ] && return 0
+  [ "$EVIDENCE" = "1" ] || return 0
+  [ "$MAP_SAVER_AVAILABLE" = "1" ] || return 0
+  [ -n "$SLAM_PID" ] || return 0
+  MAP_SAVE_DONE=1
+  say "      saving final map evidence..."
+  timeout 30 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_c_map" \
+    --ros-args -p save_map_timeout:=10.0 2>/dev/null \
+    >> "$EVIDENCE_DIR/map_saver.log" 2>&1 || true
+  if [ -s "$EVIDENCE_DIR/phase_c_map.yaml" ] && [ -s "$EVIDENCE_DIR/phase_c_map.pgm" ]; then
+    say "      saved map evidence (YAML + PGM): PASS"
+    log "validation PASS: final map files saved"
+    return 0
+  fi
+  say "      saved map evidence (YAML + PGM): FAIL"
+  log "validation FAIL: map saver package was available but map files are missing"
+  OVERALL="FAIL"
+  return 1
+}
 
 shutdown() {
   local rc="${1:-$EXIT_CODE}"
@@ -65,22 +100,27 @@ shutdown() {
   say "------------------------------------------------------------"
   say " Shutting down LunaBot Phase C safely..."
   say "------------------------------------------------------------"
+  # Save after interactive/demo motion but before stopping slam_toolbox. This
+  # also makes the GUI run produce final map evidence, not only an initial map.
+  if ! save_final_map; then
+    rc=1
+  fi
   # Stop SLAM and command generation before the simulator.
   if [ -n "$SLAM_PID" ]; then
-    kill -TERM -"$SLAM_PID" 2>/dev/null || kill -TERM "$SLAM_PID" 2>/dev/null || true
+    stop_group "$SLAM_PID"
     wait "$SLAM_PID" 2>/dev/null || true
   fi
   if [ -n "$CONTROL_PID" ]; then
-    kill -TERM -"$CONTROL_PID" 2>/dev/null || kill -TERM "$CONTROL_PID" 2>/dev/null || true
+    stop_group "$CONTROL_PID"
     wait "$CONTROL_PID" 2>/dev/null || true
   fi
   if [ -n "$ODOM_PID" ]; then
-    kill -TERM -"$ODOM_PID" 2>/dev/null || kill -TERM "$ODOM_PID" 2>/dev/null || true
+    stop_group "$ODOM_PID"
     wait "$ODOM_PID" 2>/dev/null || true
   fi
-  [ -n "$BRIDGE_PID" ] && (kill -TERM -"$BRIDGE_PID" 2>/dev/null || kill -TERM "$BRIDGE_PID" 2>/dev/null || true)
-  for p in ${TF_PIDS[@]+"${TF_PIDS[@]}"}; do kill -TERM -"$p" 2>/dev/null || kill "$p" 2>/dev/null || true; done
-  [ -n "$RVIZ_PID" ] && (kill -TERM -"$RVIZ_PID" 2>/dev/null || kill -TERM "$RVIZ_PID" 2>/dev/null || true)
+  [ -n "$BRIDGE_PID" ] && stop_group "$BRIDGE_PID"
+  for p in ${TF_PIDS[@]+"${TF_PIDS[@]}"}; do stop_group "$p"; done
+  [ -n "$RVIZ_PID" ] && stop_group "$RVIZ_PID"
   if [ -n "$GAZEBO_PID" ]; then
     kill -TERM -"$GAZEBO_PID" 2>/dev/null || kill -TERM "$GAZEBO_PID" 2>/dev/null || true
     for _ in $(seq 1 20); do
@@ -478,16 +518,14 @@ if [ "$EVIDENCE" = "1" ]; then
   timeout 25 ros2 topic echo /lunabot/imu --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/imu_sample.txt"
   timeout 25 ros2 run tf2_ros tf2_echo odom chassis 2>/dev/null \
-    | head -12 > "$EVIDENCE_DIR/tf_odom_chassis.txt"
+    > "$EVIDENCE_DIR/tf_odom_chassis.txt" || true
   timeout 25 ros2 run tf2_ros tf2_echo map odom 2>/dev/null \
-    | head -12 > "$EVIDENCE_DIR/tf_map_odom.txt"
+    > "$EVIDENCE_DIR/tf_map_odom.txt" || true
   timeout 20 ros2 topic echo /map --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/map_sample.txt"
   if [ "$MAP_SAVER_AVAILABLE" = "1" ]; then
-    echo "      saving current map with nav2_map_server..."
-    timeout 30 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_c_map" \
-      --ros-args -p save_map_timeout:=10.0 2>/dev/null \
-      > "$EVIDENCE_DIR/map_saver.log" 2>&1 || true
+    echo "      final map saver will run during clean shutdown"
+    echo "map saver scheduled for clean shutdown" > "$EVIDENCE_DIR/map_saver.log"
   else
     echo "      map saver unavailable; map_sample.txt is retained"
     echo "map saver skipped: install ros-humble-nav2-map-server to write PGM/YAML" \
@@ -586,21 +624,9 @@ if [ "$DEMO" = "1" ]; then
       OVERALL="FAIL"
       EXIT_CODE=1
     fi
-    if [ "$MAP_SAVER_AVAILABLE" = "1" ]; then
-      timeout 30 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_c_map" \
-        --ros-args -p save_map_timeout:=10.0 2>/dev/null \
-        >> "$EVIDENCE_DIR/map_saver.log" 2>&1 || true
-      if [ -s "$EVIDENCE_DIR/phase_c_map.yaml" ] && \
-         [ -s "$EVIDENCE_DIR/phase_c_map.pgm" ]; then
-        echo "      saved map evidence (YAML + PGM): PASS"
-        log "validation PASS: final map files saved"
-      else
-        echo "      saved map evidence (YAML + PGM): FAIL"
-        log "validation FAIL: map saver package was available but map files are missing"
-        OVERALL="FAIL"
-        EXIT_CODE=1
-      fi
-    fi
+  fi
+  if ! save_final_map; then
+    EXIT_CODE=1
   fi
   sleep 1
   echo ""

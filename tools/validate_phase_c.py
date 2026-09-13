@@ -112,9 +112,11 @@ check("Phase C evidence collector resolves the repository", "readlink -f" in col
 check("Phase C evidence collector enables evidence and demo", "DEMO=1 EVIDENCE=1" in collector)
 check("Phase C uses clean process-group startup", "setsid" in launch)
 check("Phase C has trap-controlled shutdown", "trap 'shutdown 130' INT TERM" in launch)
-check("Phase C shuts down slam_toolbox first", 'kill -TERM "$SLAM_PID"' in launch)
-check("Phase C shuts down control and odometry", 'kill -TERM "$CONTROL_PID"' in launch and
-      'kill -TERM "$ODOM_PID"' in launch)
+check("Phase C has bounded process-group shutdown", "stop_group()" in launch and
+      "kill -KILL -\"$pid\"" in launch)
+check("Phase C shuts down slam_toolbox first", 'stop_group "$SLAM_PID"' in launch)
+check("Phase C shuts down control and odometry", 'stop_group "$CONTROL_PID"' in launch and
+      'stop_group "$ODOM_PID"' in launch)
 check("Phase C shuts down Gazebo process group", 'kill -TERM -"$GAZEBO_PID"' in launch)
 check("Phase C cleans stale SLAM processes", "slam_toolbox.*online_async" in launch)
 
@@ -173,6 +175,7 @@ check("model odometry frame pair is unchanged", "<frame_id>odom</frame_id>" in m
 # Runtime validation must wait for actual messages, including the IMU/map/scan.
 check("runtime validation uses topic echo once", 'sample="$(timeout 30 ros2 topic echo' in launch and
       "--once" in launch)
+check("runtime checks do not use head-based early passes", "| head" not in launch)
 check("map message is runtime-validated", 'topic_ok "topic /map"' in launch)
 check("map type is OccupancyGrid-validated", "nav_msgs/msg/OccupancyGrid" in launch and
       'topic type /map' in launch)
@@ -201,6 +204,8 @@ check("map saver package is detected without a false pass",
       "MAP_SAVER_AVAILABLE" in launch and "nav2_map_server" in launch)
 check("official map_saver_cli is used", "map_saver_cli -f" in launch)
 check("map saver result is recorded", "map_saver.log" in launch)
+check("final map saves happen before SLAM shutdown", "save_final_map" in launch and
+      "saved map evidence (YAML + PGM): PASS" in launch)
 check("map evidence path is documented", "phase_c_map.yaml" in docs and
       "phase_c_map.pgm" in docs)
 
