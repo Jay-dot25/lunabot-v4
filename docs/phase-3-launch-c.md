@@ -9,10 +9,10 @@ IMU bridge, or sensor TF. Phase C is an independent launch: it starts Gazebo,
 the rover, bridge, static sensor TF, control node, odometry monitor,
 `slam_toolbox`, and RViz directly. It never invokes `launch-a` or `launch-b`.
 
-This repository contains the implementation and static checks, but the Phase C
-runtime gate is workstation-only. Do not call Phase C complete or begin Phase D
-until a real Ubuntu ROS 2/Gazebo run confirms `/map`, `map -> odom`, motion
-while the map updates, the IMU, RViz topics, and clean relaunch.
+The Phase C runtime gate was completed on the Ubuntu ROS 2/Gazebo workstation.
+The run confirmed `/map`, `map -> odom`, motion while the map updates, the IMU,
+RViz topics, map saving, and clean relaunch. Phase C was explicitly approved
+before Phase D began.
 
 ## 2. Data flow
 
@@ -223,8 +223,8 @@ down without orphaned processes. A clean relaunch is part of the Phase C gate.
 | `evidence/phase-c-launch-c/` | runtime evidence directory and checklist |
 
 ============================================================
-PHASE C IMPLEMENTATION — PENDING RUNTIME VALIDATION
+PHASE C COMPLETE — RUNTIME-VALIDATED AND APPROVED
 ============================================================
 
-Runtime approval belongs to the Ubuntu ROS 2/Gazebo workstation run described
-above. Stop at this gate and obtain explicit approval before Phase D.
+The workstation evidence and visual validation described above were completed.
+Phase D is now in progress under its own independent `~/launch-d` gate.

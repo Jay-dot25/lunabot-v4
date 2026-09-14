@@ -11,8 +11,8 @@ earlier ones.
 |---|---|---|---|
 | A | `~/launch-a` | Simulation & rover foundation (lunar world, rover, sensors, ROS bridge, TF, RViz, teleop) | approved by user |
 | B | `~/launch-b` | Control & odometry (safe command boundary, watchdog, odometry monitor) | implemented, pending runtime validation |
-| C | `~/launch-c` | SLAM & localization (`slam_toolbox`, map/TF, evidence) | implemented, pending runtime validation |
-| D | `~/launch-d` | Basic autonomous navigation (A*) | not started |
+| C | `~/launch-c` | SLAM & localization (`slam_toolbox`, map/TF, evidence) | approved by user |
+| D | `~/launch-d` | Basic autonomous navigation (A* planner, path follower) | implemented, pending runtime validation |
 | E | `~/launch-e` | Terrain perception (segmentation) | not started |
 | F | `~/launch-f` | Semantic terrain mapping | not started |
 | G | `~/launch-g` | Terrain cost map | not started |
@@ -87,9 +87,30 @@ EVIDENCE=1 ~/launch-c                          # GUI + RViz validation
 The SLAM data path is `/lunabot/lidar/scan` plus `odom → chassis` and
 `/lunabot/odom`, producing `/map` and `map → odom`. The Phase C guide is
 `docs/phase-3-launch-c.md`; runtime evidence and the workstation checklist
-are under `evidence/phase-c-launch-c/`. Phase C remains pending until the
-headless map-motion run, IMU, RViz, and clean relaunch are explicitly approved.
-Do not begin Phase D before that gate.
+are under `evidence/phase-c-launch-c/`. Phase C was runtime-validated and
+explicitly approved before starting Phase D.
+
+## Quickstart (Phase D)
+
+Phase D is independently launchable and adds one custom A* grid planner and
+conservative path follower. It consumes `/map`, `map → odom`, and real
+`/lunabot/odom`, then publishes only to `/cmd_vel_in` so the validated Phase B
+controller remains in the command path:
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-d" ~/launch-d
+
+python3 tools/validate_phase_d.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-d        # autonomous runtime gate
+EVIDENCE=1 ~/launch-d                          # GUI/RViz path validation
+```
+
+Phase D uses no Nav2, AMCL, Cartographer, or second SLAM system. Runtime
+evidence is written to `evidence/phase-d-launch-d/`. Do not begin Phase E
+until the A* goal, path, autonomous motion, RViz, map evidence, and clean
+relaunch gates are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.

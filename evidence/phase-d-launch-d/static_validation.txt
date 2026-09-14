@@ -1,0 +1,156 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/launch-d.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: scripts/astar_navigation.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: rviz/phase_c.rviz
+[PASS] file exists: rviz/phase_d.rviz
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: tools/validate_phase_b.py
+[PASS] file exists: tools/validate_phase_c.py
+[PASS] file exists: docs/phase-3-launch-c.md
+[PASS] file exists: docs/phase-4-launch-d.md
+[PASS] file exists: evidence/phase-c-launch-c/README.md
+[PASS] file exists: evidence/phase-d-launch-d/README.md
+[PASS] file exists: evidence/phase-d-launch-d/verification_checklist.md
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-d
+[PASS] executable: scripts/launch-d.sh
+[PASS] executable: scripts/astar_navigation.py
+[PASS] executable: tools/validate_phase_d.py
+[PASS] Python syntax: scripts/wasd_teleop.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: scripts/astar_navigation.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/validate_phase_b.py
+[PASS] Python syntax: tools/validate_phase_c.py
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] bash syntax: launch-c
+[PASS] bash syntax: launch-d
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: scripts/launch-c.sh
+[PASS] bash syntax: scripts/launch-d.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] existing static gate remains green: tools/validate_phase_a.py - =
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+[PASS] existing static gate remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] existing static gate remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
+[PASS] root launch-d resolves its real path
+[PASS] root launch-d execs scripts/launch-d.sh
+[PASS] Phase D does not invoke launch-a
+[PASS] Phase D does not invoke launch-b
+[PASS] Phase D does not invoke launch-c
+[PASS] Phase D has its own evidence directory
+[PASS] Phase D is symlink-safe
+[PASS] Phase D uses process groups
+[PASS] Phase D has a shutdown trap
+[PASS] Phase D shuts down navigation before SLAM
+[PASS] Phase D has bounded shutdown
+[PASS] Phase D cleans stale navigation nodes
+[PASS] Phase D avoids head-based early passes
+[PASS] slam_toolbox remains the only SLAM system
+[PASS] no second stack: cartographer
+[PASS] no second stack: nav2_amcl
+[PASS] no second stack: hector_slam
+[PASS] no second stack: karto_slam
+[PASS] no second stack: rtabmap
+[PASS] no AMCL runtime
+[PASS] Phase D starts slam_toolbox directly
+[PASS] Phase D uses the approved SLAM config
+[PASS] Phase D uses simulated time
+[PASS] planner has a ROS node
+[PASS] planner consumes OccupancyGrid
+[PASS] planner implements a heap-based open set
+[PASS] planner tracks A* g scores
+[PASS] planner uses eight-connected neighbors
+[PASS] planner publishes nav_msgs Path
+[PASS] planner publishes goal pose
+[PASS] planner consumes goal pose
+[PASS] planner uses real odometry
+[PASS] planner transforms odom pose into map
+[PASS] planner handles map origin orientation
+[PASS] planner rejects occupied cells
+[PASS] planner handles unknown cells explicitly
+[PASS] planner inflates obstacles
+[PASS] planner has goal tolerance
+[PASS] planner publishes conservative cmd_vel_in
+[PASS] planner stops on goal
+[PASS] planner publishes auditable status
+[PASS] planner provides a deterministic auto goal
+[PASS] planner uses transient-local map input
+[PASS] planner makes path/goal/status late-join safe
+[PASS] planner has no direct Gazebo dependency
+[PASS] Phase D uses the validated world
+[PASS] Phase D preserves spawn height
+[PASS] Phase D supports headless Gazebo
+[PASS] Phase D explicitly unpauses Gazebo
+[PASS] Phase D detects both bridge families
+[PASS] Phase D bridges clock
+[PASS] Phase D bridges LaserScan
+[PASS] Phase D bridges camera
+[PASS] Phase D bridges IMU
+[PASS] Phase D bridges odometry
+[PASS] Phase D keeps scoped LaserScan TF
+[PASS] Phase D keeps controller input boundary
+[PASS] Phase D keeps controller output boundary
+[PASS] Phase D keeps watchdog
+[PASS] Phase D starts odometry monitor
+[PASS] Phase D keeps Fortress IMU plugin
+[PASS] model odometry contract is unchanged
+[PASS] runtime validates real topic messages
+[PASS] runtime has no head-based topic validation
+[PASS] runtime validates OccupancyGrid type
+[PASS] runtime validates map structure
+[PASS] runtime validates map TF
+[PASS] runtime validates odom TF
+[PASS] runtime validates scoped lidar TF
+[PASS] runtime validates IMU
+[PASS] runtime validates Camera and LaserScan
+[PASS] runtime validates A* goal/path/status
+[PASS] runtime validates A* message types
+[PASS] runtime requires a non-empty path
+[PASS] runtime waits for goal reached
+[PASS] runtime compares map before/after A*
+[PASS] runtime saves Phase D map evidence
+[PASS] demo failure affects exit code
+[PASS] Phase D RViz uses map fixed frame
+[PASS] Phase D RViz has SLAM Map
+[PASS] Phase D RViz has A* Path
+[PASS] Phase D RViz has explicit LaserScan
+[PASS] Phase D RViz has explicit Camera
+[PASS] Phase D RViz uses best effort sensor QoS
+[PASS] Phase D RViz has explicit odometry
+[PASS] Phase D RViz stores map/odom TF
+[PASS] docs contain installation
+[PASS] docs contain automated command
+[PASS] docs contain goal acceptance
+[PASS] docs contain path output
+[PASS] docs contain controller boundary
+[PASS] docs contain map motion acceptance
+[PASS] docs contain map evidence
+[PASS] docs contain relaunch
+[PASS] docs contain Phase E gate
+[PASS] validator is honest about runtime
+
+RESULT: 147/147 checks passed
