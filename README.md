@@ -14,7 +14,7 @@ earlier ones.
 | C | `~/launch-c` | SLAM & localization (`slam_toolbox`, map/TF, evidence) | approved by user |
 | D | `~/launch-d` | Basic autonomous navigation (A* planner, path follower) | approved by user |
 | E | `~/launch-e` | RGB-D terrain perception (segmentation mask and overlay) | approved by user |
-| F | `~/launch-f` | Semantic terrain mapping | not started |
+| F | `~/launch-f` | Semantic terrain mapping | implemented, pending runtime validation |
 | G | `~/launch-g` | Terrain cost map | not started |
 | H | `~/launch-h` | Terrain-aware path planning | not started |
 | I | `~/launch-i` | Full autonomous integration | not started |
@@ -132,9 +132,33 @@ EVIDENCE=1 ~/launch-e                          # GUI/RViz perception run
 Phase E outputs are `/lunabot/terrain/segmentation`,
 `/lunabot/terrain/overlay`, and `/lunabot/terrain/segmentation/status`.
 Runtime evidence is written to `evidence/phase-e-launch-e/`. The Phase E guide
-is `docs/phase-5-launch-e.md`. Do not begin Phase F until the real segmentation
-messages, status content, inherited navigation, clean shutdown, and clean
-relaunch gates are explicitly approved.
+is `docs/phase-5-launch-e.md`. Phase E was runtime-validated and explicitly
+approved before Phase F began.
+
+## Quickstart (Phase F)
+
+Phase F preserves the approved Phase E RGB-D perception and adds a semantic
+terrain mapper. It projects real segmentation/depth observations through the
+existing `map -> chassis` TF into `/lunabot/terrain/semantic_map`. The semantic
+map is evidence and visualization output only; it does not alter the A* or
+Phase B controller path.
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-f" ~/launch-f
+
+python3 tools/validate_phase_f.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-f        # semantic-map runtime gate
+EVIDENCE=1 ~/launch-f                          # GUI/RViz semantic-map run
+```
+
+Phase F outputs `/lunabot/terrain/semantic_map` and
+`/lunabot/terrain/semantic_map/status`. Runtime evidence is written to
+`evidence/phase-f-launch-f/`. The Phase F guide is
+`docs/phase-6-launch-f.md`. Do not begin Phase G until the semantic map,
+status content, inherited navigation, clean shutdown, and clean relaunch gates
+are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.

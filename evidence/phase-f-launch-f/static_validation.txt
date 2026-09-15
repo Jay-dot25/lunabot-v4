@@ -1,0 +1,135 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: launch-e
+[PASS] file exists: launch-f
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/launch-d.sh
+[PASS] file exists: scripts/launch-e.sh
+[PASS] file exists: scripts/launch-f.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: scripts/astar_navigation.py
+[PASS] file exists: scripts/terrain_segmentation.py
+[PASS] file exists: scripts/semantic_terrain_mapper.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: rviz/phase_c.rviz
+[PASS] file exists: rviz/phase_d.rviz
+[PASS] file exists: rviz/phase_e.rviz
+[PASS] file exists: rviz/phase_f.rviz
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: tools/validate_phase_b.py
+[PASS] file exists: tools/validate_phase_c.py
+[PASS] file exists: tools/validate_phase_d.py
+[PASS] file exists: tools/validate_phase_e.py
+[PASS] file exists: docs/phase-3-launch-c.md
+[PASS] file exists: docs/phase-4-launch-d.md
+[PASS] file exists: docs/phase-5-launch-e.md
+[PASS] file exists: docs/phase-6-launch-f.md
+[PASS] file exists: evidence/phase-e-launch-e/README.md
+[PASS] file exists: evidence/phase-f-launch-f/README.md
+[PASS] file exists: evidence/phase-f-launch-f/verification_checklist.md
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-f
+[PASS] executable: scripts/launch-f.sh
+[PASS] executable: scripts/semantic_terrain_mapper.py
+[PASS] executable: tools/validate_phase_f.py
+[PASS] Python syntax: scripts/semantic_terrain_mapper.py
+[PASS] Python syntax: scripts/terrain_segmentation.py
+[PASS] Python syntax: scripts/astar_navigation.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/validate_phase_b.py
+[PASS] Python syntax: tools/validate_phase_c.py
+[PASS] Python syntax: tools/validate_phase_d.py
+[PASS] Python syntax: tools/validate_phase_e.py
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] bash syntax: launch-c
+[PASS] bash syntax: launch-d
+[PASS] bash syntax: launch-e
+[PASS] bash syntax: launch-f
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: scripts/launch-c.sh
+[PASS] bash syntax: scripts/launch-d.sh
+[PASS] bash syntax: scripts/launch-e.sh
+[PASS] bash syntax: scripts/launch-f.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] approved baseline remains green: tools/validate_phase_a.py - =
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - LT: 149/149 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_e.py - LT: 112/112 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-e-launch-e/static_validation.txt
+[PASS] root launch-f resolves its real path
+[PASS] root launch-f execs scripts/launch-f.sh
+[PASS] Phase F does not invoke an earlier launcher
+[PASS] Phase F has its own evidence directory
+[PASS] Phase F is symlink-safe
+[PASS] Phase F uses process groups
+[PASS] Phase F has a shutdown trap
+[PASS] Phase F cleans mapper process
+[PASS] Phase F reports its clean shutdown
+[PASS] Phase F has bounded shutdown
+[PASS] Phase F preserves Phase E perception
+[PASS] Phase F preserves the Phase D planner
+[PASS] Phase F preserves one SLAM system
+[PASS] mapper is a ROS node
+[PASS] mapper consumes the Phase E mask
+[PASS] mapper consumes depth
+[PASS] mapper decodes supported depth encodings
+[PASS] mapper uses existing map TF
+[PASS] mapper projects camera bearing
+[PASS] mapper accumulates a fixed grid
+[PASS] mapper publishes OccupancyGrid
+[PASS] mapper defines semantic values
+[PASS] mapper gives obstacles precedence
+[PASS] mapper publishes auditable status
+[PASS] mapper map/status are late-join safe
+[PASS] mapper does not publish motion commands
+[PASS] Phase F resolves mapper path
+[PASS] Phase F starts mapper directly
+[PASS] Phase F validates semantic map type
+[PASS] Phase F validates semantic status type
+[PASS] Phase F validates real semantic messages
+[PASS] Phase F validates semantic content
+[PASS] Phase F records semantic evidence
+[PASS] Phase F retains segmentation content gate
+[PASS] Phase F retains A* goal gate
+[PASS] Phase F retains map motion evidence
+[PASS] Phase F RViz keeps map fixed frame
+[PASS] Phase F RViz keeps A* path
+[PASS] Phase F RViz keeps segmentation overlay
+[PASS] Phase F RViz shows semantic map
+[PASS] Phase F RViz uses sensor-compatible QoS
+[PASS] docs contain scope
+[PASS] docs contain automated command
+[PASS] docs contain semantic acceptance
+[PASS] docs contain semantic map output
+[PASS] docs contain localization input
+[PASS] docs contain legend
+[PASS] docs contain relaunch
+[PASS] docs contain Phase G gate
+[PASS] validator is honest about runtime
+
+RESULT: 122/122 checks passed

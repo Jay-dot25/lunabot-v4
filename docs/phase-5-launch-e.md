@@ -177,5 +177,6 @@ This clean relaunch is part of the Phase E runtime gate.
 - [ ] Final map evidence is saved when the map-saver package is available.
 - [ ] Clean shutdown and a second independent relaunch pass.
 
-Phase E's runtime gates are explicitly approved. Do not begin Phase F
-(semantic terrain mapping) until a separate explicit Phase F request and gate.
+Phase E's runtime gates are explicitly approved. A separate Phase F request has
+started the semantic terrain-mapping implementation; Phase F has its own
+runtime gate and must be approved independently before Phase G.
