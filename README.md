@@ -15,8 +15,8 @@ earlier ones.
 | D | `~/launch-d` | Basic autonomous navigation (A* planner, path follower) | approved by user |
 | E | `~/launch-e` | RGB-D terrain perception (segmentation mask and overlay) | approved by user |
 | F | `~/launch-f` | Semantic terrain mapping | approved by user |
-| G | `~/launch-g` | Terrain cost map | implemented, pending runtime validation |
-| H | `~/launch-h` | Terrain-aware path planning | not started |
+| G | `~/launch-g` | Terrain cost map | approved by user |
+| H | `~/launch-h` | Terrain-aware path planning | implemented, pending runtime validation |
 | I | `~/launch-i` | Full autonomous integration | not started |
 | J | `~/launch-j` | Dynamic replanning | not started |
 | K | `~/launch-k` | Testing & evaluation | not started |
@@ -178,9 +178,31 @@ EVIDENCE=1 ~/launch-g                          # GUI/RViz cost-map run
 Phase G outputs `/lunabot/terrain/cost_map` and
 `/lunabot/terrain/cost_map/status`. Runtime evidence is written to
 `evidence/phase-g-launch-g/`. The Phase G guide is
-`docs/phase-7-launch-g.md`. Do not begin Phase H until the cost map, status
-content, inherited navigation, clean shutdown, and clean relaunch gates are
-explicitly approved.
+`docs/phase-7-launch-g.md`. Phase G was runtime-validated and explicitly
+approved before Phase H began.
+
+## Quickstart (Phase H)
+
+Phase H preserves the approved Phase G cost map and adds a weighted terrain-aware
+A* path output. It does not yet connect that path to rover motion; Phase I will
+handle full autonomous integration.
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-h" ~/launch-h
+
+python3 tools/validate_phase_h.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-h        # terrain-aware path gate
+EVIDENCE=1 ~/launch-h                          # GUI/RViz path run
+```
+
+Phase H outputs `/lunabot/terrain/plan` and
+`/lunabot/terrain/planner/status`. Runtime evidence is written to
+`evidence/phase-h-launch-h/`. The Phase H guide is
+`docs/phase-8-launch-h.md`. Do not begin Phase I until the terrain-aware path,
+status content, inherited navigation, clean shutdown, and clean relaunch gates
+are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.

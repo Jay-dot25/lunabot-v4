@@ -176,5 +176,6 @@ preserve the A* and Phase F gates, and stop all process groups. This clean relau
 - [ ] Final map evidence is saved when the map-saver package is available.
 - [ ] Clean shutdown and a second independent relaunch pass.
 
-Do not begin Phase H (terrain-aware path planning) until Phase G has its own
-explicit runtime approval.
+Phase G's runtime gate is explicitly approved. A separate Phase H request has
+started terrain-aware path-planning implementation; Phase H must complete its
+own runtime gate before Phase I.
