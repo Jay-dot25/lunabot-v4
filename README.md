@@ -19,8 +19,8 @@ earlier ones.
 | H | `~/launch-h` | Terrain-aware path planning | approved by user |
 | I | `~/launch-i` | Full autonomous integration | approved by user |
 | J | `~/launch-j` | Dynamic replanning | approved by user |
-| K | `~/launch-k` | Testing & evaluation | implemented, pending runtime validation |
-| L | `~/launch-l` | Final mission demonstration | not started |
+| K | `~/launch-k` | Testing & evaluation | approved by user |
+| L | `~/launch-l` | Final mission demonstration | implemented, pending runtime validation |
 
 Each implemented phase has a document under `docs/` covering objective,
 inputs, data flow, ROS nodes/topics/services, TF frames, launch command,
@@ -271,10 +271,35 @@ EVIDENCE=1 ~/launch-k                          # GUI/RViz run
 Phase K outputs `/lunabot/evaluation/status` in addition to the approved
 Phase J interfaces. Runtime evidence is written to
 `evidence/phase-k-launch-k/`. The Phase K guide is
-`docs/phase-11-launch-k.md`. Do not begin Phase L until the aggregate
-evaluation, clean shutdown, and clean relaunch are explicitly approved.
+`docs/phase-11-launch-k.md`. Phase K passed static validation, two independent
+real headless evaluation gates, aggregate evaluation, final map evidence,
+clean shutdown, and clean relaunch. Phase K was explicitly approved before
+Phase L began.
 
-Every later phase will follow the same contract: one command, clean state,
+## Quickstart (Phase L)
+
+Phase L is the final mission demonstration. It preserves the approved Phase K
+stack and adds an observation-only mission supervisor. The supervisor proves
+that the real plan, replanning, integrated goal, aggregate evaluation, goal
+publication, and map output form one completed mission without publishing
+velocity or competing on the command boundary.
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-l" ~/launch-l
+
+python3 tools/validate_phase_l.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-l        # final mission gate
+EVIDENCE=1 ~/launch-l                          # GUI/RViz run
+```
+
+Phase L outputs `/lunabot/mission/status` in addition to the approved Phase K
+interfaces. Runtime evidence is written to `evidence/phase-l-launch-l/`. The
+Phase L guide is `docs/phase-12-launch-l.md`. Phase L is the final phase; no
+later phase is defined.
+
+Every implemented phase follows the same contract: one command, clean state,
 runtime-validated, documented, evidenced.
 
 ## Repository layout

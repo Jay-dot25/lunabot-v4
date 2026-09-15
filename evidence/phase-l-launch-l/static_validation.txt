@@ -1,0 +1,92 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: launch-e
+[PASS] file exists: launch-f
+[PASS] file exists: launch-g
+[PASS] file exists: launch-h
+[PASS] file exists: launch-i
+[PASS] file exists: launch-j
+[PASS] file exists: launch-k
+[PASS] file exists: launch-l
+[PASS] file exists: scripts/launch-k.sh
+[PASS] file exists: scripts/launch-l.sh
+[PASS] file exists: scripts/phase_k_evaluator.py
+[PASS] file exists: scripts/phase_l_mission.py
+[PASS] file exists: tools/validate_phase_k.py
+[PASS] file exists: tools/validate_phase_l.py
+[PASS] file exists: docs/phase-11-launch-k.md
+[PASS] file exists: docs/phase-12-launch-l.md
+[PASS] file exists: evidence/phase-k-launch-k/README.md
+[PASS] file exists: evidence/phase-k-launch-k/verification_checklist.md
+[PASS] file exists: evidence/phase-l-launch-l/README.md
+[PASS] file exists: evidence/phase-l-launch-l/verification_checklist.md
+[PASS] file exists: rviz/phase_k.rviz
+[PASS] file exists: rviz/phase_l.rviz
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-l
+[PASS] executable: scripts/launch-l.sh
+[PASS] executable: scripts/phase_l_mission.py
+[PASS] executable: tools/validate_phase_l.py
+[PASS] Python syntax: scripts/phase_l_mission.py
+[PASS] Python syntax: scripts/phase_k_evaluator.py
+[PASS] Python syntax: scripts/dynamic_replan_monitor.py
+[PASS] Python syntax: scripts/terrain_aware_planner.py
+[PASS] Python syntax: scripts/terrain_path_follower.py
+[PASS] Python syntax: tools/validate_phase_l.py
+[PASS] bash syntax: launch-l
+[PASS] bash syntax: scripts/launch-l.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] approved Phase K baseline remains green - L gate
+[PASS] validator is honest about runtime
+================================================================
+RESULT: 105/105 checks passed - ALL PASS
+================================================================
+[PASS] root launch-l resolves its real path
+[PASS] root launch-l execs scripts/launch-l.sh
+[PASS] Phase L is independent of launch-k
+[PASS] Phase L uses its own evidence directory
+[PASS] Phase L is symlink-safe
+[PASS] Phase L uses process groups
+[PASS] Phase L has a shutdown trap
+[PASS] Phase L cleans mission observer
+[PASS] Phase L cleans inherited evaluator
+[PASS] Phase L reports clean shutdown
+[PASS] Phase L has 22 independent stages
+[PASS] Phase L preserves Phase K evaluator
+[PASS] Phase L uses its own RViz config
+[PASS] Phase L preserves one SLAM system
+[PASS] Phase L retains diagnostic command isolation
+[PASS] Phase L retains the single active motion source
+[PASS] Phase L requires final map evidence
+[PASS] mission supervisor is a ROS node
+[PASS] mission supervisor observes terrain plan
+[PASS] mission supervisor observes replanning
+[PASS] mission supervisor observes integrated goal
+[PASS] mission supervisor observes aggregate evaluation
+[PASS] mission supervisor observes real goal
+[PASS] mission supervisor observes map
+[PASS] mission supervisor emits retained pass
+[PASS] mission supervisor has no motion publisher
+[PASS] mission supervisor does not publish a goal
+[PASS] Phase L starts mission supervisor directly
+[PASS] Phase L validates mission status type
+[PASS] Phase L validates mission status topic
+[PASS] Phase L waits for mission pass
+[PASS] Phase L records mission evidence
+[PASS] Phase L retains aggregate evaluation gate
+[PASS] Phase L retains dynamic replanning gate
+[PASS] Phase L uses retained mission QoS
+[PASS] docs contain scope
+[PASS] docs contain automated command
+[PASS] docs contain mission acceptance
+[PASS] docs contain status output
+[PASS] docs contain safety boundary
+[PASS] docs contain relaunch
+[PASS] docs contain final-phase gate
+[PASS] validator is honest about runtime
+
+RESULT: 86/86 checks passed

@@ -145,4 +145,6 @@ replanning and goal completion, and stop all process groups.
 - [ ] `EVALUATION_PASS` is received on `/lunabot/evaluation/status`.
 - [ ] Final map evidence, clean shutdown, and clean relaunch pass.
 
-Do not begin Phase L until Phase K receives explicit runtime approval.
+Phase K was explicitly runtime-approved after two independent passing
+headless evaluation runs, aggregate `EVALUATION_PASS`, final map evidence,
+clean shutdown, and clean relaunch. Phase L may now begin.
