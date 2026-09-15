@@ -268,7 +268,7 @@ log "[2/17] environment OK ($IGN/$MSGNS, $BRIDGE_PKG, slam_toolbox)"
 # ------------------------------------------------------------
 # [3/17] Clean state
 # ------------------------------------------------------------
-echo "[3/17] Checking for stale Phase A/F processes......."
+echo "[3/17] Checking for stale Phase A/G processes......."
 stale="$(pgrep -f "lunar_world.sdf" 2>/dev/null || true)"
 if [ -n "$stale" ]; then
   echo "      Killing stale Gazebo for lunar_world (PIDs: $stale)"
