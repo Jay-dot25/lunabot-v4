@@ -187,5 +187,6 @@ groups. This clean relaunch is part of the Phase I runtime gate.
 - [ ] Final map evidence is saved as YAML and PGM.
 - [ ] Clean shutdown and a second independent relaunch pass.
 
-Do not begin Phase J (dynamic replanning) until Phase I has its own explicit
-runtime approval.
+Phase I was explicitly runtime-approved after two independent passing headless
+runs, final map evidence, clean shutdown, and clean relaunch. Phase J may now
+begin; Phase K must wait for its own explicit runtime approval.

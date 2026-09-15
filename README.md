@@ -17,8 +17,8 @@ earlier ones.
 | F | `~/launch-f` | Semantic terrain mapping | approved by user |
 | G | `~/launch-g` | Terrain cost map | approved by user |
 | H | `~/launch-h` | Terrain-aware path planning | approved by user |
-| I | `~/launch-i` | Full autonomous integration | implemented, pending runtime validation |
-| J | `~/launch-j` | Dynamic replanning | not started |
+| I | `~/launch-i` | Full autonomous integration | approved by user |
+| J | `~/launch-j` | Dynamic replanning | implemented, pending runtime validation |
 | K | `~/launch-k` | Testing & evaluation | not started |
 | L | `~/launch-l` | Final mission demonstration | not started |
 
@@ -222,9 +222,33 @@ EVIDENCE=1 ~/launch-i                          # GUI/RViz integration run
 
 Phase I outputs `/lunabot/autonomy/status` and the active `/cmd_vel_in`
 command path. Runtime evidence is written to `evidence/phase-i-launch-i/`.
-The Phase I guide is `docs/phase-9-launch-i.md`. Do not begin Phase J until
-integrated goal completion, controller-boundary evidence, clean shutdown, and
-clean relaunch are explicitly approved.
+The Phase I guide is `docs/phase-9-launch-i.md`. Phase I passed static
+validation, two independent headless runtime gates, integrated goal
+completion, final map evidence, clean shutdown, and clean relaunch. Phase I
+was explicitly approved before Phase J began.
+
+## Quickstart (Phase J)
+
+Phase J preserves the approved Phase I autonomous integration and adds a live
+replanning monitor. It proves that the terrain-aware planner emits changed
+path revisions after real rover motion without adding a competing motion
+publisher.
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-j" ~/launch-j
+
+python3 tools/validate_phase_j.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-j        # dynamic-replanning gate
+EVIDENCE=1 ~/launch-j                          # GUI/RViz run
+```
+
+Phase J outputs `/lunabot/autonomy/replan_status` in addition to the approved
+Phase I interfaces. Runtime evidence is written to
+`evidence/phase-j-launch-j/`. The Phase J guide is
+`docs/phase-10-launch-j.md`. Do not begin Phase K until dynamic replanning,
+goal completion, clean shutdown, and clean relaunch are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.
