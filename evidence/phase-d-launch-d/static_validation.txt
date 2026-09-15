@@ -102,6 +102,7 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] planner makes path/goal/status late-join safe
 [PASS] planner has no direct Gazebo dependency
 [PASS] Phase D uses the validated world
+[PASS] Phase D resolves its A* planner path
 [PASS] Phase D preserves spawn height
 [PASS] Phase D supports headless Gazebo
 [PASS] Phase D explicitly unpauses Gazebo
@@ -153,4 +154,4 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] docs contain Phase E gate
 [PASS] validator is honest about runtime
 
-RESULT: 147/147 checks passed
+RESULT: 148/148 checks passed

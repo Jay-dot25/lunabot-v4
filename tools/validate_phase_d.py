@@ -157,7 +157,9 @@ check("planner has no direct Gazebo dependency", "ignition" not in planner.lower
 
 # Phase A/B/C runtime contract carried forward.
 check("Phase D uses the validated world", 'WORLD_PATH="$WORLD_DIR/lunar_world.sdf"' in launch)
+check("Phase D resolves its A* planner path", 'NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"' in launch)
 check("Phase D preserves spawn height", 'SPAWN_Z="-2.308"' in launch)
+
 check("Phase D supports headless Gazebo", 'HEADLESS="${HEADLESS:-0}"' in launch and
       "gazebo -s" in launch)
 check("Phase D explicitly unpauses Gazebo", "WorldControl" in launch and
