@@ -13,10 +13,10 @@ rover, bridge, scoped sensor TF, control node, odometry monitor,
 `slam_toolbox`, A* navigation, and RViz directly. It does not invoke Phase C
 or any earlier launch command.
 
-The runtime gate remains workstation-only. Do not begin Phase E until a real
-run confirms a non-empty A* path, autonomous motion to a goal, live map
-updates, all inherited Phase B/C sensor checks, RViz displays, map evidence,
-and clean relaunch.
+The runtime gate was completed on the workstation. A real run confirmed a
+non-empty A* path, autonomous motion to a goal, live map updates, all inherited
+Phase B/C sensor checks, map evidence, and clean shutdown/relaunch. Phase D was
+explicitly approved before Phase E began.
 
 ## 2. Data flow
 
@@ -252,6 +252,6 @@ all process groups without orphaned nodes.
 PHASE D IMPLEMENTATION — PENDING RUNTIME VALIDATION
 ============================================================
 
-Do not begin Phase E until the workstation runtime, RViz, map evidence, clean
-shutdown, and clean relaunch have all been explicitly approved. This is the
-explicit gate before Phase E.
+Phase D workstation runtime, map evidence, clean shutdown, and clean relaunch
+were explicitly approved before Phase E implementation began. Phase E must
+complete its own runtime gate before Phase F.

@@ -1,0 +1,122 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: launch-e
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/launch-d.sh
+[PASS] file exists: scripts/launch-e.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: scripts/astar_navigation.py
+[PASS] file exists: scripts/terrain_segmentation.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: rviz/phase_c.rviz
+[PASS] file exists: rviz/phase_d.rviz
+[PASS] file exists: rviz/phase_e.rviz
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: tools/validate_phase_b.py
+[PASS] file exists: tools/validate_phase_c.py
+[PASS] file exists: tools/validate_phase_d.py
+[PASS] file exists: docs/phase-3-launch-c.md
+[PASS] file exists: docs/phase-4-launch-d.md
+[PASS] file exists: docs/phase-5-launch-e.md
+[PASS] file exists: evidence/phase-d-launch-d/README.md
+[PASS] file exists: evidence/phase-e-launch-e/README.md
+[PASS] file exists: evidence/phase-e-launch-e/verification_checklist.md
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-e
+[PASS] executable: scripts/launch-e.sh
+[PASS] executable: scripts/terrain_segmentation.py
+[PASS] executable: tools/validate_phase_e.py
+[PASS] Python syntax: scripts/terrain_segmentation.py
+[PASS] Python syntax: scripts/astar_navigation.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/validate_phase_b.py
+[PASS] Python syntax: tools/validate_phase_c.py
+[PASS] Python syntax: tools/validate_phase_d.py
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] bash syntax: launch-c
+[PASS] bash syntax: launch-d
+[PASS] bash syntax: launch-e
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: scripts/launch-c.sh
+[PASS] bash syntax: scripts/launch-d.sh
+[PASS] bash syntax: scripts/launch-e.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] approved baseline remains green: tools/validate_phase_a.py - =
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - LT: 149/149 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
+[PASS] root launch-e resolves its real path
+[PASS] root launch-e execs scripts/launch-e.sh
+[PASS] Phase E does not invoke an earlier launcher
+[PASS] Phase E has its own evidence directory
+[PASS] Phase E is symlink-safe
+[PASS] Phase E uses process groups
+[PASS] Phase E has a shutdown trap
+[PASS] Phase E cleans perception process
+[PASS] Phase E has bounded shutdown
+[PASS] Phase E preserves the Phase D planner
+[PASS] Phase E preserves one SLAM system
+[PASS] perception is a ROS node
+[PASS] perception consumes RGB images
+[PASS] perception consumes depth images
+[PASS] perception decodes supported depth encodings
+[PASS] perception publishes a mono8 mask
+[PASS] perception publishes an RGB overlay
+[PASS] perception defines explicit labels
+[PASS] perception handles invalid depth
+[PASS] perception uses a conservative ground ROI
+[PASS] perception publishes auditable status
+[PASS] perception status is late-join safe
+[PASS] perception does not alter navigation commands
+[PASS] Phase E resolves the perception path
+[PASS] Phase E starts perception directly
+[PASS] Phase E bridges the existing depth topic
+[PASS] Phase E keeps the existing RGB topic
+[PASS] Phase E validates depth at runtime
+[PASS] Phase E validates mask type
+[PASS] Phase E validates overlay type
+[PASS] Phase E validates status type
+[PASS] Phase E validates real segmentation messages
+[PASS] Phase E validates segmentation content
+[PASS] Phase E records segmentation evidence
+[PASS] Phase E retains the A* goal gate
+[PASS] Phase E retains map motion evidence
+[PASS] Phase E RViz keeps map fixed frame
+[PASS] Phase E RViz keeps A* path
+[PASS] Phase E RViz shows segmentation overlay
+[PASS] Phase E RViz includes mask display
+[PASS] Phase E RViz uses sensor-compatible QoS
+[PASS] docs contain scope
+[PASS] docs contain automated command
+[PASS] docs contain segmentation acceptance
+[PASS] docs contain mask output
+[PASS] docs contain overlay output
+[PASS] docs contain RGB-D inputs
+[PASS] docs contain relaunch
+[PASS] docs contain Phase F gate
+[PASS] validator is honest about runtime
+
+RESULT: 111/111 checks passed

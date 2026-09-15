@@ -12,8 +12,8 @@ earlier ones.
 | A | `~/launch-a` | Simulation & rover foundation (lunar world, rover, sensors, ROS bridge, TF, RViz, teleop) | approved by user |
 | B | `~/launch-b` | Control & odometry (safe command boundary, watchdog, odometry monitor) | implemented, pending runtime validation |
 | C | `~/launch-c` | SLAM & localization (`slam_toolbox`, map/TF, evidence) | approved by user |
-| D | `~/launch-d` | Basic autonomous navigation (A* planner, path follower) | implemented, pending runtime validation |
-| E | `~/launch-e` | Terrain perception (segmentation) | not started |
+| D | `~/launch-d` | Basic autonomous navigation (A* planner, path follower) | approved by user |
+| E | `~/launch-e` | RGB-D terrain perception (segmentation mask and overlay) | implemented, pending runtime validation |
 | F | `~/launch-f` | Semantic terrain mapping | not started |
 | G | `~/launch-g` | Terrain cost map | not started |
 | H | `~/launch-h` | Terrain-aware path planning | not started |
@@ -108,8 +108,32 @@ EVIDENCE=1 ~/launch-d                          # GUI/RViz path validation
 ```
 
 Phase D uses no Nav2, AMCL, Cartographer, or second SLAM system. Runtime
-evidence is written to `evidence/phase-d-launch-d/`. Do not begin Phase E
-until the A* goal, path, autonomous motion, RViz, map evidence, and clean
+evidence is written to `evidence/phase-d-launch-d/`. Phase D was runtime
+validated and explicitly approved before Phase E began.
+
+## Quickstart (Phase E)
+
+Phase E preserves the approved Phase D stack and adds a deterministic RGB-D
+terrain-perception node. It consumes the existing camera and depth streams and
+publishes a `mono8` terrain/obstacle/unknown mask, an RGB overlay, and an
+auditable status topic. It does not alter the map, planner, controller, or
+velocity path:
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-e" ~/launch-e
+
+python3 tools/validate_phase_e.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-e        # RGB-D + A* runtime gate
+EVIDENCE=1 ~/launch-e                          # GUI/RViz perception run
+```
+
+Phase E outputs are `/lunabot/terrain/segmentation`,
+`/lunabot/terrain/overlay`, and `/lunabot/terrain/segmentation/status`.
+Runtime evidence is written to `evidence/phase-e-launch-e/`. The Phase E guide
+is `docs/phase-5-launch-e.md`. Do not begin Phase F until the real segmentation
+messages, status content, inherited navigation, clean shutdown, and clean
 relaunch gates are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
