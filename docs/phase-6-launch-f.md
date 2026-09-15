@@ -22,9 +22,9 @@ messages. Terrain-aware cost fusion remains Phase G; semantic map output is
 not silently connected to the approved A* planner.
 
 Phase F is independently launchable as `~/launch-f`. Static validation is not
-runtime acceptance. The workstation runtime must produce real semantic-map
-and status messages, preserve the approved Phase A-E gates, and cleanly
-relaunch before Phase F can be approved.
+runtime acceptance. The workstation runtime produced real semantic-map and
+status messages, preserved the approved Phase A-E gates, and cleanly relaunched;
+Phase F is approved before Phase G implementation.
 
 ## 2. Data flow
 
@@ -181,5 +181,6 @@ clean relaunch is part of the Phase F runtime gate.
 - [ ] Final map evidence is saved when the map-saver package is available.
 - [ ] Clean shutdown and a second independent relaunch pass.
 
-Do not begin Phase G (terrain cost map) until Phase F has its own explicit
-runtime approval.
+Phase F's runtime gate is explicitly approved. A separate Phase G request has
+started terrain cost-map implementation; Phase G must complete its own runtime
+gate before Phase H.

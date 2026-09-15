@@ -1,0 +1,146 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: launch-e
+[PASS] file exists: launch-f
+[PASS] file exists: launch-g
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/launch-d.sh
+[PASS] file exists: scripts/launch-e.sh
+[PASS] file exists: scripts/launch-f.sh
+[PASS] file exists: scripts/launch-g.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: scripts/astar_navigation.py
+[PASS] file exists: scripts/terrain_segmentation.py
+[PASS] file exists: scripts/semantic_terrain_mapper.py
+[PASS] file exists: scripts/terrain_cost_mapper.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: rviz/phase_c.rviz
+[PASS] file exists: rviz/phase_d.rviz
+[PASS] file exists: rviz/phase_e.rviz
+[PASS] file exists: rviz/phase_f.rviz
+[PASS] file exists: rviz/phase_g.rviz
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: tools/validate_phase_b.py
+[PASS] file exists: tools/validate_phase_c.py
+[PASS] file exists: tools/validate_phase_d.py
+[PASS] file exists: tools/validate_phase_e.py
+[PASS] file exists: tools/validate_phase_f.py
+[PASS] file exists: docs/phase-3-launch-c.md
+[PASS] file exists: docs/phase-4-launch-d.md
+[PASS] file exists: docs/phase-5-launch-e.md
+[PASS] file exists: docs/phase-6-launch-f.md
+[PASS] file exists: docs/phase-7-launch-g.md
+[PASS] file exists: evidence/phase-f-launch-f/README.md
+[PASS] file exists: evidence/phase-g-launch-g/README.md
+[PASS] file exists: evidence/phase-g-launch-g/verification_checklist.md
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-g
+[PASS] executable: scripts/launch-g.sh
+[PASS] executable: scripts/terrain_cost_mapper.py
+[PASS] executable: tools/validate_phase_g.py
+[PASS] Python syntax: scripts/terrain_cost_mapper.py
+[PASS] Python syntax: scripts/semantic_terrain_mapper.py
+[PASS] Python syntax: scripts/terrain_segmentation.py
+[PASS] Python syntax: scripts/astar_navigation.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/validate_phase_b.py
+[PASS] Python syntax: tools/validate_phase_c.py
+[PASS] Python syntax: tools/validate_phase_d.py
+[PASS] Python syntax: tools/validate_phase_e.py
+[PASS] Python syntax: tools/validate_phase_f.py
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] bash syntax: launch-c
+[PASS] bash syntax: launch-d
+[PASS] bash syntax: launch-e
+[PASS] bash syntax: launch-f
+[PASS] bash syntax: launch-g
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: scripts/launch-c.sh
+[PASS] bash syntax: scripts/launch-d.sh
+[PASS] bash syntax: scripts/launch-e.sh
+[PASS] bash syntax: scripts/launch-f.sh
+[PASS] bash syntax: scripts/launch-g.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] approved baseline remains green: tools/validate_phase_a.py - =
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - LT: 149/149 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_e.py - LT: 112/112 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-e-launch-e/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_f.py - LT: 122/122 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-f-launch-f/static_validation.txt
+[PASS] root launch-g resolves its real path
+[PASS] root launch-g execs scripts/launch-g.sh
+[PASS] Phase G does not invoke an earlier launcher
+[PASS] Phase G has its own evidence directory
+[PASS] Phase G is symlink-safe
+[PASS] Phase G uses process groups
+[PASS] Phase G has a shutdown trap
+[PASS] Phase G cleans cost mapper process
+[PASS] Phase G reports its clean shutdown
+[PASS] Phase G has bounded shutdown
+[PASS] Phase G preserves semantic mapper
+[PASS] Phase G preserves the Phase D planner
+[PASS] Phase G preserves one SLAM system
+[PASS] cost mapper is a ROS node
+[PASS] cost mapper consumes semantic map
+[PASS] cost mapper publishes cost map
+[PASS] cost mapper defines terrain cost
+[PASS] cost mapper defines unknown caution cost
+[PASS] cost mapper defines obstacle cost
+[PASS] cost mapper inflates obstacles
+[PASS] cost mapper preserves map geometry
+[PASS] cost mapper publishes auditable status
+[PASS] cost mapper map/status are late-join safe
+[PASS] cost mapper does not publish motion commands
+[PASS] Phase G resolves cost mapper path
+[PASS] Phase G starts cost mapper directly
+[PASS] Phase G validates cost map type
+[PASS] Phase G validates cost status type
+[PASS] Phase G validates real cost messages
+[PASS] Phase G validates cost content
+[PASS] Phase G records cost evidence
+[PASS] Phase G retains semantic content gate
+[PASS] Phase G retains A* goal gate
+[PASS] Phase G retains map motion evidence
+[PASS] Phase G RViz keeps map fixed frame
+[PASS] Phase G RViz keeps A* path
+[PASS] Phase G RViz keeps semantic map
+[PASS] Phase G RViz shows cost map
+[PASS] Phase G RViz uses sensor-compatible QoS
+[PASS] docs contain scope
+[PASS] docs contain automated command
+[PASS] docs contain cost acceptance
+[PASS] docs contain cost map output
+[PASS] docs contain semantic input
+[PASS] docs contain obstacle inflation
+[PASS] docs contain relaunch
+[PASS] docs contain Phase H gate
+[PASS] validator is honest about runtime
+
+RESULT: 131/131 checks passed
