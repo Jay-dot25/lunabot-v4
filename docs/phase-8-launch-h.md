@@ -175,5 +175,6 @@ clean relaunch is part of the Phase H runtime gate.
 - [ ] Final map evidence is saved when the map-saver package is available.
 - [ ] Clean shutdown and a second independent relaunch pass.
 
-Do not begin Phase I (full autonomous integration) until Phase H has its own
-explicit runtime approval.
+Phase H's runtime gate is explicitly approved. A separate Phase I request has
+started full autonomous integration; Phase I must complete its own runtime gate
+before Phase J.

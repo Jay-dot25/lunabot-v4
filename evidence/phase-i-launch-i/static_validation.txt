@@ -1,0 +1,175 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: launch-e
+[PASS] file exists: launch-f
+[PASS] file exists: launch-g
+[PASS] file exists: launch-h
+[PASS] file exists: launch-i
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/launch-d.sh
+[PASS] file exists: scripts/launch-e.sh
+[PASS] file exists: scripts/launch-f.sh
+[PASS] file exists: scripts/launch-g.sh
+[PASS] file exists: scripts/launch-h.sh
+[PASS] file exists: scripts/launch-i.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: scripts/astar_navigation.py
+[PASS] file exists: scripts/terrain_segmentation.py
+[PASS] file exists: scripts/semantic_terrain_mapper.py
+[PASS] file exists: scripts/terrain_cost_mapper.py
+[PASS] file exists: scripts/terrain_aware_planner.py
+[PASS] file exists: scripts/terrain_path_follower.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_a.rviz
+[PASS] file exists: rviz/phase_b.rviz
+[PASS] file exists: rviz/phase_c.rviz
+[PASS] file exists: rviz/phase_d.rviz
+[PASS] file exists: rviz/phase_e.rviz
+[PASS] file exists: rviz/phase_f.rviz
+[PASS] file exists: rviz/phase_g.rviz
+[PASS] file exists: rviz/phase_h.rviz
+[PASS] file exists: rviz/phase_i.rviz
+[PASS] file exists: tools/validate_phase_a.py
+[PASS] file exists: tools/validate_phase_b.py
+[PASS] file exists: tools/validate_phase_c.py
+[PASS] file exists: tools/validate_phase_d.py
+[PASS] file exists: tools/validate_phase_e.py
+[PASS] file exists: tools/validate_phase_f.py
+[PASS] file exists: tools/validate_phase_g.py
+[PASS] file exists: tools/validate_phase_h.py
+[PASS] file exists: docs/phase-3-launch-c.md
+[PASS] file exists: docs/phase-4-launch-d.md
+[PASS] file exists: docs/phase-5-launch-e.md
+[PASS] file exists: docs/phase-6-launch-f.md
+[PASS] file exists: docs/phase-7-launch-g.md
+[PASS] file exists: docs/phase-8-launch-h.md
+[PASS] file exists: docs/phase-9-launch-i.md
+[PASS] file exists: evidence/phase-h-launch-h/README.md
+[PASS] file exists: evidence/phase-i-launch-i/README.md
+[PASS] file exists: evidence/phase-i-launch-i/verification_checklist.md
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-i
+[PASS] executable: scripts/launch-i.sh
+[PASS] executable: scripts/terrain_path_follower.py
+[PASS] executable: tools/validate_phase_i.py
+[PASS] Python syntax: scripts/terrain_path_follower.py
+[PASS] Python syntax: scripts/terrain_aware_planner.py
+[PASS] Python syntax: scripts/terrain_cost_mapper.py
+[PASS] Python syntax: scripts/semantic_terrain_mapper.py
+[PASS] Python syntax: scripts/terrain_segmentation.py
+[PASS] Python syntax: scripts/astar_navigation.py
+[PASS] Python syntax: scripts/control_odometry.py
+[PASS] Python syntax: scripts/odometry_monitor.py
+[PASS] Python syntax: tools/validate_phase_a.py
+[PASS] Python syntax: tools/validate_phase_b.py
+[PASS] Python syntax: tools/validate_phase_c.py
+[PASS] Python syntax: tools/validate_phase_d.py
+[PASS] Python syntax: tools/validate_phase_e.py
+[PASS] Python syntax: tools/validate_phase_f.py
+[PASS] Python syntax: tools/validate_phase_g.py
+[PASS] Python syntax: tools/validate_phase_h.py
+[PASS] bash syntax: launch-a
+[PASS] bash syntax: launch-b
+[PASS] bash syntax: launch-c
+[PASS] bash syntax: launch-d
+[PASS] bash syntax: launch-e
+[PASS] bash syntax: launch-f
+[PASS] bash syntax: launch-g
+[PASS] bash syntax: launch-h
+[PASS] bash syntax: launch-i
+[PASS] bash syntax: scripts/launch-a.sh
+[PASS] bash syntax: scripts/launch-b.sh
+[PASS] bash syntax: scripts/launch-c.sh
+[PASS] bash syntax: scripts/launch-d.sh
+[PASS] bash syntax: scripts/launch-e.sh
+[PASS] bash syntax: scripts/launch-f.sh
+[PASS] bash syntax: scripts/launch-g.sh
+[PASS] bash syntax: scripts/launch-h.sh
+[PASS] bash syntax: scripts/launch-i.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] approved baseline remains green: tools/validate_phase_a.py - =
+RESULT: 76/76 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+============================================================
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - LT: 149/149 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_e.py - LT: 112/112 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-e-launch-e/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_f.py - LT: 122/122 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-f-launch-f/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_g.py - LT: 131/131 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-g-launch-g/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_h.py - LT: 144/144 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-h-launch-h/static_validation.txt
+[PASS] root launch-i resolves its real path
+[PASS] root launch-i execs scripts/launch-i.sh
+[PASS] Phase I does not invoke an earlier launcher
+[PASS] Phase I has its own evidence directory
+[PASS] Phase I is symlink-safe
+[PASS] Phase I uses process groups
+[PASS] Phase I has a shutdown trap
+[PASS] Phase I cleans active follower
+[PASS] Phase I reports its clean shutdown
+[PASS] Phase I has bounded shutdown
+[PASS] Phase I preserves the terrain planner
+[PASS] Phase I preserves the Phase D planner diagnostically
+[PASS] Phase I preserves one SLAM system
+[PASS] follower is a ROS node
+[PASS] follower consumes terrain path
+[PASS] follower consumes real odometry
+[PASS] follower consumes the goal
+[PASS] follower uses existing localization
+[PASS] follower publishes into controller boundary
+[PASS] follower has conservative limits
+[PASS] follower publishes integrated status
+[PASS] follower stops safely
+[PASS] follower does not publish final cmd_vel
+[PASS] Phase I resolves follower path
+[PASS] Phase I starts follower directly
+[PASS] Phase I isolates diagnostic A* command
+[PASS] Phase I validates integration status type
+[PASS] Phase I validates real integration status
+[PASS] Phase I validates integrated goal content
+[PASS] Phase I captures active input motion
+[PASS] Phase I validates controller-boundary motion
+[PASS] Phase I records integration evidence
+[PASS] Phase I retains terrain plan gate
+[PASS] Phase I retains cost/semantic gates
+[PASS] Phase I retains map motion evidence
+[PASS] Phase I requires final map evidence
+[PASS] Phase I RViz keeps map fixed frame
+[PASS] Phase I RViz shows active terrain path
+[PASS] Phase I RViz keeps diagnostic A* path
+[PASS] Phase I RViz keeps cost map
+[PASS] Phase I RViz uses sensor-compatible QoS
+[PASS] docs contain scope
+[PASS] docs contain automated command
+[PASS] docs contain integration acceptance
+[PASS] docs contain status output
+[PASS] docs contain controller boundary
+[PASS] docs contain command isolation
+[PASS] docs contain phase H distinction
+[PASS] docs contain relaunch
+[PASS] docs contain Phase J gate
+[PASS] validator is honest about runtime
+
+RESULT: 156/156 checks passed

@@ -16,8 +16,8 @@ earlier ones.
 | E | `~/launch-e` | RGB-D terrain perception (segmentation mask and overlay) | approved by user |
 | F | `~/launch-f` | Semantic terrain mapping | approved by user |
 | G | `~/launch-g` | Terrain cost map | approved by user |
-| H | `~/launch-h` | Terrain-aware path planning | implemented, pending runtime validation |
-| I | `~/launch-i` | Full autonomous integration | not started |
+| H | `~/launch-h` | Terrain-aware path planning | approved by user |
+| I | `~/launch-i` | Full autonomous integration | implemented, pending runtime validation |
 | J | `~/launch-j` | Dynamic replanning | not started |
 | K | `~/launch-k` | Testing & evaluation | not started |
 | L | `~/launch-l` | Final mission demonstration | not started |
@@ -200,9 +200,31 @@ EVIDENCE=1 ~/launch-h                          # GUI/RViz path run
 Phase H outputs `/lunabot/terrain/plan` and
 `/lunabot/terrain/planner/status`. Runtime evidence is written to
 `evidence/phase-h-launch-h/`. The Phase H guide is
-`docs/phase-8-launch-h.md`. Do not begin Phase I until the terrain-aware path,
-status content, inherited navigation, clean shutdown, and clean relaunch gates
-are explicitly approved.
+`docs/phase-8-launch-h.md`. Phase H was runtime-validated and explicitly
+approved before Phase I began.
+
+## Quickstart (Phase I)
+
+Phase I performs the first full integration: the approved terrain-aware plan
+feeds an active path follower, which publishes through `/cmd_vel_in` into the
+approved Phase B controller. The diagnostic Phase D A* remains available but
+is isolated from the active command boundary.
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-i" ~/launch-i
+
+python3 tools/validate_phase_i.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-i        # full integration gate
+EVIDENCE=1 ~/launch-i                          # GUI/RViz integration run
+```
+
+Phase I outputs `/lunabot/autonomy/status` and the active `/cmd_vel_in`
+command path. Runtime evidence is written to `evidence/phase-i-launch-i/`.
+The Phase I guide is `docs/phase-9-launch-i.md`. Do not begin Phase J until
+integrated goal completion, controller-boundary evidence, clean shutdown, and
+clean relaunch are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.
