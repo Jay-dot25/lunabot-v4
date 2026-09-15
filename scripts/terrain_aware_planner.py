@@ -75,7 +75,10 @@ class TerrainAwarePlanner(Node):
         self.cost_map: Optional[OccupancyGrid] = None
         self.goal: Optional[PoseStamped] = None
         self.odom: Optional[Odometry] = None
-        self.last_plan_time = self.get_clock().now() - Duration(seconds=10.0)
+        # Simulation time starts at zero; subtracting a warm-up duration can
+        # produce a negative rclpy Time. The first timer tick will plan after
+        # the configured replan period instead.
+        self.last_plan_time = self.get_clock().now()
         self.last_status = ""
         self.publish_status("TERRAIN_PLANNER_WAITING_FOR_COST_MAP")
         self.timer = self.create_timer(0.1, self._tick)
