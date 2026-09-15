@@ -13,7 +13,7 @@ earlier ones.
 | B | `~/launch-b` | Control & odometry (safe command boundary, watchdog, odometry monitor) | implemented, pending runtime validation |
 | C | `~/launch-c` | SLAM & localization (`slam_toolbox`, map/TF, evidence) | approved by user |
 | D | `~/launch-d` | Basic autonomous navigation (A* planner, path follower) | approved by user |
-| E | `~/launch-e` | RGB-D terrain perception (segmentation mask and overlay) | implemented, pending runtime validation |
+| E | `~/launch-e` | RGB-D terrain perception (segmentation mask and overlay) | approved by user |
 | F | `~/launch-f` | Semantic terrain mapping | not started |
 | G | `~/launch-g` | Terrain cost map | not started |
 | H | `~/launch-h` | Terrain-aware path planning | not started |

@@ -16,8 +16,9 @@ Invalid depth is unknown. Semantic terrain mapping and navigation cost fusion
 remain future phases.
 
 Phase E is independently launchable as `~/launch-e`. Static validation is not
-runtime acceptance. The workstation runtime must produce real mask, overlay,
-and status messages, then cleanly relaunch before Phase E can be approved.
+runtime acceptance. The workstation runtime produced real mask, overlay, and
+status messages, then cleanly relaunched; Phase E is approved. Phase F requires
+its own separate explicit request and gate.
 
 ## 2. Data flow
 
@@ -176,5 +177,5 @@ This clean relaunch is part of the Phase E runtime gate.
 - [ ] Final map evidence is saved when the map-saver package is available.
 - [ ] Clean shutdown and a second independent relaunch pass.
 
-Do not begin Phase F (semantic terrain mapping) until these runtime gates are
-explicitly approved.
+Phase E's runtime gates are explicitly approved. Do not begin Phase F
+(semantic terrain mapping) until a separate explicit Phase F request and gate.

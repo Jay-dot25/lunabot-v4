@@ -48,4 +48,5 @@ EVIDENCE=1 ~/launch-e
 - [ ] The second run again produces `SEGMENTATION_PASS`.
 - [ ] No stale Gazebo, bridge, perception, SLAM, planner, or controller process remains.
 
-Phase F must not begin until this checklist is explicitly approved.
+This checklist is approved for Phase E. Phase F must not begin until a
+separate explicit Phase F request and gate.
