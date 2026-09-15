@@ -107,6 +107,12 @@ class DynamicReplanMonitor(Node):
         )
 
     def _plan_callback(self, msg: Path) -> None:
+        # Keep the successful marker latched. The planner may continue
+        # publishing later revisions while the follower settles at its goal,
+        # but those updates must not overwrite DYNAMIC_REPLAN_PASS before the
+        # launcher can retrieve the retained evidence.
+        if self.passed:
+            return
         if not msg.poses:
             self.publish_status("DYNAMIC_REPLAN_EMPTY_PLAN")
             return

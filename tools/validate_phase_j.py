@@ -146,6 +146,8 @@ check("monitor counts changed revisions", "self.revisions += 1" in monitor and
       "signature != self.last_signature" in monitor)
 check("monitor requires motion for pass", "self.minimum_motion" in monitor and
       "DYNAMIC_REPLAN_PASS" in monitor)
+check("monitor latches a successful pass", "if self.passed:" in monitor and
+      "Keep the successful marker latched" in monitor)
 check("monitor publishes retained status", "self.status_pub" in monitor and
       "TRANSIENT_LOCAL" in monitor)
 check("monitor has no motion publisher", "create_publisher(Twist" not in monitor and

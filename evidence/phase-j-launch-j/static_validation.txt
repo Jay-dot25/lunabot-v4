@@ -56,7 +56,7 @@
 [PASS] model SDF well-formed
 [PASS] approved Phase I baseline remains green - 160/160 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-j-fix/evidence/phase-i-launch-i/static_validation.txt
+report: /tmp/lunabot-phase-j-fix2/evidence/phase-i-launch-i/static_validation.txt
 [PASS] root launch-j resolves its real path
 [PASS] root launch-j execs scripts/launch-j.sh
 [PASS] Phase J is independent of launch-i
@@ -73,6 +73,7 @@ report: /tmp/lunabot-phase-j-fix/evidence/phase-i-launch-i/static_validation.txt
 [PASS] monitor consumes the active goal
 [PASS] monitor counts changed revisions
 [PASS] monitor requires motion for pass
+[PASS] monitor latches a successful pass
 [PASS] monitor publishes retained status
 [PASS] monitor has no motion publisher
 [PASS] Phase J resolves dynamic monitor path
@@ -98,4 +99,4 @@ report: /tmp/lunabot-phase-j-fix/evidence/phase-i-launch-i/static_validation.txt
 [PASS] docs contain Phase K gate
 [PASS] validator is honest about runtime
 
-RESULT: 97/97 checks passed
+RESULT: 98/98 checks passed
