@@ -180,6 +180,8 @@ check("Phase I validates integration status type", 'type_ok "type integration st
 check("Phase I validates real integration status", 'topic_ok "topic /lunabot/autonomy/status"' in launch)
 check("Phase I validates integrated goal content", "INTEGRATION_GOAL_REACHED" in launch and
       "integration status content: PASS" in launch)
+check("Phase I defines motion capture before use",
+      launch.index("capture_motion_evidence() {") < launch.index("\ncapture_motion_evidence\n"))
 check("Phase I captures active input motion", "capture_motion_evidence" in launch and
       "cmd_vel_in_motion.txt" in launch and "nonzero /cmd_vel_in motion evidence: PASS" in launch)
 check("Phase I validates controller-boundary motion", "cmd_vel_motion.txt" in launch and

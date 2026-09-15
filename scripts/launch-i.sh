@@ -614,6 +614,81 @@ fi
 # ------------------------------------------------------------
 # [18/19] Runtime validation
 # ------------------------------------------------------------
+twist_has_motion() {
+  # ros2 topic echo renders Twist as `linear:` / `angular:` blocks. Accept
+  # either forward/reverse or rotation as real motion, but reject an all-zero
+  # watchdog stream. The threshold avoids treating formatting noise as motion.
+  awk '
+    /^linear:/ { section="linear"; next }
+    /^angular:/ { section="angular"; next }
+    section == "linear" && $1 == "x:" {
+      if (($2 + 0.0) > 0.001 || ($2 + 0.0) < -0.001) found=1
+    }
+    section == "angular" && $1 == "z:" {
+      if (($2 + 0.0) > 0.001 || ($2 + 0.0) < -0.001) found=1
+    }
+    END { exit(found ? 0 : 1) }
+  ' "$1"
+}
+
+capture_motion_evidence() {
+  [ "$DEMO" = "1" ] || return 0
+  : > "$EVIDENCE_DIR/cmd_vel_in_motion.txt"
+  : > "$EVIDENCE_DIR/cmd_vel_motion.txt"
+  setsid timeout 240 ros2 topic echo /cmd_vel_in --qos-reliability best_effort \
+    > "$EVIDENCE_DIR/cmd_vel_in_motion.txt" 2>/dev/null &
+  CMD_INPUT_CAPTURE_PID=$!
+  setsid timeout 240 ros2 topic echo /cmd_vel --qos-reliability best_effort \
+    > "$EVIDENCE_DIR/cmd_vel_motion.txt" 2>/dev/null &
+  CMD_OUTPUT_CAPTURE_PID=$!
+  log "runtime evidence: capturing /cmd_vel_in and /cmd_vel motion"
+}
+
+finish_motion_evidence() {
+  [ "$DEMO" = "1" ] || return 0
+  # Leave a short window for the last command and its controller output to be
+  # flushed before stopping the capture groups.
+  sleep 2
+  if [ -n "$CMD_INPUT_CAPTURE_PID" ]; then
+    stop_group "$CMD_INPUT_CAPTURE_PID"
+    wait "$CMD_INPUT_CAPTURE_PID" 2>/dev/null || true
+    CMD_INPUT_CAPTURE_PID=""
+  fi
+  if [ -n "$CMD_OUTPUT_CAPTURE_PID" ]; then
+    stop_group "$CMD_OUTPUT_CAPTURE_PID"
+    wait "$CMD_OUTPUT_CAPTURE_PID" 2>/dev/null || true
+    CMD_OUTPUT_CAPTURE_PID=""
+  fi
+  if twist_has_motion "$EVIDENCE_DIR/cmd_vel_in_motion.txt"; then
+    echo "      nonzero /cmd_vel_in motion evidence: PASS"
+    log "validation PASS: nonzero /cmd_vel_in motion"
+  else
+    echo "      nonzero /cmd_vel_in motion evidence: FAIL"
+    log "validation FAIL: /cmd_vel_in contained no nonzero Twist"
+    OVERALL="FAIL"
+  fi
+  if twist_has_motion "$EVIDENCE_DIR/cmd_vel_motion.txt"; then
+    echo "      controller output /cmd_vel motion evidence: PASS"
+    log "validation PASS: nonzero controller output /cmd_vel"
+  else
+    echo "      controller output /cmd_vel motion evidence: FAIL"
+    log "validation FAIL: /cmd_vel contained no nonzero Twist"
+    OVERALL="FAIL"
+  fi
+  control_boundary="$(timeout 15 ros2 topic echo /lunabot/control/status --once 2>/dev/null || true)"
+  printf '%s\n' "$control_boundary" > "$EVIDENCE_DIR/controller_boundary_status.txt"
+  if printf '%s\n' "$control_boundary" | grep -q "ACTIVE" && \
+     printf '%s\n' "$control_boundary" | grep -q "input=/cmd_vel_in" && \
+     printf '%s\n' "$control_boundary" | grep -q "output=/cmd_vel"; then
+    echo "      controller boundary evidence (/cmd_vel_in -> /cmd_vel): PASS"
+    log "validation PASS: controller ACTIVE boundary evidence"
+  else
+    echo "      controller boundary evidence (/cmd_vel_in -> /cmd_vel): FAIL"
+    log "validation FAIL: controller boundary status was [$control_boundary]"
+    OVERALL="FAIL"
+  fi
+}
+
 echo "[18/19] Runtime validation.........................."
 capture_motion_evidence
 wait_for_integration_goal() {
@@ -767,81 +842,6 @@ tf_ok() {
   OVERALL="FAIL"
   return 1
 }
-twist_has_motion() {
-  # ros2 topic echo renders Twist as `linear:` / `angular:` blocks. Accept
-  # either forward/reverse or rotation as real motion, but reject an all-zero
-  # watchdog stream. The threshold avoids treating formatting noise as motion.
-  awk '
-    /^linear:/ { section="linear"; next }
-    /^angular:/ { section="angular"; next }
-    section == "linear" && $1 == "x:" {
-      if (($2 + 0.0) > 0.001 || ($2 + 0.0) < -0.001) found=1
-    }
-    section == "angular" && $1 == "z:" {
-      if (($2 + 0.0) > 0.001 || ($2 + 0.0) < -0.001) found=1
-    }
-    END { exit(found ? 0 : 1) }
-  ' "$1"
-}
-
-capture_motion_evidence() {
-  [ "$DEMO" = "1" ] || return 0
-  : > "$EVIDENCE_DIR/cmd_vel_in_motion.txt"
-  : > "$EVIDENCE_DIR/cmd_vel_motion.txt"
-  setsid timeout 240 ros2 topic echo /cmd_vel_in --qos-reliability best_effort \
-    > "$EVIDENCE_DIR/cmd_vel_in_motion.txt" 2>/dev/null &
-  CMD_INPUT_CAPTURE_PID=$!
-  setsid timeout 240 ros2 topic echo /cmd_vel --qos-reliability best_effort \
-    > "$EVIDENCE_DIR/cmd_vel_motion.txt" 2>/dev/null &
-  CMD_OUTPUT_CAPTURE_PID=$!
-  log "runtime evidence: capturing /cmd_vel_in and /cmd_vel motion"
-}
-
-finish_motion_evidence() {
-  [ "$DEMO" = "1" ] || return 0
-  # Leave a short window for the last command and its controller output to be
-  # flushed before stopping the capture groups.
-  sleep 2
-  if [ -n "$CMD_INPUT_CAPTURE_PID" ]; then
-    stop_group "$CMD_INPUT_CAPTURE_PID"
-    wait "$CMD_INPUT_CAPTURE_PID" 2>/dev/null || true
-    CMD_INPUT_CAPTURE_PID=""
-  fi
-  if [ -n "$CMD_OUTPUT_CAPTURE_PID" ]; then
-    stop_group "$CMD_OUTPUT_CAPTURE_PID"
-    wait "$CMD_OUTPUT_CAPTURE_PID" 2>/dev/null || true
-    CMD_OUTPUT_CAPTURE_PID=""
-  fi
-  if twist_has_motion "$EVIDENCE_DIR/cmd_vel_in_motion.txt"; then
-    echo "      nonzero /cmd_vel_in motion evidence: PASS"
-    log "validation PASS: nonzero /cmd_vel_in motion"
-  else
-    echo "      nonzero /cmd_vel_in motion evidence: FAIL"
-    log "validation FAIL: /cmd_vel_in contained no nonzero Twist"
-    OVERALL="FAIL"
-  fi
-  if twist_has_motion "$EVIDENCE_DIR/cmd_vel_motion.txt"; then
-    echo "      controller output /cmd_vel motion evidence: PASS"
-    log "validation PASS: nonzero controller output /cmd_vel"
-  else
-    echo "      controller output /cmd_vel motion evidence: FAIL"
-    log "validation FAIL: /cmd_vel contained no nonzero Twist"
-    OVERALL="FAIL"
-  fi
-  control_boundary="$(timeout 15 ros2 topic echo /lunabot/control/status --once 2>/dev/null || true)"
-  printf '%s\n' "$control_boundary" > "$EVIDENCE_DIR/controller_boundary_status.txt"
-  if printf '%s\n' "$control_boundary" | grep -q "ACTIVE" && \
-     printf '%s\n' "$control_boundary" | grep -q "input=/cmd_vel_in" && \
-     printf '%s\n' "$control_boundary" | grep -q "output=/cmd_vel"; then
-    echo "      controller boundary evidence (/cmd_vel_in -> /cmd_vel): PASS"
-    log "validation PASS: controller ACTIVE boundary evidence"
-  else
-    echo "      controller boundary evidence (/cmd_vel_in -> /cmd_vel): FAIL"
-    log "validation FAIL: controller boundary status was [$control_boundary]"
-    OVERALL="FAIL"
-  fi
-}
-
 kill -0 "$GAZEBO_PID" 2>/dev/null && echo "      Gazebo process alive: PASS" || { echo "      Gazebo process alive: FAIL"; OVERALL="FAIL"; }
 map_type=""
 for _ in 1 2 3; do
