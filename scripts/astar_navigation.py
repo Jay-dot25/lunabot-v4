@@ -144,7 +144,27 @@ class AStarNavigation(Node):
     def _odom_callback(self, msg: Odometry) -> None:
         self.odom_msg = msg
 
+    @staticmethod
+    def _same_goal(first: PoseStamped, second: PoseStamped) -> bool:
+        if (first.header.frame_id or '') != (second.header.frame_id or ''):
+            return False
+        a, b = first.pose, second.pose
+        return (
+            abs(a.position.x - b.position.x) < 1e-6 and
+            abs(a.position.y - b.position.y) < 1e-6 and
+            abs(a.position.z - b.position.z) < 1e-6 and
+            abs(a.orientation.x - b.orientation.x) < 1e-6 and
+            abs(a.orientation.y - b.orientation.y) < 1e-6 and
+            abs(a.orientation.z - b.orientation.z) < 1e-6 and
+            abs(a.orientation.w - b.orientation.w) < 1e-6
+        )
+
     def _goal_callback(self, msg: PoseStamped) -> None:
+        # The planner republishes the active command so late diagnostics can
+        # observe it. Do not treat that own-goal echo as a new command: doing
+        # so would clear the path on every timer tick and prevent progress.
+        if self.goal_msg is not None and self._same_goal(msg, self.goal_msg):
+            return
         self.goal_msg = msg
         self.goal_sent = True
         self.reached = False
@@ -392,7 +412,12 @@ def main(args=None):
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
-        node._publish_stop()
+        try:
+            node._publish_stop()
+        except Exception:
+            # The context may already be invalid after an external shutdown;
+            # cleanup must not turn a clean interrupt into a traceback.
+            pass
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
