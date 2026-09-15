@@ -97,7 +97,8 @@ noncomment = "\n".join(line for line in launch.splitlines()
                            if not line.lstrip().startswith("#"))
 
 # Independent launch and inherited safety.
-check("root launch-e resolves its real path", "pwd -P" in wrapper)
+check("root launch-e resolves its real path", "readlink -f" in wrapper and
+      "SCRIPT_PATH" in wrapper)
 check("root launch-e execs scripts/launch-e.sh", "scripts/launch-e.sh" in wrapper)
 check("Phase E does not invoke an earlier launcher", "launch-d" not in noncomment and
       "launch-c" not in noncomment and "launch-b" not in noncomment and
