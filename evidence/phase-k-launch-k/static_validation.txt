@@ -1,0 +1,110 @@
+[PASS] file exists: launch-a
+[PASS] file exists: launch-b
+[PASS] file exists: launch-c
+[PASS] file exists: launch-d
+[PASS] file exists: launch-e
+[PASS] file exists: launch-f
+[PASS] file exists: launch-g
+[PASS] file exists: launch-h
+[PASS] file exists: launch-i
+[PASS] file exists: launch-j
+[PASS] file exists: launch-k
+[PASS] file exists: scripts/launch-a.sh
+[PASS] file exists: scripts/launch-b.sh
+[PASS] file exists: scripts/launch-c.sh
+[PASS] file exists: scripts/launch-d.sh
+[PASS] file exists: scripts/launch-e.sh
+[PASS] file exists: scripts/launch-f.sh
+[PASS] file exists: scripts/launch-g.sh
+[PASS] file exists: scripts/launch-h.sh
+[PASS] file exists: scripts/launch-i.sh
+[PASS] file exists: scripts/launch-j.sh
+[PASS] file exists: scripts/launch-k.sh
+[PASS] file exists: scripts/wasd_teleop.py
+[PASS] file exists: scripts/control_odometry.py
+[PASS] file exists: scripts/odometry_monitor.py
+[PASS] file exists: scripts/astar_navigation.py
+[PASS] file exists: scripts/terrain_segmentation.py
+[PASS] file exists: scripts/semantic_terrain_mapper.py
+[PASS] file exists: scripts/terrain_cost_mapper.py
+[PASS] file exists: scripts/terrain_aware_planner.py
+[PASS] file exists: scripts/terrain_path_follower.py
+[PASS] file exists: scripts/dynamic_replan_monitor.py
+[PASS] file exists: scripts/phase_k_evaluator.py
+[PASS] file exists: config/slam_toolbox_phase_c.yaml
+[PASS] file exists: rviz/phase_j.rviz
+[PASS] file exists: rviz/phase_k.rviz
+[PASS] file exists: tools/validate_phase_j.py
+[PASS] file exists: tools/validate_phase_k.py
+[PASS] file exists: docs/phase-10-launch-j.md
+[PASS] file exists: docs/phase-11-launch-k.md
+[PASS] file exists: evidence/phase-j-launch-j/README.md
+[PASS] file exists: evidence/phase-j-launch-j/verification_checklist.md
+[PASS] file exists: evidence/phase-k-launch-k/README.md
+[PASS] file exists: evidence/phase-k-launch-k/verification_checklist.md
+[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
+[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
+[PASS] executable: launch-k
+[PASS] executable: scripts/launch-k.sh
+[PASS] executable: scripts/phase_k_evaluator.py
+[PASS] executable: tools/validate_phase_k.py
+[PASS] Python syntax: scripts/phase_k_evaluator.py
+[PASS] Python syntax: scripts/dynamic_replan_monitor.py
+[PASS] Python syntax: scripts/terrain_aware_planner.py
+[PASS] Python syntax: scripts/terrain_path_follower.py
+[PASS] Python syntax: tools/validate_phase_j.py
+[PASS] Python syntax: tools/validate_phase_k.py
+[PASS] bash syntax: launch-k
+[PASS] bash syntax: scripts/launch-k.sh
+[PASS] world SDF well-formed
+[PASS] model SDF well-formed
+[PASS] approved Phase J baseline remains green - ut runtime
+================================================================
+RESULT: 99/99 checks passed - ALL PASS
+================================================================
+[PASS] root launch-k resolves its real path
+[PASS] root launch-k execs scripts/launch-k.sh
+[PASS] Phase K is independent of launch-j
+[PASS] Phase K has its own evidence directory
+[PASS] Phase K is symlink-safe
+[PASS] Phase K uses process groups
+[PASS] Phase K has a shutdown trap
+[PASS] Phase K cleans evaluator and replan monitor
+[PASS] Phase K reports clean shutdown
+[PASS] Phase K cleans evaluator on relaunch
+[PASS] Phase K preserves one SLAM system
+[PASS] evaluator is a ROS node
+[PASS] evaluator consumes terrain plan
+[PASS] evaluator consumes replan status
+[PASS] evaluator consumes integrated goal status
+[PASS] evaluator consumes controller status
+[PASS] evaluator consumes odometry
+[PASS] evaluator checks both command boundaries
+[PASS] evaluator emits aggregate pass
+[PASS] evaluator latches aggregate pass
+[PASS] evaluator has no motion publisher
+[PASS] Phase K resolves evaluator path
+[PASS] Phase K starts evaluator directly
+[PASS] Phase K validates evaluation type
+[PASS] Phase K validates evaluation topic
+[PASS] Phase K waits for aggregate pass
+[PASS] Phase K retains dynamic replan gate
+[PASS] Phase K retains active follower boundary
+[PASS] Phase K retains diagnostic command isolation
+[PASS] Phase K uses reliable evaluation QoS
+[PASS] Phase K records evaluation evidence
+[PASS] Phase K requires final map evidence
+[PASS] Phase K RViz keeps map fixed frame
+[PASS] Phase K RViz shows active terrain path
+[PASS] Phase K RViz keeps diagnostic path
+[PASS] Phase K RViz keeps cost map
+[PASS] docs contain scope
+[PASS] docs contain automated command
+[PASS] docs contain evaluation acceptance
+[PASS] docs contain status output
+[PASS] docs contain boundary metrics
+[PASS] docs contain relaunch
+[PASS] docs contain Phase L gate
+[PASS] validator is honest about runtime
+
+RESULT: 105/105 checks passed

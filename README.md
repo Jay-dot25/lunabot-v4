@@ -18,8 +18,8 @@ earlier ones.
 | G | `~/launch-g` | Terrain cost map | approved by user |
 | H | `~/launch-h` | Terrain-aware path planning | approved by user |
 | I | `~/launch-i` | Full autonomous integration | approved by user |
-| J | `~/launch-j` | Dynamic replanning | implemented, pending runtime validation |
-| K | `~/launch-k` | Testing & evaluation | not started |
+| J | `~/launch-j` | Dynamic replanning | approved by user |
+| K | `~/launch-k` | Testing & evaluation | implemented, pending runtime validation |
 | L | `~/launch-l` | Final mission demonstration | not started |
 
 Each implemented phase has a document under `docs/` covering objective,
@@ -247,8 +247,32 @@ EVIDENCE=1 ~/launch-j                          # GUI/RViz run
 Phase J outputs `/lunabot/autonomy/replan_status` in addition to the approved
 Phase I interfaces. Runtime evidence is written to
 `evidence/phase-j-launch-j/`. The Phase J guide is
-`docs/phase-10-launch-j.md`. Do not begin Phase K until dynamic replanning,
-goal completion, clean shutdown, and clean relaunch are explicitly approved.
+`docs/phase-10-launch-j.md`. Phase J passed static validation, two independent
+headless runtime gates, dynamic-plan revision evidence, final map evidence,
+clean shutdown, and clean relaunch. Phase J was explicitly approved before
+Phase K began.
+
+## Quickstart (Phase K)
+
+Phase K preserves the approved Phase J stack and adds an observation-only
+runtime evaluator. It aggregates real plan, replanning, goal, controller,
+odometry, and command-boundary evidence without publishing motion commands.
+
+```bash
+cd ~/lunabot-v4
+source /opt/ros/humble/setup.bash
+ln -sfn "$PWD/launch-k" ~/launch-k
+
+python3 tools/validate_phase_k.py             # static gate
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-k        # evaluation gate
+EVIDENCE=1 ~/launch-k                          # GUI/RViz run
+```
+
+Phase K outputs `/lunabot/evaluation/status` in addition to the approved
+Phase J interfaces. Runtime evidence is written to
+`evidence/phase-k-launch-k/`. The Phase K guide is
+`docs/phase-11-launch-k.md`. Do not begin Phase L until the aggregate
+evaluation, clean shutdown, and clean relaunch are explicitly approved.
 
 Every later phase will follow the same contract: one command, clean state,
 runtime-validated, documented, evidenced.

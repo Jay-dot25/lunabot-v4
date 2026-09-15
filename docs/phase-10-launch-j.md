@@ -147,4 +147,6 @@ reach the goal, preserve the controller boundary, and stop all process groups.
 - [ ] Goal completion, motion, map updates, and final map evidence pass.
 - [ ] Clean shutdown and clean relaunch pass.
 
-Do not begin Phase K until Phase J receives explicit runtime approval.
+Phase J was explicitly runtime-approved after two independent passing
+headless runs, final map evidence, clean shutdown, and clean relaunch. Phase K
+may now begin; Phase L must wait for its own explicit runtime approval.
