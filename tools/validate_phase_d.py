@@ -150,8 +150,9 @@ check("planner provides a deterministic auto goal", "auto_goal_distance" in plan
       "AUTO_GOAL_SENT" in planner)
 check("planner uses transient-local map input", "TRANSIENT_LOCAL" in planner and
       "map_qos" in planner)
-check("planner makes path/goal/status late-join safe", planner.count("latched_qos") >= 1 and
-      "self.status_pub" in planner and "self.path_pub" in planner)
+check("planner makes path/status late-join safe and republishes goals",
+      planner.count("latched_qos") >= 1 and "self.status_pub" in planner and
+      "self.path_pub" in planner and "goal_pub.publish(self.goal_msg)" in planner)
 check("planner has no direct Gazebo dependency", "ignition" not in planner.lower() and
       "gazebo" not in planner.lower())
 

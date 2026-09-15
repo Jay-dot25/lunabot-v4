@@ -99,7 +99,7 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] planner publishes auditable status
 [PASS] planner provides a deterministic auto goal
 [PASS] planner uses transient-local map input
-[PASS] planner makes path/goal/status late-join safe
+[PASS] planner makes path/status late-join safe and republishes goals
 [PASS] planner has no direct Gazebo dependency
 [PASS] Phase D uses the validated world
 [PASS] Phase D resolves its A* planner path

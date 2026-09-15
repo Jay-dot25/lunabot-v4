@@ -504,7 +504,7 @@ topic_ok() {
   local sample=""
   local durability="volatile"
   case "$2" in
-    /map|/goal_pose|/plan|/lunabot/navigation/status) durability="transient_local" ;;
+    /map|/plan|/lunabot/navigation/status) durability="transient_local" ;;
   esac
   # Do not pipe to head: head can exit successfully before ros2 receives a
   # message, creating a false PASS. This assignment waits for --once data.
@@ -614,7 +614,7 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/odometry_status.txt"
   timeout 15 ros2 topic echo /lunabot/navigation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/navigation_status.txt"
-  timeout 15 ros2 topic echo /goal_pose --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 15 ros2 topic echo /goal_pose --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/goal_pose.txt"
   timeout 15 ros2 topic echo /plan --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/plan.txt"
