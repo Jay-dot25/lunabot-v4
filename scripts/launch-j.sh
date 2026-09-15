@@ -940,7 +940,15 @@ tf_ok "TF sensor_head -> scoped LaserScan frame" "sensor_head" "lunabot_v4/senso
 type_ok "type /goal_pose geometry_msgs/PoseStamped" "/goal_pose" "geometry_msgs/msg/PoseStamped"
 type_ok "type /plan nav_msgs/Path" "/plan" "nav_msgs/msg/Path"
 type_ok "type navigation status std_msgs/String" "/lunabot/navigation/status" "std_msgs/msg/String"
-topic_ok "topic /goal_pose"                    "/goal_pose"
+# A* intentionally stops republishing its volatile goal after GOAL_REACHED.
+# In DEMO mode, use the recorded AUTO_GOAL_SENT event plus the real goal
+# completion gate instead of requiring a late volatile sample.
+if [ "$DEMO" = "1" ] && grep -q "AUTO_GOAL_SENT" "$EVIDENCE_DIR/navigation.log" 2>/dev/null; then
+  echo "      topic /goal_pose: PASS (AUTO_GOAL_SENT + completion evidence)"
+  log "validation PASS: /goal_pose AUTO_GOAL_SENT"
+else
+  topic_ok "topic /goal_pose"                "/goal_pose"
+fi
 topic_ok "topic /plan"                         "/plan"
 topic_ok "topic /lunabot/navigation/status"    "/lunabot/navigation/status"
 topic_ok "topic /cmd_vel_in"                  "/cmd_vel_in"

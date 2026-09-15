@@ -56,7 +56,7 @@
 [PASS] model SDF well-formed
 [PASS] approved Phase I baseline remains green - 160/160 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-j-fix2/evidence/phase-i-launch-i/static_validation.txt
+report: /tmp/lunabot-phase-j-fix3/evidence/phase-i-launch-i/static_validation.txt
 [PASS] root launch-j resolves its real path
 [PASS] root launch-j execs scripts/launch-j.sh
 [PASS] Phase J is independent of launch-i
@@ -81,6 +81,7 @@ report: /tmp/lunabot-phase-j-fix2/evidence/phase-i-launch-i/static_validation.tx
 [PASS] Phase J validates replan status type
 [PASS] Phase J validates replan status topic
 [PASS] Phase J requires dynamic pass
+[PASS] Phase J validates the shared goal without a late volatile false negative
 [PASS] Phase J retains active follower boundary
 [PASS] Phase J retains diagnostic command isolation
 [PASS] Phase J uses reliable retained replan QoS
@@ -99,4 +100,4 @@ report: /tmp/lunabot-phase-j-fix2/evidence/phase-i-launch-i/static_validation.tx
 [PASS] docs contain Phase K gate
 [PASS] validator is honest about runtime
 
-RESULT: 98/98 checks passed
+RESULT: 99/99 checks passed

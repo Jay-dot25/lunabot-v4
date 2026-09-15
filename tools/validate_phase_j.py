@@ -160,6 +160,9 @@ check("Phase J validates replan status type", 'type_ok "type dynamic replan stat
 check("Phase J validates replan status topic", 'topic_ok "topic /lunabot/autonomy/replan_status"' in launch)
 check("Phase J requires dynamic pass", "DYNAMIC_REPLAN_PASS" in launch and
       "dynamic terrain-plan replanning: PASS" in launch)
+check("Phase J validates the shared goal without a late volatile false negative",
+      "AUTO_GOAL_SENT" in launch and "topic /goal_pose: PASS" in launch and
+      "topic_ok \"topic /goal_pose\"" in launch)
 check("Phase J retains active follower boundary", "-p cmd_topic:=/cmd_vel_in" in launch and
       "cmd_vel_in_motion.txt" in launch)
 check("Phase J retains diagnostic command isolation", "cmd_topic:=/lunabot/navigation/diagnostic_cmd_vel" in launch)
