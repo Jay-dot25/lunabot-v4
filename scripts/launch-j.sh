@@ -803,10 +803,15 @@ topic_ok() {
   local durability="volatile"
   local reliability="best_effort"
   case "$2" in
-    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status)
+    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status|/lunabot/autonomy/replan_status)
       durability="transient_local"
       # Reliable + transient-local is required to retrieve the retained status
       # from a publisher after the node emitted its startup message.
+      reliability="reliable"
+      ;;
+    /goal_pose)
+      # Goals are volatile commands, but use a reliable observer for the
+      # reliable A* publisher rather than a best-effort late observer.
       reliability="reliable"
       ;;
   esac
@@ -999,9 +1004,9 @@ topic_ok "topic /lunabot/autonomy/replan_status" \
   "/lunabot/autonomy/replan_status"
 replan_status="$(timeout 15 ros2 topic echo /lunabot/autonomy/replan_status \
   --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
-if printf '%s\n' "$replan_status" | grep -q "DYNAMIC_REPLAN_"; then
+if printf '%s\n' "$replan_status" | grep -q "DYNAMIC_REPLAN_PASS"; then
   echo "      dynamic replan status content: PASS"
-  log "validation PASS: dynamic replan status"
+  log "validation PASS: DYNAMIC_REPLAN_PASS status"
 else
   echo "      dynamic replan status content: FAIL"
   log "validation FAIL: dynamic replan status was [$replan_status]"
@@ -1019,7 +1024,13 @@ else
   OVERALL="FAIL"
 fi
 if [ "$DEMO" = "1" ]; then
-  wait_for_dynamic_replan || true
+  if printf '%s\n' "$replan_status" | grep -q "DYNAMIC_REPLAN_PASS"; then
+    printf '%s\n' "$replan_status" > "$EVIDENCE_DIR/replan_wait_status.txt"
+    echo "      dynamic terrain-plan replanning: PASS"
+    log "validation PASS: DYNAMIC_REPLAN_PASS"
+  else
+    wait_for_dynamic_replan || true
+  fi
   wait_for_integration_goal || true
   finish_motion_evidence
 fi
