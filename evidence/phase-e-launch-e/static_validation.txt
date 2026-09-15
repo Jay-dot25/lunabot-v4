@@ -77,6 +77,7 @@ report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
 [PASS] Phase E has a shutdown trap
 [PASS] Phase E cleans perception process
 [PASS] Phase E has bounded shutdown
+[PASS] Phase E reports its clean shutdown
 [PASS] Phase E preserves the Phase D planner
 [PASS] Phase E preserves one SLAM system
 [PASS] perception is a ROS node
@@ -119,4 +120,4 @@ report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
 [PASS] docs contain Phase F gate
 [PASS] validator is honest about runtime
 
-RESULT: 111/111 checks passed
+RESULT: 112/112 checks passed

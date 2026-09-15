@@ -158,7 +158,7 @@ shutdown() {
   done
   echo "" >> "$LOG_FILE"
   echo "clean shutdown at $(date -u +%FT%TZ)" >> "$LOG_FILE"
-  say "Launch D environment cleanly closed."
+  say "Launch E environment cleanly closed."
   say "Log: $LOG_FILE"
   say "============================================================"
   exit "$rc"

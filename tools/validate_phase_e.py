@@ -111,6 +111,7 @@ check("Phase E has a shutdown trap", "trap 'shutdown 130' INT TERM" in launch)
 check("Phase E cleans perception process", "PERCEPTION_PID" in launch and
       'stop_group "$PERCEPTION_PID"' in launch)
 check("Phase E has bounded shutdown", 'kill -KILL -"$pid"' in launch)
+check("Phase E reports its clean shutdown", "Launch E environment cleanly closed." in launch)
 check("Phase E preserves the Phase D planner", 'NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"' in launch)
 check("Phase E preserves one SLAM system", "ros2 launch slam_toolbox online_async_launch.py" in launch and
       "cartographer" not in (launch + perception).lower() and
