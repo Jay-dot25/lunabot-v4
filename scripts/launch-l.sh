@@ -917,7 +917,7 @@ topic_ok() {
   local durability="volatile"
   local reliability="best_effort"
   case "$2" in
-    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status|/lunabot/autonomy/replan_status|/lunabot/evaluation/status)
+    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status|/lunabot/autonomy/replan_status|/lunabot/evaluation/status|/lunabot/mission/status)
       durability="transient_local"
       # Reliable + transient-local is required to retrieve the retained status
       # from a publisher after the node emitted its startup message.
@@ -1310,7 +1310,7 @@ echo "  /lunabot/autonomy/status std_msgs/String (active integration)"
 echo "  /lunabot/autonomy/replan_status std_msgs/String (dynamic replanning)"
 echo "  /lunabot/evaluation/status std_msgs/String (runtime evaluation)"
 echo "  /lunabot/mission/status    std_msgs/String (final mission result)"
-echo "  /lunabot/terrain/segmentation sensor_msgs/Image (mask)"}
+echo "  /lunabot/terrain/segmentation sensor_msgs/Image (mask)"
 echo "  /lunabot/terrain/overlay      sensor_msgs/Image (overlay)"
 echo "  /lunabot/terrain/segmentation/status std_msgs/String"
 echo "  /lunabot/terrain/semantic_map nav_msgs/OccupancyGrid"

@@ -160,7 +160,8 @@ check("mission supervisor does not publish a goal", "create_publisher(PoseStampe
 # Launcher integration and runtime acceptance.
 check("Phase L starts mission supervisor directly", 'python3 "$MISSION_PATH" --ros-args' in launch)
 check("Phase L validates mission status type", 'type_ok "type mission status std_msgs/String"' in launch)
-check("Phase L validates mission status topic", 'topic_ok "topic /lunabot/mission/status"' in launch)
+check("Phase L validates mission status topic", 'topic_ok "topic /lunabot/mission/status"' in launch and
+      "/lunabot/mission/status)" in launch)
 check("Phase L waits for mission pass", "MISSION_DEMO_PASS" in launch and
       "final mission demonstration: PASS" in launch)
 check("Phase L records mission evidence", "mission.log" in launch and
