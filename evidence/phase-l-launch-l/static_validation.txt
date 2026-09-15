@@ -14,6 +14,8 @@
 [PASS] file exists: scripts/launch-l.sh
 [PASS] file exists: scripts/phase_k_evaluator.py
 [PASS] file exists: scripts/phase_l_mission.py
+[PASS] file exists: scripts/obstacle_detector.py
+[PASS] file exists: scripts/terrain_cost_mapper.py
 [PASS] file exists: tools/validate_phase_k.py
 [PASS] file exists: tools/validate_phase_l.py
 [PASS] file exists: docs/phase-11-launch-k.md
@@ -32,6 +34,9 @@
 [PASS] executable: tools/validate_phase_l.py
 [PASS] Python syntax: scripts/phase_l_mission.py
 [PASS] Python syntax: scripts/phase_k_evaluator.py
+[PASS] Python syntax: scripts/obstacle_detector.py
+[PASS] Python syntax: scripts/astar_navigation.py
+[PASS] Python syntax: scripts/terrain_cost_mapper.py
 [PASS] Python syntax: scripts/dynamic_replan_monitor.py
 [PASS] Python syntax: scripts/terrain_aware_planner.py
 [PASS] Python syntax: scripts/terrain_path_follower.py
@@ -55,26 +60,40 @@ RESULT: 105/105 checks passed - ALL PASS
 [PASS] Phase L cleans mission observer
 [PASS] Phase L cleans inherited evaluator
 [PASS] Phase L reports clean shutdown
-[PASS] Phase L has 22 independent stages
+[PASS] Phase L has 23 independent stages
 [PASS] Phase L preserves Phase K evaluator
+[PASS] Phase L starts real obstacle detector
+[PASS] Phase L cleans obstacle detector
+[PASS] Phase L supports manual final mode
 [PASS] Phase L uses its own RViz config
+[PASS] RViz provides manual Set Goal tool
+[PASS] RViz shows sensed obstacle map
+[PASS] RViz shows forward obstacle markers
+[PASS] RViz shows selected goal
 [PASS] Phase L preserves one SLAM system
 [PASS] Phase L retains diagnostic command isolation
 [PASS] Phase L retains the single active motion source
 [PASS] Phase L requires final map evidence
+[PASS] world contains habitat presentation models
+[PASS] world contains a physical presentation obstacle
 [PASS] mission supervisor is a ROS node
 [PASS] mission supervisor observes terrain plan
 [PASS] mission supervisor observes replanning
 [PASS] mission supervisor observes integrated goal
 [PASS] mission supervisor observes aggregate evaluation
+[PASS] mission supervisor observes manual-goal status
+[PASS] mission supervisor observes obstacle status
 [PASS] mission supervisor observes real goal
 [PASS] mission supervisor observes map
 [PASS] mission supervisor emits retained pass
 [PASS] mission supervisor has no motion publisher
 [PASS] mission supervisor does not publish a goal
+[PASS] obstacle detector is observation-only
+[PASS] cost map consumes sensed obstacle overlay
 [PASS] Phase L starts mission supervisor directly
 [PASS] Phase L validates mission status type
 [PASS] Phase L validates mission status topic
+[PASS] Phase L validates obstacle topics
 [PASS] Phase L waits for mission pass
 [PASS] Phase L records mission evidence
 [PASS] Phase L retains aggregate evaluation gate
@@ -89,4 +108,4 @@ RESULT: 105/105 checks passed - ALL PASS
 [PASS] docs contain final-phase gate
 [PASS] validator is honest about runtime
 
-RESULT: 86/86 checks passed
+RESULT: 105/105 checks passed

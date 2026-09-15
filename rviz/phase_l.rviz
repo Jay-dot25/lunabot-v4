@@ -122,6 +122,24 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /plan
       Value: true
+    - Class: rviz_default_plugins/Pose
+      Arrow Color: 50; 255; 50
+      Axes Length: 0.6
+      Axes Radius: 0.08
+      Enabled: true
+      Head Length: 0.20
+      Head Radius: 0.12
+      Name: Selected Goal
+      Shaft Length: 0.40
+      Shaft Radius: 0.06
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+      Value: true
     - Class: rviz_default_plugins/Odometry
       Enabled: true
       Keep: 100
@@ -143,6 +161,33 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /lunabot/odom
+      Value: true
+    - Alpha: 0.75
+      Class: rviz_default_plugins/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Sensed Obstacle Map
+      Topic:
+        Depth: 1
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /lunabot/obstacles/map
+      Update Topic: false
+      Use Timestamp: false
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Forward Obstacle Returns
+      Namespaces:
+        lunabot_obstacles: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /lunabot/obstacles/markers
       Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
@@ -273,6 +318,8 @@ Visualization Manager:
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /goal_pose
       Line color: 128; 128; 0
   Value: true
   Views:

@@ -1,29 +1,39 @@
-# Phase L Evidence — Final Mission Demonstration
+# Phase L Evidence — Final Presentation Mission
 
 This directory is written by the independent `~/launch-l` final mission gate.
 
-Run the gate from a sourced ROS 2 Humble terminal:
+## Manual presentation gate
 
 ```bash
 cd ~/lunabot-v4
-EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-l
+FINAL_DEMO=1 AUTO_GOAL=false EVIDENCE=1 ~/launch-l
 ```
 
-The mission observer watches the approved Phase K aggregate result together
-with the real terrain plan, dynamic replanning, integrated goal completion,
-goal publication, and map output. It publishes `MISSION_DEMO_PASS` only after
-all mission criteria are present. It is observation-only and never publishes
-velocity or a goal.
+Use RViz's `Set Goal` tool to choose the rover destination. The mission must
+sense the physical Gazebo obstacle with LiDAR, update the obstacle/cost map,
+replan, and reach the selected goal.
 
-Expected runtime acceptance includes:
+A repeatable infrastructure regression is also available:
+
+```bash
+DEMO=1 AUTO_GOAL=true REQUIRE_MANUAL_GOAL=false \
+  EVIDENCE=1 HEADLESS=1 ~/launch-l
+```
+
+The regression does not replace the manual final demonstration.
+
+Expected manual acceptance includes:
 
 ```text
+manual RViz goal selection: PASS
+OBSTACLE_DETECTED
+DYNAMIC_REPLAN_PASS
 MISSION_DEMO_PASS
 PHASE L RUN COMPLETE - overall result: PASS
 Launch L environment cleanly closed.
 ```
 
-Static validation is stored in `static_validation.txt`; it is not a substitute
-for the workstation runtime gate. Do not hand-edit generated runtime evidence.
-If a check fails, inspect `mission.log`, `evaluation.log`, `replan.log`,
-`integration.log`, and `last_run.log`.
+Important evidence files include `obstacles.log`, `obstacle_status.txt`,
+`obstacle_map.txt`, `goal_selection_wait_status.txt`, `mission.log`,
+`mission_status.txt`, `replan_status.txt`, `phase_l_map.yaml`, and
+`phase_l_map.pgm`. Do not hand-edit generated runtime evidence.

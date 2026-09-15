@@ -32,7 +32,9 @@ class DynamicReplanMonitor(Node):
         self.declare_parameter("goal_topic", "/goal_pose")
         self.declare_parameter("odom_topic", "/lunabot/odom")
         self.declare_parameter("planner_status_topic", "/lunabot/terrain/planner/status")
+        self.declare_parameter("obstacle_topic", "/lunabot/obstacles/status")
         self.declare_parameter("status_topic", "/lunabot/autonomy/replan_status")
+        self.declare_parameter("require_obstacle", False)
         self.declare_parameter("minimum_revisions", 2)
         self.declare_parameter("minimum_motion", 0.05)
 
@@ -41,7 +43,9 @@ class DynamicReplanMonitor(Node):
         self.goal_topic = str(get("goal_topic").value)
         self.odom_topic = str(get("odom_topic").value)
         self.planner_status_topic = str(get("planner_status_topic").value)
+        self.obstacle_topic = str(get("obstacle_topic").value)
         self.status_topic = str(get("status_topic").value)
+        self.require_obstacle = bool(get("require_obstacle").value)
         self.minimum_revisions = max(1, int(get("minimum_revisions").value))
         self.minimum_motion = max(0.01, float(get("minimum_motion").value))
 
@@ -58,6 +62,8 @@ class DynamicReplanMonitor(Node):
         self.planner_status_sub = self.create_subscription(
             String, self.planner_status_topic, self._planner_status_callback,
             plan_qos)
+        self.obstacle_sub = self.create_subscription(
+            String, self.obstacle_topic, self._obstacle_callback, plan_qos)
         status_qos = QoSProfile(depth=1)
         status_qos.reliability = ReliabilityPolicy.RELIABLE
         status_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
@@ -70,6 +76,7 @@ class DynamicReplanMonitor(Node):
         self.last_x: Optional[float] = None
         self.last_y: Optional[float] = None
         self.last_planner_status = ""
+        self.obstacle_seen = False
         self.last_status = ""
         self.passed = False
         self.publish_status("DYNAMIC_REPLAN_WAITING_FOR_PLAN")
@@ -90,6 +97,10 @@ class DynamicReplanMonitor(Node):
 
     def _planner_status_callback(self, msg: String) -> None:
         self.last_planner_status = msg.data
+
+    def _obstacle_callback(self, msg: String) -> None:
+        self.obstacle_seen = self.obstacle_seen or "OBSTACLE_DETECTED" in msg.data
+        self._evaluate()
 
     def _odom_callback(self, msg: Odometry) -> None:
         x = float(msg.pose.pose.position.x)
@@ -139,6 +150,9 @@ class DynamicReplanMonitor(Node):
         if not self.goal_seen:
             self.publish_status("DYNAMIC_REPLAN_WAITING_FOR_GOAL")
             return
+        if self.require_obstacle and not self.obstacle_seen:
+            self.publish_status("DYNAMIC_REPLAN_WAITING_FOR_OBSTACLE")
+            return
         if self.revisions < self.minimum_revisions:
             self.publish_status(
                 f"DYNAMIC_REPLAN_WAITING_FOR_UPDATE revisions={self.revisions}/"
@@ -151,7 +165,8 @@ class DynamicReplanMonitor(Node):
         self.passed = True
         self.publish_status(
             f"DYNAMIC_REPLAN_PASS revisions={self.revisions} "
-            f"motion={self.total_motion:.2f} planner={self.last_planner_status}")
+            f"motion={self.total_motion:.2f} obstacle={int(self.obstacle_seen)} "
+            f"planner={self.last_planner_status}")
 
 
 def main(args=None) -> None:

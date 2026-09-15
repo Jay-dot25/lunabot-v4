@@ -50,6 +50,7 @@ required = [
     "launch-g", "launch-h", "launch-i", "launch-j", "launch-k", "launch-l",
     "scripts/launch-k.sh", "scripts/launch-l.sh",
     "scripts/phase_k_evaluator.py", "scripts/phase_l_mission.py",
+    "scripts/obstacle_detector.py", "scripts/terrain_cost_mapper.py",
     "tools/validate_phase_k.py", "tools/validate_phase_l.py",
     "docs/phase-11-launch-k.md", "docs/phase-12-launch-l.md",
     "evidence/phase-k-launch-k/README.md",
@@ -69,7 +70,9 @@ for rel in ["launch-l", "scripts/launch-l.sh", "scripts/phase_l_mission.py",
     check(f"executable: {rel}", path.is_file() and bool(path.stat().st_mode & 0o111))
 
 for rel in ["scripts/phase_l_mission.py", "scripts/phase_k_evaluator.py",
-            "scripts/dynamic_replan_monitor.py", "scripts/terrain_aware_planner.py",
+            "scripts/obstacle_detector.py", "scripts/astar_navigation.py",
+            "scripts/terrain_cost_mapper.py", "scripts/dynamic_replan_monitor.py",
+            "scripts/terrain_aware_planner.py",
             "scripts/terrain_path_follower.py", "tools/validate_phase_l.py"]:
     try:
         ast.parse(read(rel))
@@ -121,12 +124,25 @@ check("Phase L cleans mission observer", 'stop_group "$MISSION_PID"' in launch a
       'MISSION_PID=""' in launch)
 check("Phase L cleans inherited evaluator", 'stop_group "$EVALUATOR_PID"' in launch)
 check("Phase L reports clean shutdown", "Launch L environment cleanly closed." in launch)
-check("Phase L has 22 independent stages", "[22/22]" in launch and
-      "[13/22]" in launch and "[21/22]" in launch)
+check("Phase L has 23 independent stages", "[23/23]" in launch and
+      "[13/23]" in launch and "[22/23]" in launch)
 check("Phase L preserves Phase K evaluator", "phase_k_evaluator.py" in launch and
       "EVALUATION_PASS" in launch)
+check("Phase L starts real obstacle detector", 'python3 "$OBSTACLE_PATH" --ros-args' in launch and
+      "/lunabot/obstacles/status" in launch and "/lunabot/obstacles/map" in launch)
+check("Phase L cleans obstacle detector", 'stop_group "$OBSTACLE_PID"' in launch)
+check("Phase L supports manual final mode", "FINAL_DEMO" in launch and
+      'AUTO_GOAL="${AUTO_GOAL:-false}"' in launch and
+      "wait_for_goal_selection" in launch)
 check("Phase L uses its own RViz config", "rviz/phase_l.rviz" in launch and
       "rviz/phase_k.rviz" not in launch)
+check("RViz provides manual Set Goal tool", "rviz_default_plugins/SetGoal" in rviz and
+      "Topic: /goal_pose" in rviz)
+check("RViz shows sensed obstacle map", "Sensed Obstacle Map" in rviz and
+      "Value: /lunabot/obstacles/map" in rviz)
+check("RViz shows forward obstacle markers", "Forward Obstacle Returns" in rviz and
+      "Value: /lunabot/obstacles/markers" in rviz)
+check("RViz shows selected goal", "Selected Goal" in rviz)
 check("Phase L preserves one SLAM system", "ros2 launch slam_toolbox online_async_launch.py" in launch and
       "cartographer" not in (launch + mission).lower() and
       "nav2_amcl" not in (launch + mission).lower())
@@ -136,6 +152,11 @@ check("Phase L retains the single active motion source", "cmd_topic:=/cmd_vel_in
 check("Phase L requires final map evidence", "phase_l_map.yaml" in launch and
       "phase_l_map.pgm" in launch and
       "saved map evidence (YAML + PGM): PASS" in launch)
+world = read("src/lunabot_gazebo/worlds/lunar_world.sdf")
+check("world contains habitat presentation models", "lunar_habitat_main" in world and
+      "lunar_habitat_equipment" in world)
+check("world contains a physical presentation obstacle", "presentation_obstacle_forward" in world and
+      "obstacle_collision" in world)
 
 # Observation-only mission supervisor contract.
 check("mission supervisor is a ROS node", "class PhaseLMission(Node)" in mission)
@@ -147,6 +168,10 @@ check("mission supervisor observes integrated goal", "INTEGRATION_GOAL_REACHED" 
       "self.goal_reached" in mission)
 check("mission supervisor observes aggregate evaluation", "EVALUATION_PASS" in mission and
       "self.evaluation_pass" in mission)
+check("mission supervisor observes manual-goal status", "MANUAL_GOAL_SELECTED" in mission and
+      "self.manual_goal_seen" in mission and "require_manual_goal" in mission)
+check("mission supervisor observes obstacle status", "OBSTACLE_DETECTED" in mission and
+      "self.obstacle_detected" in mission)
 check("mission supervisor observes real goal", "PoseStamped" in mission and
       "self.goal_seen" in mission)
 check("mission supervisor observes map", "OccupancyGrid" in mission and
@@ -156,27 +181,36 @@ check("mission supervisor emits retained pass", "MISSION_DEMO_PASS" in mission a
 check("mission supervisor has no motion publisher", "create_publisher(Twist" not in mission and
       "geometry_msgs.msg.Twist" not in mission)
 check("mission supervisor does not publish a goal", "create_publisher(PoseStamped" not in mission)
+obstacle = read("scripts/obstacle_detector.py")
+check("obstacle detector is observation-only", "LaserScan" in obstacle and
+      "create_publisher(Twist" not in obstacle and
+      "OBSTACLE_DETECTED" in obstacle)
+check("cost map consumes sensed obstacle overlay", "obstacle_topic" in read("scripts/terrain_cost_mapper.py") and
+      "sensed_obstacles" in read("scripts/terrain_cost_mapper.py"))
 
 # Launcher integration and runtime acceptance.
 check("Phase L starts mission supervisor directly", 'python3 "$MISSION_PATH" --ros-args' in launch)
 check("Phase L validates mission status type", 'type_ok "type mission status std_msgs/String"' in launch)
 check("Phase L validates mission status topic", 'topic_ok "topic /lunabot/mission/status"' in launch and
-      "/lunabot/mission/status)" in launch)
+      "/lunabot/mission/status|" in launch)
+check("Phase L validates obstacle topics", 'topic_ok "topic /lunabot/obstacles/status"' in launch and
+      'topic_ok "topic /lunabot/obstacles/map"' in launch)
 check("Phase L waits for mission pass", "MISSION_DEMO_PASS" in launch and
       "final mission demonstration: PASS" in launch)
 check("Phase L records mission evidence", "mission.log" in launch and
       "mission_status.txt" in launch and "mission_wait_status.txt" in launch)
 check("Phase L retains aggregate evaluation gate", "aggregate runtime evaluation: PASS" in launch)
-check("Phase L retains dynamic replanning gate", "dynamic terrain-plan replanning: PASS" in launch)
+check("Phase L retains dynamic replanning gate", "dynamic terrain-plan replanning: PASS" in launch and
+      "require_obstacle:=true" in launch)
 check("Phase L uses retained mission QoS", "--qos-reliability reliable --qos-durability transient_local" in launch and
       "/lunabot/mission/status" in launch)
 
 for phrase, name in [
     ("Final Mission Demonstration", "scope"),
-    ("EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-l", "automated command"),
+    ("DEMO=1 AUTO_GOAL=true REQUIRE_MANUAL_GOAL=false", "automated command"),
     ("MISSION_DEMO_PASS", "mission acceptance"),
     ("/lunabot/mission/status", "status output"),
-    ("observation-only", "safety boundary"),
+    ("do not publish velocity", "safety boundary"),
     ("clean relaunch", "relaunch"),
     ("no later phase is defined", "final-phase gate"),
 ]:

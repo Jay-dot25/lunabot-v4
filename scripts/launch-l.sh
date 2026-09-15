@@ -38,6 +38,7 @@ COST_PATH="$REPO_DIR/scripts/terrain_cost_mapper.py"
 TERRAIN_PLANNER_PATH="$REPO_DIR/scripts/terrain_aware_planner.py"
 FOLLOWER_PATH="$REPO_DIR/scripts/terrain_path_follower.py"
 REPLAN_MONITOR_PATH="$REPO_DIR/scripts/dynamic_replan_monitor.py"
+OBSTACLE_PATH="$REPO_DIR/scripts/obstacle_detector.py"
 EVALUATOR_PATH="$REPO_DIR/scripts/phase_k_evaluator.py"
 MISSION_PATH="$REPO_DIR/scripts/phase_l_mission.py"
 RVIZ_CONFIG="$REPO_DIR/rviz/phase_l.rviz"
@@ -48,8 +49,10 @@ SPAWN_Z="-2.308"
 WORLD_NAME="lunar_world"
 HEADLESS="${HEADLESS:-0}"
 DEMO="${DEMO:-0}"
+FINAL_DEMO="${FINAL_DEMO:-0}"
 EVIDENCE="${EVIDENCE:-0}"
-AUTO_GOAL="${AUTO_GOAL:-true}"
+AUTO_GOAL="${AUTO_GOAL:-false}"
+REQUIRE_MANUAL_GOAL="${REQUIRE_MANUAL_GOAL:-true}"
 
 OVERALL="PASS"
 GAZEBO_PID=""
@@ -65,6 +68,7 @@ COST_PID=""
 TERRAIN_PLANNER_PID=""
 FOLLOWER_PID=""
 REPLAN_MONITOR_PID=""
+OBSTACLE_PID=""
 EVALUATOR_PID=""
 MISSION_PID=""
 GOAL_WAIT_PID=""
@@ -157,6 +161,10 @@ shutdown() {
     stop_group "$REPLAN_MONITOR_PID"
     wait "$REPLAN_MONITOR_PID" 2>/dev/null || true
   fi
+  if [ -n "$OBSTACLE_PID" ]; then
+    stop_group "$OBSTACLE_PID"
+    wait "$OBSTACLE_PID" 2>/dev/null || true
+  fi
   if [ -n "$EVALUATOR_PID" ]; then
     stop_group "$EVALUATOR_PID"
     wait "$EVALUATOR_PID" 2>/dev/null || true
@@ -241,12 +249,12 @@ echo ""
 say "Launch mode: $([ "$HEADLESS" = 1 ] && echo HEADLESS || echo GUI) | demo=$([ "$DEMO" = 1 ] && echo yes || echo no) | evidence=$([ "$EVIDENCE" = 1 ] && echo yes || echo no)"
 
 # ------------------------------------------------------------
-# [1/22] Check project files
+# [1/23] Check project files
 # ------------------------------------------------------------
-echo "[1/22] Checking Phase A baseline + Phase L files....."
+echo "[1/23] Checking Phase A baseline + Phase L files....."
 missing=0
 for f in "$WORLD_PATH" "$MODEL_PATH" "$WASD_PATH" "$CONTROL_PATH" "$ODOM_PATH" "$SLAM_CONFIG" "$NAV_PATH" \
-         "$RVIZ_CONFIG" "$PERCEPTION_PATH" "$MAPPER_PATH" "$COST_PATH" "$TERRAIN_PLANNER_PATH" "$FOLLOWER_PATH" "$REPLAN_MONITOR_PATH" "$EVALUATOR_PATH" "$MISSION_PATH" "$WORLD_DIR/meshes/lunar_terrain.obj" \
+         "$RVIZ_CONFIG" "$PERCEPTION_PATH" "$MAPPER_PATH" "$COST_PATH" "$TERRAIN_PLANNER_PATH" "$FOLLOWER_PATH" "$REPLAN_MONITOR_PATH" "$OBSTACLE_PATH" "$EVALUATOR_PATH" "$MISSION_PATH" "$WORLD_DIR/meshes/lunar_terrain.obj" \
          "$WORLD_DIR/meshes/lunar_terrain_collision.obj"; do
   if [ ! -f "$f" ]; then
     say "      MISSING: $f"
@@ -258,12 +266,12 @@ if [ "$missing" -ne 0 ]; then
   exit 1
 fi
 echo "      world, rover, terrain, teleop, controller, monitor, planner, perception, mapper, cost mapper, terrain planner, follower, rviz: OK"
-log "[1/22] files OK"
+log "[1/23] files OK"
 
 # ------------------------------------------------------------
-# [2/22] Check ROS 2 / Gazebo environment
+# [2/23] Check ROS 2 / Gazebo environment
 # ------------------------------------------------------------
-echo "[2/22] Checking ROS 2 / Gazebo environment........"
+echo "[2/23] Checking ROS 2 / Gazebo environment........"
 if [ ! -f /opt/ros/humble/setup.bash ]; then
   echo "      ERROR: ROS 2 Humble not found at /opt/ros/humble"
   echo "      Install: https://docs.ros.org/en/humble/Installation.html"
@@ -310,12 +318,12 @@ else
 fi
 echo "      ROS 2 Humble: OK | Gazebo Sim: $IGN ($MSGNS) | bridge: $BRIDGE_PKG"
 echo "      SLAM system: slam_toolbox | map saver: $MAP_SAVER_STATUS"
-log "[2/22] environment OK ($IGN/$MSGNS, $BRIDGE_PKG, slam_toolbox)"
+log "[2/23] environment OK ($IGN/$MSGNS, $BRIDGE_PKG, slam_toolbox)"
 
 # ------------------------------------------------------------
-# [3/22] Clean state
+# [3/23] Clean state
 # ------------------------------------------------------------
-echo "[3/22] Checking for stale Phase A/I processes......."
+echo "[3/23] Checking for stale Phase A/I processes......."
 stale="$(pgrep -f "lunar_world.sdf" 2>/dev/null || true)"
 if [ -n "$stale" ]; then
   echo "      Killing stale Gazebo for lunar_world (PIDs: $stale)"
@@ -325,19 +333,19 @@ fi
 # A prior interrupted `ros2 run` can leave its child bridge alive. Remove
 # only processes belonging to this Phase L command/node contract.
 for pattern in "ros_ign_bridge.*parameter_bridge" "ros_gz_bridge.*parameter_bridge" \
-               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" "scripts/dynamic_replan_monitor.py" "scripts/phase_k_evaluator.py" "slam_toolbox.*online_async"; do
+               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" "scripts/dynamic_replan_monitor.py" "scripts/obstacle_detector.py" "scripts/phase_k_evaluator.py" "scripts/phase_l_mission.py" "slam_toolbox.*online_async"; do
   for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
     kill -TERM "$p" 2>/dev/null || true
   done
 done
 sleep 1
 echo "      clean state: OK"
-log "[3/22] clean state OK"
+log "[3/23] clean state OK"
 
 # ------------------------------------------------------------
-# [4/22] Start Gazebo - same validated Phase A world
+# [4/23] Start Gazebo - same validated Phase A world
 # ------------------------------------------------------------
-echo "[4/22] Starting Gazebo lunar world.................."
+echo "[4/23] Starting Gazebo lunar world.................."
 export GZ_SIM_RESOURCE_PATH="$WORLD_DIR${GZ_SIM_RESOURCE_PATH:+:$GZ_SIM_RESOURCE_PATH}"
 export IGN_GAZEBO_RESOURCE_PATH="$GZ_SIM_RESOURCE_PATH"
 : > "$EVIDENCE_DIR/gazebo.log"
@@ -371,12 +379,12 @@ case "$control_resp" in
   *) abort "could not unpause Gazebo simulation: $control_resp";;
 esac
 echo "      Gazebo running (PID $GAZEBO_PID), lunar_world loaded"
-log "[4/22] gazebo OK and unpaused (pid $GAZEBO_PID)"
+log "[4/23] gazebo OK and unpaused (pid $GAZEBO_PID)"
 
 # ------------------------------------------------------------
-# [5/22] Spawn LunaBot V4
+# [5/23] Spawn LunaBot V4
 # ------------------------------------------------------------
-echo "[5/22] Spawning LunaBot V4.........................."
+echo "[5/23] Spawning LunaBot V4.........................."
 spawn_resp="$(timeout 20 "$IGN" service -s "/world/$WORLD_NAME/create" \
   --reqtype "$MSGNS.EntityFactory" --reptype "$MSGNS.Boolean" \
   --timeout 15000 \
@@ -386,12 +394,12 @@ case "$spawn_resp" in
   *true*) echo "      LunaBot V4 spawned at (0.0, 0.0, $SPAWN_Z)";;
   *) abort "spawn failed: $spawn_resp";;
 esac
-log "[5/22] spawn OK (z=$SPAWN_Z)"
+log "[5/23] spawn OK (z=$SPAWN_Z)"
 
 # ------------------------------------------------------------
-# [6/22] ROS 2 <-> Gazebo bridge - same sensor contract
+# [6/23] ROS 2 <-> Gazebo bridge - same sensor contract
 # ------------------------------------------------------------
-echo "[6/22] Starting ROS 2 <-> Gazebo bridge............."
+echo "[6/23] Starting ROS 2 <-> Gazebo bridge............."
 : > "$EVIDENCE_DIR/bridge.log"
 setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
   "/cmd_vel@geometry_msgs/msg/Twist]$MSGNS.Twist" \
@@ -414,12 +422,12 @@ BRIDGE_PID=$!
 sleep 3
 kill -0 "$BRIDGE_PID" 2>/dev/null || abort "bridge exited; see $EVIDENCE_DIR/bridge.log"
 echo "      bridge running (PID $BRIDGE_PID), 16 mappings"
-log "[6/22] bridge OK (pid $BRIDGE_PID)"
+log "[6/23] bridge OK (pid $BRIDGE_PID)"
 
 # ------------------------------------------------------------
-# [7/22] Phase L RGB-D terrain segmentation
+# [7/23] Phase L RGB-D terrain segmentation
 # ------------------------------------------------------------
-echo "[7/22] Starting terrain segmentation................"
+echo "[7/23] Starting terrain segmentation................"
 : > "$EVIDENCE_DIR/segmentation.log"
 setsid python3 "$PERCEPTION_PATH" --ros-args \
   -p image_topic:=/lunabot/camera/image_raw \
@@ -433,12 +441,12 @@ PERCEPTION_PID=$!
 sleep 2
 kill -0 "$PERCEPTION_PID" 2>/dev/null || abort "terrain segmentation exited; see $EVIDENCE_DIR/segmentation.log"
 echo "      segmentation running (PID $PERCEPTION_PID), RGB-D -> terrain mask"
-log "[7/22] segmentation OK (pid $PERCEPTION_PID)"
+log "[7/23] segmentation OK (pid $PERCEPTION_PID)"
 
 # ------------------------------------------------------------
-# [8/22] Phase L semantic terrain mapper
+# [8/23] Phase L semantic terrain mapper
 # ------------------------------------------------------------
-echo "[8/22] Starting semantic terrain mapping..........."
+echo "[8/23] Starting semantic terrain mapping..........."
 : > "$EVIDENCE_DIR/semantic_mapping.log"
 setsid python3 "$MAPPER_PATH" --ros-args \
   -p mask_topic:=/lunabot/terrain/segmentation \
@@ -452,15 +460,16 @@ MAPPER_PID=$!
 sleep 2
 kill -0 "$MAPPER_PID" 2>/dev/null || abort "semantic terrain mapper exited; see $EVIDENCE_DIR/semantic_mapping.log"
 echo "      semantic mapper running (PID $MAPPER_PID), mask + depth -> map"
-log "[8/22] semantic mapper OK (pid $MAPPER_PID)"
+log "[8/23] semantic mapper OK (pid $MAPPER_PID)"
 
 # ------------------------------------------------------------
-# [9/22] Phase L terrain cost-map generator
+# [9/23] Phase L terrain cost-map generator
 # ------------------------------------------------------------
-echo "[9/22] Starting terrain cost-map generator........."
+echo "[9/23] Starting terrain cost-map generator........."
 : > "$EVIDENCE_DIR/cost_mapping.log"
 setsid python3 "$COST_PATH" --ros-args \
   -p semantic_topic:=/lunabot/terrain/semantic_map \
+  -p obstacle_topic:=/lunabot/obstacles/map \
   -p cost_topic:=/lunabot/terrain/cost_map \
   -p status_topic:=/lunabot/terrain/cost_map/status \
   -p inflation_radius:=0.30 \
@@ -470,12 +479,12 @@ COST_PID=$!
 sleep 2
 kill -0 "$COST_PID" 2>/dev/null || abort "terrain cost mapper exited; see $EVIDENCE_DIR/cost_mapping.log"
 echo "      cost mapper running (PID $COST_PID), semantic map -> cost map"
-log "[9/22] cost mapper OK (pid $COST_PID)"
+log "[9/23] cost mapper OK (pid $COST_PID)"
 
 # ------------------------------------------------------------
-# [10/22] Phase L terrain-aware path planner
+# [10/23] Phase L terrain-aware path planner
 # ------------------------------------------------------------
-echo "[10/22] Starting terrain-aware path planner........"
+echo "[10/23] Starting terrain-aware path planner........"
 : > "$EVIDENCE_DIR/terrain_planner.log"
 setsid python3 "$TERRAIN_PLANNER_PATH" --ros-args \
   -p cost_map_topic:=/lunabot/terrain/cost_map \
@@ -491,18 +500,20 @@ TERRAIN_PLANNER_PID=$!
 sleep 2
 kill -0 "$TERRAIN_PLANNER_PID" 2>/dev/null || abort "terrain-aware planner exited; see $EVIDENCE_DIR/terrain_planner.log"
 echo "      terrain-aware planner running (PID $TERRAIN_PLANNER_PID), cost map -> /terrain/plan"
-log "[10/22] terrain-aware planner OK (pid $TERRAIN_PLANNER_PID)"
+log "[10/23] terrain-aware planner OK (pid $TERRAIN_PLANNER_PID)"
 
 # ------------------------------------------------------------
-# [11/22] Phase L dynamic replanning monitor
+# [11/23] Phase L dynamic replanning monitor
 # ------------------------------------------------------------
-echo "[11/22] Starting dynamic replanning monitor........"
+echo "[11/23] Starting dynamic replanning monitor........"
 : > "$EVIDENCE_DIR/replan.log"
 setsid python3 "$REPLAN_MONITOR_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
   -p goal_topic:=/goal_pose \
   -p odom_topic:=/lunabot/odom \
   -p planner_status_topic:=/lunabot/terrain/planner/status \
+  -p obstacle_topic:=/lunabot/obstacles/status \
+  -p require_obstacle:=true \
   -p status_topic:=/lunabot/autonomy/replan_status \
   -p minimum_revisions:=2 -p minimum_motion:=0.05 \
   -p use_sim_time:=true \
@@ -511,12 +522,12 @@ REPLAN_MONITOR_PID=$!
 sleep 2
 kill -0 "$REPLAN_MONITOR_PID" 2>/dev/null || abort "dynamic replanning monitor exited; see $EVIDENCE_DIR/replan.log"
 echo "      dynamic replanning monitor running (PID $REPLAN_MONITOR_PID)"
-log "[11/22] dynamic replanning monitor OK (pid $REPLAN_MONITOR_PID)"
+log "[11/23] dynamic replanning monitor OK (pid $REPLAN_MONITOR_PID)"
 
 # ------------------------------------------------------------
-# [12/22] Phase L runtime evaluator
+# [12/23] Phase L runtime evaluator
 # ------------------------------------------------------------
-echo "[12/22] Starting runtime evaluation monitor........"
+echo "[12/23] Starting runtime evaluation monitor........"
 : > "$EVIDENCE_DIR/evaluation.log"
 setsid python3 "$EVALUATOR_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
@@ -534,18 +545,43 @@ EVALUATOR_PID=$!
 sleep 2
 kill -0 "$EVALUATOR_PID" 2>/dev/null || abort "runtime evaluation monitor exited; see $EVIDENCE_DIR/evaluation.log"
 echo "      runtime evaluation monitor running (PID $EVALUATOR_PID)"
-log "[12/22] runtime evaluation monitor OK (pid $EVALUATOR_PID)"
+log "[12/23] runtime evaluation monitor OK (pid $EVALUATOR_PID)"
 
 # ------------------------------------------------------------
-# [13/22] Phase L mission demonstration observer
+# [13/23] Phase L LiDAR obstacle detector
 # ------------------------------------------------------------
-echo "[13/22] Starting mission demonstration observer....."
+echo "[13/23] Starting real obstacle detector..........."
+: > "$EVIDENCE_DIR/obstacles.log"
+setsid python3 "$OBSTACLE_PATH" --ros-args \
+  -p scan_topic:=/lunabot/lidar/scan \
+  -p status_topic:=/lunabot/obstacles/status \
+  -p marker_topic:=/lunabot/obstacles/markers \
+  -p map_topic:=/lunabot/obstacles/map \
+  -p map_frame:=map -p base_frame:=chassis \
+  -p front_half_angle:=0.60 -p detection_distance:=2.5 \
+  -p map_resolution:=0.10 -p map_width:=160 -p map_height:=160 \
+  -p map_origin_x:=-8.0 -p map_origin_y:=-8.0 \
+  -p use_sim_time:=true \
+  >> "$EVIDENCE_DIR/obstacles.log" 2>&1 &
+OBSTACLE_PID=$!
+sleep 2
+kill -0 "$OBSTACLE_PID" 2>/dev/null || abort "obstacle detector exited; see $EVIDENCE_DIR/obstacles.log"
+echo "      real obstacle detector running (PID $OBSTACLE_PID), LiDAR -> obstacle map"
+log "[13/23] obstacle detector OK (pid $OBSTACLE_PID)"
+
+# ------------------------------------------------------------
+# [14/23] Phase L mission demonstration observer
+# ------------------------------------------------------------
+echo "[14/23] Starting mission demonstration observer....."
 : > "$EVIDENCE_DIR/mission.log"
 setsid python3 "$MISSION_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
   -p replan_topic:=/lunabot/autonomy/replan_status \
   -p autonomy_topic:=/lunabot/autonomy/status \
   -p evaluation_topic:=/lunabot/evaluation/status \
+  -p navigation_topic:=/lunabot/navigation/status \
+  -p obstacle_topic:=/lunabot/obstacles/status \
+  -p require_manual_goal:="$REQUIRE_MANUAL_GOAL" \
   -p goal_topic:=/goal_pose \
   -p map_topic:=/map \
   -p status_topic:=/lunabot/mission/status \
@@ -555,12 +591,12 @@ MISSION_PID=$!
 sleep 2
 kill -0 "$MISSION_PID" 2>/dev/null || abort "mission demonstration observer exited; see $EVIDENCE_DIR/mission.log"
 echo "      mission observer running (PID $MISSION_PID), observation-only"
-log "[13/22] mission demonstration observer OK (pid $MISSION_PID)"
+log "[14/23] mission demonstration observer OK (pid $MISSION_PID)"
 
 # ------------------------------------------------------------
-# [14/22] Static TF - unchanged Phase A sensor frames
+# [15/23] Static TF - unchanged Phase A sensor frames
 # ------------------------------------------------------------
-echo "[14/22] Starting static TF (sensor frames)............"
+echo "[15/23] Starting static TF (sensor frames)............"
 TF_SPECS=(
   "chassis|sensor_head|0.18 0 0.85 0 0 0"
   "sensor_head|rgb_camera|0.14 0 0 0 0 0"
@@ -578,12 +614,12 @@ for spec in "${TF_SPECS[@]}"; do
   TF_PIDS+=("$!")
 done
 echo "      5 static transforms published (including scoped Gazebo LaserScan frame)"
-log "[14/22] static TF OK"
+log "[15/23] static TF OK"
 
 # ------------------------------------------------------------
-# [15/22] Phase L control node
+# [16/23] Phase L control node
 # ------------------------------------------------------------
-echo "[15/22] Starting Phase L control layer................"
+echo "[16/23] Starting Phase L control layer................"
 : > "$EVIDENCE_DIR/control.log"
 setsid python3 "$CONTROL_PATH" \
   --input-topic /cmd_vel_in --output-topic /cmd_vel \
@@ -595,12 +631,12 @@ CONTROL_PID=$!
 sleep 2
 kill -0 "$CONTROL_PID" 2>/dev/null || abort "control node exited; see $EVIDENCE_DIR/control.log"
 echo "      control running (PID $CONTROL_PID): /cmd_vel_in -> /cmd_vel"
-log "[15/22] control OK (pid $CONTROL_PID)"
+log "[16/23] control OK (pid $CONTROL_PID)"
 
 # ------------------------------------------------------------
-# [16/22] Phase L odometry monitor
+# [17/23] Phase L odometry monitor
 # ------------------------------------------------------------
-echo "[16/22] Starting odometry monitor...................."
+echo "[17/23] Starting odometry monitor...................."
 : > "$EVIDENCE_DIR/odometry_monitor.log"
 setsid python3 "$ODOM_PATH" --evidence-dir "$EVIDENCE_DIR" \
   >> "$EVIDENCE_DIR/odometry_monitor.log" 2>&1 &
@@ -608,12 +644,12 @@ ODOM_PID=$!
 sleep 2
 kill -0 "$ODOM_PID" 2>/dev/null || abort "odometry monitor exited; see $EVIDENCE_DIR/odometry_monitor.log"
 echo "      monitor running (PID $ODOM_PID), recording /lunabot/odom"
-log "[16/22] odometry monitor OK (pid $ODOM_PID)"
+log "[17/23] odometry monitor OK (pid $ODOM_PID)"
 
 # ------------------------------------------------------------
-# [17/22] Phase L SLAM and localization
+# [18/23] Phase L SLAM and localization
 # ------------------------------------------------------------
-echo "[17/22] Starting slam_toolbox mapping................"
+echo "[18/23] Starting slam_toolbox mapping................"
 : > "$EVIDENCE_DIR/slam.log"
 setsid ros2 launch slam_toolbox online_async_launch.py \
   slam_params_file:="$SLAM_CONFIG" use_sim_time:=true \
@@ -622,12 +658,12 @@ SLAM_PID=$!
 sleep 4
 kill -0 "$SLAM_PID" 2>/dev/null || abort "slam_toolbox exited; see $EVIDENCE_DIR/slam.log"
 echo "      slam_toolbox running (PID $SLAM_PID), mapping /lunabot/lidar/scan"
-log "[17/22] slam_toolbox OK (pid $SLAM_PID)"
+log "[18/23] slam_toolbox OK (pid $SLAM_PID)"
 
 # ------------------------------------------------------------
-# [18/22] Phase L A* autonomous navigation
+# [19/23] Phase L A* autonomous navigation
 # ------------------------------------------------------------
-echo "[18/22] Starting A* autonomous navigation..........."
+echo "[19/23] Starting A* autonomous navigation..........."
 : > "$EVIDENCE_DIR/navigation.log"
 if [ "$DEMO" = "1" ]; then
   AUTO_GOAL=true
@@ -649,12 +685,12 @@ NAV_PID=$!
 sleep 3
 kill -0 "$NAV_PID" 2>/dev/null || abort "A* navigation exited; see $EVIDENCE_DIR/navigation.log"
 echo "      diagnostic A* running (PID $NAV_PID), /plan + status only"
-log "[18/22] diagnostic A* OK (pid $NAV_PID, auto_goal=$AUTO_GOAL, cmd isolated)"
+log "[19/23] diagnostic A* OK (pid $NAV_PID, auto_goal=$AUTO_GOAL, cmd isolated)"
 
 # ------------------------------------------------------------
-# [19/22] Phase L terrain-aware motion integration
+# [20/23] Phase L terrain-aware motion integration
 # ------------------------------------------------------------
-echo "[19/22] Starting terrain-aware path follower........"
+echo "[20/23] Starting terrain-aware path follower........"
 : > "$EVIDENCE_DIR/integration.log"
 setsid python3 "$FOLLOWER_PATH" --ros-args \
   -p path_topic:=/lunabot/terrain/plan \
@@ -670,31 +706,31 @@ FOLLOWER_PID=$!
 sleep 2
 kill -0 "$FOLLOWER_PID" 2>/dev/null || abort "terrain path follower exited; see $EVIDENCE_DIR/integration.log"
 echo "      terrain-aware follower running (PID $FOLLOWER_PID), /terrain/plan -> /cmd_vel_in"
-log "[19/22] integration follower OK (pid $FOLLOWER_PID)"
+log "[20/23] integration follower OK (pid $FOLLOWER_PID)"
 
 # ------------------------------------------------------------
-# [20/22] RViz2
+# [21/23] RViz2
 # ------------------------------------------------------------
 if [ "$HEADLESS" = "1" ]; then
-  echo "[20/22] RViz2 (skipped - HEADLESS).................. OK"
-  log "[20/22] rviz skipped (headless)"
+  echo "[21/23] RViz2 (skipped - HEADLESS).................. OK"
+  log "[21/23] rviz skipped (headless)"
 else
-  echo "[20/22] Starting RViz2.............................."
+  echo "[21/23] Starting RViz2.............................."
   setsid rviz2 -d "$RVIZ_CONFIG" -f map >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
   RVIZ_PID=$!
   sleep 2
   if kill -0 "$RVIZ_PID" 2>/dev/null; then
     echo "      RViz2 running (PID $RVIZ_PID), fixed frame: map"
-    log "[20/22] rviz OK (pid $RVIZ_PID)"
+    log "[21/23] rviz OK (pid $RVIZ_PID)"
   else
     echo "      WARNING: RViz2 exited at startup (continuing without it)."
-    log "[20/22] rviz FAILED to start"
+    log "[21/23] rviz FAILED to start"
     OVERALL="FAIL"
   fi
 fi
 
 # ------------------------------------------------------------
-# [21/22] Runtime validation
+# [22/23] Runtime validation
 # ------------------------------------------------------------
 twist_has_motion() {
   # ros2 topic echo renders Twist as `linear:` / `angular:` blocks. Accept
@@ -714,7 +750,7 @@ twist_has_motion() {
 }
 
 capture_motion_evidence() {
-  [ "$DEMO" = "1" ] || return 0
+  { [ "$DEMO" = "1" ] || [ "$FINAL_DEMO" = "1" ]; } || return 0
   : > "$EVIDENCE_DIR/cmd_vel_in_motion.txt"
   : > "$EVIDENCE_DIR/cmd_vel_motion.txt"
   setsid timeout 240 ros2 topic echo /cmd_vel_in --qos-reliability best_effort \
@@ -727,7 +763,7 @@ capture_motion_evidence() {
 }
 
 finish_motion_evidence() {
-  [ "$DEMO" = "1" ] || return 0
+  { [ "$DEMO" = "1" ] || [ "$FINAL_DEMO" = "1" ]; } || return 0
   # Leave a short window for the last command and its controller output to be
   # flushed before stopping the capture groups.
   sleep 2
@@ -770,7 +806,7 @@ finish_motion_evidence() {
   fi
 }
 
-echo "[21/22] Runtime validation.........................."
+echo "[22/23] Runtime validation.........................."
 capture_motion_evidence
 wait_for_evaluation() {
   local status_file="$EVIDENCE_DIR/evaluation_wait_status.txt"
@@ -826,6 +862,35 @@ wait_for_mission() {
   wait "$wait_pid" 2>/dev/null || true
   echo "      final mission demonstration: FAIL"
   log "validation FAIL: mission observer did not reach pass"
+  OVERALL="FAIL"
+  return 1
+}
+
+wait_for_goal_selection() {
+  local status_file="$EVIDENCE_DIR/goal_selection_wait_status.txt"
+  rm -f "$status_file"
+  echo "      waiting for operator RViz goal selection..."
+  setsid timeout 300 ros2 topic echo /goal_pose \\
+    --qos-reliability reliable --qos-durability volatile --once \\
+    > "$status_file" 2>/dev/null &
+  local wait_pid=$!
+  for _ in $(seq 1 300); do
+    if grep -q "pose:" "$status_file" 2>/dev/null; then
+      stop_group "$wait_pid"
+      wait "$wait_pid" 2>/dev/null || true
+      echo "      manual RViz goal selection: PASS"
+      log "validation PASS: manual RViz goal selected"
+      return 0
+    fi
+    if ! kill -0 "$wait_pid" 2>/dev/null; then
+      break
+    fi
+    sleep 1
+  done
+  stop_group "$wait_pid"
+  wait "$wait_pid" 2>/dev/null || true
+  echo "      manual RViz goal selection: FAIL"
+  log "validation FAIL: no operator goal was selected"
   OVERALL="FAIL"
   return 1
 }
@@ -917,7 +982,7 @@ topic_ok() {
   local durability="volatile"
   local reliability="best_effort"
   case "$2" in
-    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status|/lunabot/autonomy/replan_status|/lunabot/evaluation/status|/lunabot/mission/status)
+    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status|/lunabot/autonomy/replan_status|/lunabot/evaluation/status|/lunabot/mission/status|/lunabot/obstacles/status|/lunabot/obstacles/map)
       durability="transient_local"
       # Reliable + transient-local is required to retrieve the retained status
       # from a publisher after the node emitted its startup message.
@@ -1047,6 +1112,21 @@ topic_ok "topic /lunabot/odometry/status"     "/lunabot/odometry/status"
 topic_ok "topic /lunabot/camera/image_raw"   "/lunabot/camera/image_raw"
 topic_ok "topic /lunabot/depth/image_raw"    "/lunabot/depth/image_raw"
 topic_ok "topic /lunabot/lidar/scan"          "/lunabot/lidar/scan"
+type_ok "type obstacle status std_msgs/String" "/lunabot/obstacles/status" "std_msgs/msg/String"
+topic_ok "topic /lunabot/obstacles/status" "/lunabot/obstacles/status"
+type_ok "type obstacle map nav_msgs/OccupancyGrid" "/lunabot/obstacles/map" "nav_msgs/msg/OccupancyGrid"
+topic_ok "topic /lunabot/obstacles/map" "/lunabot/obstacles/map"
+type_ok "type obstacle marker visualization_msgs/Marker" "/lunabot/obstacles/markers" "visualization_msgs/msg/Marker"
+topic_ok "topic /lunabot/obstacles/markers" "/lunabot/obstacles/markers"
+obstacle_status="$(timeout 15 ros2 topic echo /lunabot/obstacles/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
+if printf '%s\n' "$obstacle_status" | grep -q "OBSTACLE_"; then
+  echo "      obstacle detector content: PASS"
+  log "validation PASS: obstacle detector status available"
+else
+  echo "      obstacle detector content: FAIL"
+  log "validation FAIL: obstacle status was [$obstacle_status]"
+  OVERALL="FAIL"
+fi
 topic_ok "topic /lunabot/imu"                 "/lunabot/imu"
 tf_ok "TF odom -> chassis" "odom" "chassis"
 tf_ok "TF chassis -> sensor_head" "chassis" "sensor_head"
@@ -1055,11 +1135,15 @@ type_ok "type /goal_pose geometry_msgs/PoseStamped" "/goal_pose" "geometry_msgs/
 type_ok "type /plan nav_msgs/Path" "/plan" "nav_msgs/msg/Path"
 type_ok "type navigation status std_msgs/String" "/lunabot/navigation/status" "std_msgs/msg/String"
 # A* intentionally stops republishing its volatile goal after GOAL_REACHED.
-# In DEMO mode, use the recorded AUTO_GOAL_SENT event plus the real goal
-# completion gate instead of requiring a late volatile sample.
-if [ "$DEMO" = "1" ] && grep -q "AUTO_GOAL_SENT" "$EVIDENCE_DIR/navigation.log" 2>/dev/null; then
-  echo "      topic /goal_pose: PASS (AUTO_GOAL_SENT + completion evidence)"
-  log "validation PASS: /goal_pose AUTO_GOAL_SENT"
+# Automated regression uses the recorded AUTO_GOAL_SENT event. The final GUI
+# mission deliberately waits for the operator's RViz Set Goal selection.
+if [ "$DEMO" = "1" ] && [ "$AUTO_GOAL" = "true" ] && \
+   grep -q "AUTO_GOAL_SENT" "$EVIDENCE_DIR/navigation.log" 2>/dev/null; then
+  echo "      topic /goal_pose: PASS (AUTO_GOAL_SENT regression goal)"
+  log "validation PASS: /goal_pose AUTO_GOAL_SENT regression"
+elif [ "$FINAL_DEMO" = "1" ]; then
+  echo "      topic /goal_pose: WAITING (operator selects RViz goal)"
+  log "validation WAIT: manual /goal_pose selection required"
 else
   topic_ok "topic /goal_pose"                "/goal_pose"
 fi
@@ -1185,6 +1269,13 @@ if [ "$DEMO" = "1" ]; then
   wait_for_evaluation || true
   wait_for_mission || true
   finish_motion_evidence
+elif [ "$FINAL_DEMO" = "1" ]; then
+  wait_for_goal_selection || true
+  wait_for_dynamic_replan || true
+  wait_for_integration_goal || true
+  wait_for_evaluation || true
+  wait_for_mission || true
+  finish_motion_evidence
 fi
 
 if [ "$EVIDENCE" = "1" ]; then
@@ -1205,6 +1296,10 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/evaluation_status.txt"
   timeout 15 ros2 topic echo /lunabot/mission/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/mission_status.txt"
+  timeout 15 ros2 topic echo /lunabot/obstacles/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
+    > "$EVIDENCE_DIR/obstacle_status.txt"
+  timeout 15 ros2 topic echo /lunabot/obstacles/map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
+    > "$EVIDENCE_DIR/obstacle_map.txt"
   timeout 15 ros2 topic echo /goal_pose --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/goal_pose.txt"
   timeout 15 ros2 topic echo /plan --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
@@ -1264,11 +1359,11 @@ if [ "$EVIDENCE" = "1" ]; then
       > "$EVIDENCE_DIR/map_saver.log"
   fi
   echo "      evidence written (map, TF map->odom, odom, SLAM log)"
-  log "[21/22] evidence recorded"
+  log "[22/23] evidence recorded"
 fi
 
 # ------------------------------------------------------------
-# [22/22] Status
+# [23/23] Status
 # ------------------------------------------------------------
 echo ""
 echo "------------------------------------------------------------"
@@ -1281,6 +1376,7 @@ echo "SLAM              : RUNNING (slam_toolbox mapping)"
 echo "Navigation        : RUNNING (terrain-aware follower -> /cmd_vel_in)"
 echo "Dynamic replanning: RUNNING (live terrain-plan revisions)"
 echo "Evaluation        : RUNNING (runtime metrics and safety evidence)"
+echo "Obstacle sensing  : RUNNING (LiDAR forward sector + map overlay)"
 echo "Diagnostic A*     : RUNNING (path/status only)"
 echo "Map               : RUNNING (/map + map->odom TF)"
 echo "Watchdog          : RUNNING (0.5 s timeout)"
@@ -1310,6 +1406,9 @@ echo "  /lunabot/autonomy/status std_msgs/String (active integration)"
 echo "  /lunabot/autonomy/replan_status std_msgs/String (dynamic replanning)"
 echo "  /lunabot/evaluation/status std_msgs/String (runtime evaluation)"
 echo "  /lunabot/mission/status    std_msgs/String (final mission result)"
+echo "  /lunabot/obstacles/status  std_msgs/String (LiDAR obstacle status)"
+echo "  /lunabot/obstacles/map     nav_msgs/OccupancyGrid (sensed obstacles)"
+echo "  /lunabot/obstacles/markers visualization_msgs/Marker"
 echo "  /lunabot/terrain/segmentation sensor_msgs/Image (mask)"
 echo "  /lunabot/terrain/overlay      sensor_msgs/Image (overlay)"
 echo "  /lunabot/terrain/segmentation/status std_msgs/String"
@@ -1339,6 +1438,9 @@ echo "  - terrain cost map converts labels to inflated traversability costs"
 echo "  - terrain-aware planner plus follower drives through /cmd_vel_in"
 echo "  - dynamic replanning monitor proves changed terrain plans during motion"
 echo "  - runtime evaluator proves plan, goal, motion, controller, and odometry metrics"
+echo "  - real LiDAR obstacle detector publishes forward returns and map overlay"
+echo "  - cost map incorporates sensed obstacle cells and inflation"
+echo "  - final GUI mode waits for an RViz Set Goal selection"
 echo "  - navigation commands remain behind the Phase B controller"
 echo "  - /map and map->odom localization outputs verified"
 echo "  - command safety layer clamps and ramps /cmd_vel"
@@ -1347,7 +1449,7 @@ echo "  - live odometry monitor checks frames, rate and continuity"
 echo "  - overall startup validation: $OVERALL"
 echo ""
 echo "============================================================"
-log "[22/22] status printed (overall $OVERALL)"
+log "[23/23] status printed (overall $OVERALL)"
 if [ "$OVERALL" != "PASS" ]; then
   EXIT_CODE=1
 fi
@@ -1373,13 +1475,29 @@ if [ "$DEMO" = "1" ]; then
   printf "PHASE L RUN COMPLETE - overall result: %s\n" "$OVERALL"
   echo "============================================================"
   shutdown "$EXIT_CODE"
+elif [ "$FINAL_DEMO" = "1" ]; then
+  echo ""
+  echo "============================================================"
+  echo " FINAL MANUAL-GOAL MISSION (FINAL_DEMO mode)"
+  echo "============================================================"
+  if [ "$OVERALL" != "PASS" ]; then
+    EXIT_CODE=1
+  fi
+  if ! save_final_map; then
+    EXIT_CODE=1
+  fi
+  echo ""
+  echo "============================================================"
+  printf "PHASE L RUN COMPLETE - overall result: %s\n" "$OVERALL"
+  echo "============================================================"
+  shutdown "$EXIT_CODE"
 else
   echo ""
   echo "============================================================"
   echo " Phase L autonomous navigation is running."
   echo ""
   echo " A* auto goal: $AUTO_GOAL"
-  echo " RViz can publish a replacement goal on /goal_pose."
+  echo " RViz Set Goal selects /goal_pose."
   echo " Press Ctrl+C to stop Phase L safely."
   echo "============================================================"
   while true; do sleep 1; done

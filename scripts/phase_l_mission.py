@@ -26,9 +26,12 @@ class PhaseLMission(Node):
         self.declare_parameter("replan_topic", "/lunabot/autonomy/replan_status")
         self.declare_parameter("autonomy_topic", "/lunabot/autonomy/status")
         self.declare_parameter("evaluation_topic", "/lunabot/evaluation/status")
+        self.declare_parameter("navigation_topic", "/lunabot/navigation/status")
+        self.declare_parameter("obstacle_topic", "/lunabot/obstacles/status")
         self.declare_parameter("goal_topic", "/goal_pose")
         self.declare_parameter("map_topic", "/map")
         self.declare_parameter("status_topic", "/lunabot/mission/status")
+        self.declare_parameter("require_manual_goal", True)
 
         get = self.get_parameter
         status_qos = QoSProfile(depth=1)
@@ -51,9 +54,16 @@ class PhaseLMission(Node):
             self._evaluation_callback, retained_qos)
         self.goal_sub = self.create_subscription(
             PoseStamped, str(get("goal_topic").value), self._goal_callback, 10)
+        self.navigation_sub = self.create_subscription(
+            String, str(get("navigation_topic").value),
+            self._navigation_callback, retained_qos)
+        self.obstacle_sub = self.create_subscription(
+            String, str(get("obstacle_topic").value),
+            self._obstacle_callback, retained_qos)
         self.map_sub = self.create_subscription(
             OccupancyGrid, str(get("map_topic").value), self._map_callback,
             retained_qos)
+        self.require_manual_goal = bool(get("require_manual_goal").value)
         self.status_pub = self.create_publisher(
             String, str(get("status_topic").value), status_qos)
 
@@ -62,6 +72,8 @@ class PhaseLMission(Node):
         self.goal_reached = False
         self.evaluation_pass = False
         self.goal_seen = False
+        self.manual_goal_seen = False
+        self.obstacle_detected = False
         self.map_seen = False
         self.map_updates = 0
         self.last_status = ""
@@ -94,6 +106,14 @@ class PhaseLMission(Node):
         self.evaluation_pass = self.evaluation_pass or "EVALUATION_PASS" in msg.data
         self._evaluate()
 
+    def _navigation_callback(self, msg: String) -> None:
+        self.manual_goal_seen = self.manual_goal_seen or "MANUAL_GOAL_SELECTED" in msg.data
+        self._evaluate()
+
+    def _obstacle_callback(self, msg: String) -> None:
+        self.obstacle_detected = self.obstacle_detected or "OBSTACLE_DETECTED" in msg.data
+        self._evaluate()
+
     def _goal_callback(self, msg: PoseStamped) -> None:
         # Receiving a real PoseStamped is the goal-publication criterion; the
         # integrated status separately proves that the goal was reached.
@@ -116,14 +136,18 @@ class PhaseLMission(Node):
             self.evaluation_pass,
             self.goal_seen,
             self.map_seen,
+            self.obstacle_detected,
+            (self.manual_goal_seen or not self.require_manual_goal),
         )
         if all(criteria):
             self.passed = True
             self.publish_status(
                 "MISSION_DEMO_PASS plan=1 replan=1 goal=1 evaluation=1 "
-                f"goal_pose=1 map=1 map_updates={self.map_updates}")
+                f"goal_pose=1 map=1 obstacle=1 manual_goal="
+                f"{int(self.manual_goal_seen)} map_updates={self.map_updates}")
             return
-        names = ("plan", "replan", "goal", "evaluation", "goal_pose", "map")
+        names = ("plan", "replan", "goal", "evaluation", "goal_pose", "map",
+                 "obstacle", "manual_goal")
         missing = [name for name, valid in zip(names, criteria) if not valid]
         self.publish_status("MISSION_WAITING_FOR_" + ",".join(missing).upper())
 

@@ -72,6 +72,51 @@
       </link>
     </model>
 
+    <!-- ================= LUNAR HABITAT PRESENTATION SET =================
+         Static visual/collision landmarks make the final demonstration read as
+         a lunar habitat mission rather than an empty terrain regression. The
+         forward obstacle is deliberately placed on a useful demonstration
+         route so LiDAR/depth can detect it as a real Gazebo collision object.
+    -->
+    <model name="lunar_habitat_main">
+      <static>true</static>
+      <pose>-3.5 3.5 -1.65 0 0 0</pose>
+      <link name="habitat_body">
+        <collision name="body_collision"><geometry><box><size>4.0 3.0 2.3</size></box></geometry></collision>
+        <visual name="body_visual"><geometry><box><size>4.0 3.0 2.3</size></box></geometry><material><ambient>0.32 0.36 0.42 1</ambient><diffuse>0.32 0.36 0.42 1</diffuse></material></visual>
+        <visual name="roof_visual"><pose>0 0 1.25 0 0 0</pose><geometry><box><size>4.4 3.4 0.18</size></box></geometry><material><ambient>0.12 0.16 0.20 1</ambient><diffuse>0.12 0.16 0.20 1</diffuse></material></visual>
+        <visual name="window_front"><pose>0 -1.51 0.25 0 0 0</pose><geometry><box><size>1.6 0.04 0.55</size></box></geometry><material><ambient>0.08 0.25 0.35 1</ambient><diffuse>0.08 0.25 0.35 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="lunar_habitat_equipment">
+      <static>true</static>
+      <pose>-3.0 -2.8 -2.18 0 0 0</pose>
+      <link name="equipment_body">
+        <collision name="equipment_collision"><geometry><box><size>2.2 1.5 1.2</size></box></geometry></collision>
+        <visual name="equipment_visual"><geometry><box><size>2.2 1.5 1.2</size></box></geometry><material><ambient>0.48 0.30 0.12 1</ambient><diffuse>0.48 0.30 0.12 1</diffuse></material></visual>
+        <visual name="panel"><pose>0 0 0.72 0.25 0 0</pose><geometry><box><size>1.8 0.04 0.65</size></box></geometry><material><ambient>0.04 0.12 0.22 1</ambient><diffuse>0.04 0.12 0.22 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="presentation_obstacle_forward">
+      <static>true</static>
+      <pose>2.0 0.0 -2.39 0 0 0</pose>
+      <link name="obstacle_body">
+        <collision name="obstacle_collision"><geometry><box><size>0.95 0.95 0.80</size></box></geometry></collision>
+        <visual name="obstacle_visual"><geometry><box><size>0.95 0.95 0.80</size></box></geometry><material><ambient>0.88 0.27 0.05 1</ambient><diffuse>0.88 0.27 0.05 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="presentation_rock_left">
+      <static>true</static>
+      <pose>1.4 2.1 -2.48 0 0 0</pose>
+      <link name="rock_body">
+        <collision name="rock_collision"><geometry><sphere><radius>0.55</radius></sphere></geometry></collision>
+        <visual name="rock_visual"><geometry><sphere><radius>0.55</radius></sphere></geometry><material><ambient>0.28 0.29 0.30 1</ambient><diffuse>0.28 0.29 0.30 1</diffuse></material></visual>
+      </link>
+    </model>
+
     <!-- ================= HORIZON CATCH PLANE =================
          Keeps the world from ending in a void if the rover drives beyond the
          terrain mesh edge (400 m x 400 m crater field). Sits ~3 m below the

@@ -115,6 +115,8 @@ class AStarNavigation(Node):
         self.odom_msg: Optional[Odometry] = None
         self.goal_msg: Optional[PoseStamped] = None
         self.goal_sent = False
+        self.auto_goal_sent = False
+        self.manual_goal_seen = False
         self.path_points: list[tuple[float, float]] = []
         self.path_stamp = self.get_clock().now()
         self.last_plan = self.get_clock().now() - Duration(seconds=10.0)
@@ -167,10 +169,12 @@ class AStarNavigation(Node):
             return
         self.goal_msg = msg
         self.goal_sent = True
+        self.manual_goal_seen = True
         self.reached = False
         self.path_points = []
         self.publish_status(
-            f'GOAL_RECEIVED frame={msg.header.frame_id or self.map_frame}')
+            f'MANUAL_GOAL_SELECTED frame={msg.header.frame_id or self.map_frame} '
+            f'x={msg.pose.position.x:.2f} y={msg.pose.position.y:.2f}')
 
     def _transform_pose(self, x: float, y: float, yaw: float,
                         source_frame: str, target_frame: str):
@@ -208,6 +212,7 @@ class AStarNavigation(Node):
         goal.pose.orientation.z, goal.pose.orientation.w = q[2], q[3]
         self.goal_msg = goal
         self.goal_sent = True
+        self.auto_goal_sent = True
         self.goal_pub.publish(goal)
         self.publish_status(
             f'AUTO_GOAL_SENT frame={self.map_frame} '

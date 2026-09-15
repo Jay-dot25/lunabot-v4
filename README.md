@@ -278,26 +278,27 @@ Phase L began.
 
 ## Quickstart (Phase L)
 
-Phase L is the final mission demonstration. It preserves the approved Phase K
-stack and adds an observation-only mission supervisor. The supervisor proves
-that the real plan, replanning, integrated goal, aggregate evaluation, goal
-publication, and map output form one completed mission without publishing
-velocity or competing on the command boundary.
+Phase L is the final presentation mission. It preserves the approved Phase K
+stack, adds a real LiDAR obstacle detector, adds physical habitat/obstacle
+models, and provides an RViz Set Goal tool. The manual gate demonstrates a
+selected goal, sensed obstacle, dynamic replanning, and goal completion.
 
 ```bash
 cd ~/lunabot-v4
 source /opt/ros/humble/setup.bash
 ln -sfn "$PWD/launch-l" ~/launch-l
 
-python3 tools/validate_phase_l.py             # static gate
-EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-l        # final mission gate
-EVIDENCE=1 ~/launch-l                          # GUI/RViz run
+python3 tools/validate_phase_l.py                         # static gate
+FINAL_DEMO=1 AUTO_GOAL=false EVIDENCE=1 ~/launch-l        # manual GUI gate
+DEMO=1 AUTO_GOAL=true REQUIRE_MANUAL_GOAL=false \
+  EVIDENCE=1 HEADLESS=1 ~/launch-l                      # regression gate
 ```
 
-Phase L outputs `/lunabot/mission/status` in addition to the approved Phase K
-interfaces. Runtime evidence is written to `evidence/phase-l-launch-l/`. The
-Phase L guide is `docs/phase-12-launch-l.md`. Phase L is the final phase; no
-later phase is defined.
+Phase L outputs `/lunabot/obstacles/status`, `/lunabot/obstacles/map`, and
+`/lunabot/mission/status` in addition to the approved Phase K interfaces.
+Runtime evidence is written to `evidence/phase-l-launch-l/`. The Phase L guide
+is `docs/phase-12-launch-l.md`. Phase L is the final phase; no later phase is
+defined.
 
 Every implemented phase follows the same contract: one command, clean state,
 runtime-validated, documented, evidenced.
