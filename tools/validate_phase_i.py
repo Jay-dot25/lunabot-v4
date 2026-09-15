@@ -170,6 +170,8 @@ check("follower has conservative limits", "max_linear" in follower and "max_angu
 check("follower publishes integrated status", "INTEGRATION_GOAL_REACHED" in follower and
       "self.status_pub" in follower)
 check("follower stops safely", "_publish_stop" in follower and "Twist()" in follower)
+check("follower latches a completed goal safely", "if self.reached:" in follower and
+      "if self.reached:\n            self._publish_stop()" in follower)
 check("follower does not publish final cmd_vel", 'cmd_topic", "/cmd_vel"' not in follower)
 
 # Phase I launcher/runtime integration.
@@ -187,6 +189,9 @@ check("Phase I captures active input motion", "capture_motion_evidence" in launc
 check("Phase I validates controller-boundary motion", "cmd_vel_motion.txt" in launch and
       "controller_boundary_status.txt" in launch and
       "controller boundary evidence (/cmd_vel_in -> /cmd_vel): PASS" in launch)
+check("Phase I retrieves retained status with compatible QoS",
+      "--qos-reliability reliable --qos-durability transient_local" in launch)
+check("terrain planner guards ROS shutdown", "if rclpy.ok():" in read("scripts/terrain_aware_planner.py"))
 check("Phase I records integration evidence", "integration_status.txt" in launch and
       "integration.log" in launch)
 check("Phase I retains terrain plan gate", "terrain-aware plan content: PASS" in launch)

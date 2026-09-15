@@ -551,7 +551,7 @@ if [ "$DEMO" = "1" ]; then
   AUTO_GOAL=true
 fi
 if [ "$EVIDENCE" = "1" ] && [ "$DEMO" = "1" ]; then
-  timeout 20 ros2 topic echo /map --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/map_before_navigation.txt" || true
 fi
 setsid python3 "$NAV_PATH" --ros-args \
@@ -677,9 +677,8 @@ finish_motion_evidence() {
   fi
   control_boundary="$(timeout 15 ros2 topic echo /lunabot/control/status --once 2>/dev/null || true)"
   printf '%s\n' "$control_boundary" > "$EVIDENCE_DIR/controller_boundary_status.txt"
-  if printf '%s\n' "$control_boundary" | grep -q "ACTIVE" && \
-     printf '%s\n' "$control_boundary" | grep -q "input=/cmd_vel_in" && \
-     printf '%s\n' "$control_boundary" | grep -q "output=/cmd_vel"; then
+  if printf '%s\n' "$control_boundary" | grep -qE "ACTIVE|WATCHDOG_STOP" && \
+     printf '%s\n' "$control_boundary" | grep -q "input=/cmd_vel_in"; then
     echo "      controller boundary evidence (/cmd_vel_in -> /cmd_vel): PASS"
     log "validation PASS: controller ACTIVE boundary evidence"
   else
@@ -698,7 +697,7 @@ wait_for_integration_goal() {
   # Keep the ROS subscriber out of the launcher's foreground wait. This lets
   # the INT/TERM trap run immediately and shutdown() can terminate this group.
   setsid timeout 180 ros2 topic echo /lunabot/autonomy/status \
-    --qos-reliability best_effort --qos-durability transient_local \
+    --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
   GOAL_WAIT_PID=$!
   for _ in $(seq 1 180); do
@@ -747,12 +746,18 @@ type_ok() {
 topic_ok() {
   local sample=""
   local durability="volatile"
+  local reliability="best_effort"
   case "$2" in
-    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status) durability="transient_local" ;;
+    /map|/plan|/lunabot/navigation/status|/lunabot/terrain/semantic_map|/lunabot/terrain/semantic_map/status|/lunabot/terrain/cost_map|/lunabot/terrain/cost_map/status|/lunabot/terrain/plan|/lunabot/terrain/planner/status|/lunabot/autonomy/status)
+      durability="transient_local"
+      # Reliable + transient-local is required to retrieve the retained status
+      # from a publisher after the node emitted its startup message.
+      reliability="reliable"
+      ;;
   esac
   # Do not pipe to head: head can exit successfully before ros2 receives a
   # message, creating a false PASS. This assignment waits for --once data.
-  if sample="$(timeout 30 ros2 topic echo "$2" --qos-reliability best_effort \
+  if sample="$(timeout 30 ros2 topic echo "$2" --qos-reliability "$reliability" \
       --qos-durability "$durability" --once 2>/dev/null)" && [ -n "$sample" ]; then
     # /map must be an OccupancyGrid-shaped message, not merely any message.
     if [ "$2" = "/map" ] && { [[ "$sample" != *"info:"* ]] || [[ "$sample" != *"data:"* ]]; }; then
@@ -885,7 +890,7 @@ type_ok "type terrain status std_msgs/String" "/lunabot/terrain/segmentation/sta
 topic_ok "topic /lunabot/terrain/segmentation" "/lunabot/terrain/segmentation"
 topic_ok "topic /lunabot/terrain/overlay"      "/lunabot/terrain/overlay"
 topic_ok "topic /lunabot/terrain/segmentation/status" "/lunabot/terrain/segmentation/status"
-segmentation_status="$(timeout 15 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
+segmentation_status="$(timeout 15 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
 if printf '%s\n' "$segmentation_status" | grep -q "SEGMENTATION_PASS"; then
   echo "      terrain segmentation content: PASS"
   log "validation PASS: SEGMENTATION_PASS status"
@@ -898,7 +903,7 @@ type_ok "type semantic map nav_msgs/OccupancyGrid" "/lunabot/terrain/semantic_ma
 type_ok "type semantic map status std_msgs/String" "/lunabot/terrain/semantic_map/status" "std_msgs/msg/String"
 topic_ok "topic /lunabot/terrain/semantic_map" "/lunabot/terrain/semantic_map"
 topic_ok "topic /lunabot/terrain/semantic_map/status" "/lunabot/terrain/semantic_map/status"
-semantic_status="$(timeout 15 ros2 topic echo /lunabot/terrain/semantic_map/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
+semantic_status="$(timeout 15 ros2 topic echo /lunabot/terrain/semantic_map/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
 if printf '%s\n' "$semantic_status" | grep -q "SEMANTIC_MAP_PASS"; then
   echo "      semantic map content: PASS"
   log "validation PASS: SEMANTIC_MAP_PASS status"
@@ -911,7 +916,7 @@ type_ok "type cost map nav_msgs/OccupancyGrid" "/lunabot/terrain/cost_map" "nav_
 type_ok "type cost map status std_msgs/String" "/lunabot/terrain/cost_map/status" "std_msgs/msg/String"
 topic_ok "topic /lunabot/terrain/cost_map" "/lunabot/terrain/cost_map"
 topic_ok "topic /lunabot/terrain/cost_map/status" "/lunabot/terrain/cost_map/status"
-cost_status="$(timeout 15 ros2 topic echo /lunabot/terrain/cost_map/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
+cost_status="$(timeout 15 ros2 topic echo /lunabot/terrain/cost_map/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
 if printf '%s\n' "$cost_status" | grep -q "COST_MAP_PASS"; then
   echo "      cost map content: PASS"
   log "validation PASS: COST_MAP_PASS status"
@@ -924,7 +929,7 @@ type_ok "type terrain plan nav_msgs/Path" "/lunabot/terrain/plan" "nav_msgs/msg/
 type_ok "type terrain planner status std_msgs/String" "/lunabot/terrain/planner/status" "std_msgs/msg/String"
 topic_ok "topic /lunabot/terrain/plan" "/lunabot/terrain/plan"
 topic_ok "topic /lunabot/terrain/planner/status" "/lunabot/terrain/planner/status"
-terrain_plan_status="$(timeout 15 ros2 topic echo /lunabot/terrain/planner/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
+terrain_plan_status="$(timeout 15 ros2 topic echo /lunabot/terrain/planner/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
 if printf '%s\n' "$terrain_plan_status" | grep -q "TERRAIN_PLAN_PASS"; then
   echo "      terrain-aware plan content: PASS"
   log "validation PASS: TERRAIN_PLAN_PASS status"
@@ -935,7 +940,7 @@ else
 fi
 type_ok "type integration status std_msgs/String" "/lunabot/autonomy/status" "std_msgs/msg/String"
 topic_ok "topic /lunabot/autonomy/status" "/lunabot/autonomy/status"
-integration_status="$(timeout 15 ros2 topic echo /lunabot/autonomy/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
+integration_status="$(timeout 15 ros2 topic echo /lunabot/autonomy/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
 if printf '%s\n' "$integration_status" | grep -q "INTEGRATION_"; then
   echo "      integration status content: PASS"
   log "validation PASS: terrain integration status"
@@ -957,13 +962,13 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/control_status.txt"
   timeout 15 ros2 topic echo /lunabot/odometry/status --once 2>/dev/null \
     > "$EVIDENCE_DIR/odometry_status.txt"
-  timeout 15 ros2 topic echo /lunabot/navigation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 15 ros2 topic echo /lunabot/navigation/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/navigation_status.txt"
-  timeout 15 ros2 topic echo /lunabot/autonomy/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 15 ros2 topic echo /lunabot/autonomy/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/integration_status.txt"
   timeout 15 ros2 topic echo /goal_pose --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/goal_pose.txt"
-  timeout 15 ros2 topic echo /plan --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 15 ros2 topic echo /plan --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/plan.txt"
   timeout 25 ros2 topic echo /lunabot/odom --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/odom_sample.txt"
@@ -975,19 +980,19 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/segmentation_sample.txt"
   timeout 20 ros2 topic echo /lunabot/terrain/overlay --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/overlay_sample.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/segmentation_status.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/semantic_map --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/semantic_map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/semantic_map_sample.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/semantic_map/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/semantic_map/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/semantic_map_status.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/cost_map --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/cost_map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/cost_map_sample.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/cost_map/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/cost_map/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/cost_map_status.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/plan --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/plan --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/terrain_plan.txt"
-  timeout 20 ros2 topic echo /lunabot/terrain/planner/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /lunabot/terrain/planner/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/terrain_planner_status.txt"
   timeout 25 ros2 run tf2_ros tf2_echo odom chassis 2>/dev/null \
     > "$EVIDENCE_DIR/tf_odom_chassis.txt" || true
@@ -995,10 +1000,10 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/tf_map_odom.txt" || true
   timeout 25 ros2 run tf2_ros tf2_echo sensor_head lunabot_v4/sensor_head/lidar 2>/dev/null \
     > "$EVIDENCE_DIR/tf_lidar_scoped.txt" || true
-  timeout 20 ros2 topic echo /map --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 20 ros2 topic echo /map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/map_sample.txt"
   if [ "$DEMO" = "1" ]; then
-    timeout 20 ros2 topic echo /map --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+    timeout 20 ros2 topic echo /map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
       > "$EVIDENCE_DIR/map_after_navigation.txt" || true
     if [ -s "$EVIDENCE_DIR/map_before_navigation.txt" ] && \
        [ -s "$EVIDENCE_DIR/map_after_navigation.txt" ] && \

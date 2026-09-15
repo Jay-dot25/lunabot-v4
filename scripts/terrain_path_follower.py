@@ -205,6 +205,14 @@ class TerrainPathFollower(Node):
             self.publish_status("INTEGRATION_WAITING_FOR_GOAL")
             self._publish_stop()
             return
+        # Once the integrated follower has reached the active goal, hold a
+        # safe stop until a genuinely new goal arrives. SLAM map->odom updates
+        # can move the transformed pose by a few centimeters on later ticks;
+        # without this latch the follower could resume motion after reporting
+        # completion.
+        if self.reached:
+            self._publish_stop()
+            return
         goal_distance = math.hypot(goal[0] - current_x, goal[1] - current_y)
         if goal_distance <= self.goal_tolerance:
             self._publish_stop()

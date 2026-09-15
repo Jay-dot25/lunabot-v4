@@ -98,7 +98,26 @@ class TerrainAwarePlanner(Node):
             return
         self.cost_map = msg
 
+    @staticmethod
+    def _same_goal(first: PoseStamped, second: PoseStamped) -> bool:
+        if (first.header.frame_id or "") != (second.header.frame_id or ""):
+            return False
+        a, b = first.pose, second.pose
+        return (
+            abs(a.position.x - b.position.x) < 1e-6 and
+            abs(a.position.y - b.position.y) < 1e-6 and
+            abs(a.position.z - b.position.z) < 1e-6 and
+            abs(a.orientation.x - b.orientation.x) < 1e-6 and
+            abs(a.orientation.y - b.orientation.y) < 1e-6 and
+            abs(a.orientation.z - b.orientation.z) < 1e-6 and
+            abs(a.orientation.w - b.orientation.w) < 1e-6
+        )
+
     def _goal_callback(self, msg: PoseStamped) -> None:
+        # A* republishes its active goal for late observers. Do not reset the
+        # terrain planner's goal state or status for an identical message.
+        if self.goal is not None and self._same_goal(msg, self.goal):
+            return
         self.goal = msg
         self.publish_status(
             f"TERRAIN_GOAL_RECEIVED frame={msg.header.frame_id or self.map_frame}")
@@ -270,7 +289,8 @@ def main(args=None) -> None:
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

@@ -95,31 +95,30 @@
 [PASS] bash syntax: scripts/launch-i.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - =
-RESULT: 76/76 checks passed - ALL PASS
+[PASS] approved baseline remains green: tools/validate_phase_a.py - SULT: 76/76 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-a-launch-a/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_b.py - LT: 103/103 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - 133/133 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - LT: 149/149 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - 149/149 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_e.py - LT: 112/112 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-d-launch-d/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_e.py - 112/112 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-e-launch-e/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_f.py - LT: 122/122 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-e-launch-e/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_f.py - 122/122 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-f-launch-f/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_g.py - LT: 131/131 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-f-launch-f/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_g.py - 131/131 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-g-launch-g/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_h.py - LT: 144/144 checks passed - ALL PASS
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-g-launch-g/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_h.py - 144/144 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-h-launch-h/static_validation.txt
+report: /tmp/lunabot-phase-i-fix2/evidence/phase-h-launch-h/static_validation.txt
 [PASS] root launch-i resolves its real path
 [PASS] root launch-i execs scripts/launch-i.sh
 [PASS] Phase I does not invoke an earlier launcher
@@ -142,6 +141,7 @@ report: /home/user/lunabot-v4/evidence/phase-h-launch-h/static_validation.txt
 [PASS] follower has conservative limits
 [PASS] follower publishes integrated status
 [PASS] follower stops safely
+[PASS] follower latches a completed goal safely
 [PASS] follower does not publish final cmd_vel
 [PASS] Phase I resolves follower path
 [PASS] Phase I starts follower directly
@@ -149,8 +149,11 @@ report: /home/user/lunabot-v4/evidence/phase-h-launch-h/static_validation.txt
 [PASS] Phase I validates integration status type
 [PASS] Phase I validates real integration status
 [PASS] Phase I validates integrated goal content
+[PASS] Phase I defines motion capture before use
 [PASS] Phase I captures active input motion
 [PASS] Phase I validates controller-boundary motion
+[PASS] Phase I retrieves retained status with compatible QoS
+[PASS] terrain planner guards ROS shutdown
 [PASS] Phase I records integration evidence
 [PASS] Phase I retains terrain plan gate
 [PASS] Phase I retains cost/semantic gates
@@ -172,4 +175,4 @@ report: /home/user/lunabot-v4/evidence/phase-h-launch-h/static_validation.txt
 [PASS] docs contain Phase J gate
 [PASS] validator is honest about runtime
 
-RESULT: 156/156 checks passed
+RESULT: 160/160 checks passed
