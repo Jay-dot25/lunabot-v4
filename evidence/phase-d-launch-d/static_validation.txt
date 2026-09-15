@@ -1,3 +1,6 @@
+================================================================
+LUNABOT V4 PHASE D STATIC VALIDATION
+================================================================
 [PASS] file exists: launch-a
 [PASS] file exists: launch-b
 [PASS] file exists: launch-c
@@ -67,6 +70,7 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] Phase D has a shutdown trap
 [PASS] Phase D shuts down navigation before SLAM
 [PASS] Phase D has bounded shutdown
+[PASS] Phase D interrupts and cleans the goal wait
 [PASS] Phase D cleans stale navigation nodes
 [PASS] Phase D avoids head-based early passes
 [PASS] slam_toolbox remains the only SLAM system
@@ -153,5 +157,7 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] docs contain relaunch
 [PASS] docs contain Phase E gate
 [PASS] validator is honest about runtime
-
-RESULT: 148/148 checks passed
+================================================================
+RESULT: 149/149 checks passed - ALL PASS
+================================================================
+report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt

@@ -109,6 +109,8 @@ check("Phase D has a shutdown trap", "trap 'shutdown 130' INT TERM" in launch)
 check("Phase D shuts down navigation before SLAM", 'stop_group "$NAV_PID"' in launch and
       launch.index('stop_group "$NAV_PID"') < launch.index('stop_group "$SLAM_PID"'))
 check("Phase D has bounded shutdown", 'kill -KILL -"$pid"' in launch)
+check("Phase D interrupts and cleans the goal wait", "GOAL_WAIT_PID" in launch and
+      'stop_group "$GOAL_WAIT_PID"' in launch)
 check("Phase D cleans stale navigation nodes", "scripts/astar_navigation.py" in launch)
 check("Phase D avoids head-based early passes", "| head" not in launch)
 

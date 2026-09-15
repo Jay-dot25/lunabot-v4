@@ -51,6 +51,7 @@ CONTROL_PID=""
 ODOM_PID=""
 SLAM_PID=""
 NAV_PID=""
+GOAL_WAIT_PID=""
 TF_PIDS=()
 BRIDGE_PKG=""
 MAP_SAVER_AVAILABLE=0
@@ -108,7 +109,13 @@ shutdown() {
   if ! save_final_map; then
     rc=1
   fi
-  # Stop autonomous navigation, then SLAM and command generation before the simulator.
+  # Stop any status subscriber first so Ctrl+C cannot leave the goal wait loop
+  # holding the launcher open, then stop navigation and the inherited stack.
+  if [ -n "$GOAL_WAIT_PID" ]; then
+    stop_group "$GOAL_WAIT_PID"
+    wait "$GOAL_WAIT_PID" 2>/dev/null || true
+    GOAL_WAIT_PID=""
+  fi
   if [ -n "$NAV_PID" ]; then
     stop_group "$NAV_PID"
     wait "$NAV_PID" 2>/dev/null || true
@@ -464,16 +471,32 @@ fi
 # ------------------------------------------------------------
 echo "[13/14] Runtime validation.........................."
 wait_for_goal() {
+  local status_file="$EVIDENCE_DIR/goal_wait_status.txt"
+  rm -f "$status_file"
   echo "      waiting for A* GOAL_REACHED..."
+  # Keep the ROS subscriber out of the launcher's foreground wait. This lets
+  # the INT/TERM trap run immediately and shutdown() can terminate this group.
+  setsid timeout 180 ros2 topic echo /lunabot/navigation/status \
+    --qos-reliability best_effort --qos-durability transient_local \
+    > "$status_file" 2>/dev/null &
+  GOAL_WAIT_PID=$!
   for _ in $(seq 1 180); do
-    status="$(timeout 3 ros2 topic echo /lunabot/navigation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
-    if printf '%s\n' "$status" | grep -q "GOAL_REACHED"; then
+    if grep -q "GOAL_REACHED" "$status_file" 2>/dev/null; then
+      stop_group "$GOAL_WAIT_PID"
+      wait "$GOAL_WAIT_PID" 2>/dev/null || true
+      GOAL_WAIT_PID=""
       echo "      A* goal reached: PASS"
       log "validation PASS: A* GOAL_REACHED"
       return 0
     fi
+    if ! kill -0 "$GOAL_WAIT_PID" 2>/dev/null; then
+      break
+    fi
     sleep 1
   done
+  stop_group "$GOAL_WAIT_PID"
+  wait "$GOAL_WAIT_PID" 2>/dev/null || true
+  GOAL_WAIT_PID=""
   echo "      A* goal reached: FAIL"
   log "validation FAIL: A* did not reach goal within 180 s"
   OVERALL="FAIL"
