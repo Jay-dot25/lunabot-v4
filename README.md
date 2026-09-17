@@ -26,6 +26,10 @@ Each implemented phase has a document under `docs/` covering objective,
 inputs, data flow, ROS nodes/topics/services, TF frames, launch command,
 validation procedure, success criteria, evidence, and limitations.
 
+For one consolidated code map, command reference, topic contract, runtime
+inspection guide, evidence guide, and final A-to-L acceptance procedure, see
+[`docs/full-launch-a-to-l.md`](docs/full-launch-a-to-l.md).
+
 ## Quickstart (Phase A)
 
 Requirements (workstation):
