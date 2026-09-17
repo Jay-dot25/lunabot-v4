@@ -91,6 +91,13 @@ def validate_sdfs():
     horizon = world.find("./model[@name='lunar_horizon']")
     check("horizon catch-plane present", horizon is not None)
     check("GUI camera configured", world.find("gui/camera") is not None)
+    habitat = world.find("./model[@name='lunar_habitat_main']")
+    equipment = world.find("./model[@name='lunar_habitat_equipment']")
+    obstacle = world.find("./model[@name='presentation_obstacle_forward']")
+    check("lunar habitat presentation model present", habitat is not None)
+    check("habitat equipment presentation model present", equipment is not None)
+    check("physical forward obstacle present", obstacle is not None and
+          obstacle.find("link/collision") is not None)
 
     # model
     mroot = ET.parse(MODEL).getroot()
@@ -247,6 +254,7 @@ def validate_rviz():
     check("rviz fixed frame odom", "Fixed Frame: odom" in txt)
     check("rviz displays LaserScan topic", "type: sensor_msgs/msg/LaserScan" in txt)
     check("rviz displays Image topic", "type: sensor_msgs/msg/Image" in txt)
+    check("rviz displays depth image", "Value: /lunabot/depth/image_raw" in txt)
     check("rviz TF display", "rviz_default_plugins/TF" in txt)
 
 

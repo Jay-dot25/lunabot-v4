@@ -34,6 +34,11 @@ Requirements (workstation):
 - **ros_ign bridge** (`ros-humble-ros-ign`)
 - `rviz2`
 
+Phase A now opens a presentation-ready lunar habitat scene with a real
+forward obstacle object. Gazebo shows the habitat and rover; RViz shows the
+RGB/depth camera feeds, LiDAR, and TF. Goal selection and obstacle avoidance
+are introduced in later phases.
+
 ```bash
 cd ~/lunabot-v4
 ln -s ~/lunabot-v4/launch-a ~/launch-a   # once

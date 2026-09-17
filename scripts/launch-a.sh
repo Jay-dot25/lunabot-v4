@@ -119,7 +119,7 @@ if [ "$missing" -ne 0 ]; then
   echo "      Re-generate terrain:  python3 tools/generate_lunar_terrain.py"
   exit 1
 fi
-echo "      world, rover model, terrain meshes, teleop, rviz: OK"
+echo "      world, rover, lunar habitat, physical obstacle, terrain meshes, teleop, rviz: OK"
 log "[1/10] project files OK"
 
 # ------------------------------------------------------------
@@ -352,6 +352,7 @@ else
 fi
 topic_ok "topic /lunabot/odom"              "/lunabot/odom"
 topic_ok "topic /lunabot/camera/image_raw"  "/lunabot/camera/image_raw"
+topic_ok "topic /lunabot/depth/image_raw"   "/lunabot/depth/image_raw"
 topic_ok "topic /lunabot/lidar/scan"        "/lunabot/lidar/scan"
 topic_ok "topic /lunabot/imu"               "/lunabot/imu"
 tf_ok    "TF odom -> chassis"               "odom" "chassis"
@@ -408,6 +409,8 @@ echo "  /clock                        rosgraph_msgs/Clock        (sim time)"
 echo "  /lunabot/odom                 nav_msgs/Odometry"
 echo "  /lunabot/camera/image_raw     sensor_msgs/Image          (RGB 640x480 @20Hz)"
 echo "  /lunabot/depth/image_raw      sensor_msgs/Image          (depth @15Hz)"
+echo "  Gazebo lunar_habitat_main    static habitat presentation model"
+echo "  Gazebo presentation_obstacle_forward  physical LiDAR obstacle"
 echo "  /lunabot/lidar/scan           sensor_msgs/LaserScan      (720 beams @10Hz)"
 echo "  /lunabot/imu                  sensor_msgs/Imu            (@100Hz)"
 echo "  /lunabot/joint_states         sensor_msgs/JointState"
@@ -420,8 +423,9 @@ echo "------------------------------------------------------------"
 echo "VALIDATION"
 echo "------------------------------------------------------------"
 echo "  - all project files present"
-echo "  - Gazebo + lunar_world started (lunar terrain + horizon)"
+echo "  - Gazebo + lunar_world started (terrain + habitat + physical obstacles)"
 echo "  - LunaBot V4 spawned on terrain (spawn z=$SPAWN_Z)"
+echo "  - RGB-D camera and LiDAR are available for later obstacle sensing"
 echo "  - bridge + TF + sensor topics verified at runtime"
 echo "  - overall: $OVERALL"
 echo ""

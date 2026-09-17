@@ -2,11 +2,13 @@
 
 ## 1. Objective
 
-Establish the complete simulated LunaBot foundation: a realistic lunar
-environment (large cratered terrain, monochrome grey appearance, lunar
-gravity) with the LunaBot V4 rover (rocker-bogie, six wheels, RGB camera,
-depth camera, LiDAR, IMU) running in Gazebo Sim, exposed through ROS 2
-topics and TF, viewable in RViz2, and drivable by manual teleoperation.
+Establish the complete simulated LunaBot foundation: a presentation-ready
+lunar habitat environment (large cratered terrain, habitat structures,
+monochrome grey appearance, lunar gravity, and physical obstacles) with the
+LunaBot V4 rover (rocker-bogie, six wheels, RGB camera, depth camera, LiDAR,
+IMU) running in Gazebo Sim, exposed through ROS 2 topics and TF, viewable in
+RViz2, and drivable by manual teleoperation. The habitat and obstacle models
+are real Gazebo collision objects so later phases can sense them.
 
 Phase A is the baseline that every later phase builds on. It must launch
 independently from a clean state with a single command.
@@ -22,12 +24,12 @@ None. Phase A is the first phase. It reuses the existing repository assets
 |---|---|
 | Lunar terrain asset | **Created** `worlds/meshes/lunar_terrain.obj` (visual, 320×320 grid, 1.25 m, per-vertex grey albedo) + `lunar_terrain_collision.obj` (100×100, 4 m). The world referenced `meshes/lunar_terrain.obj` but **no mesh existed** — the world previously had no ground at all. Generated deterministically by `tools/generate_lunar_terrain.py` (seed 42). |
 | Terrain geometry | 400 m × 400 m crater field: 220 small craters (3–10 m), 70 medium (12–30 m), 7 large (44–90 m, with rims and central peaks), multi-octave rolling relief (~14 m total relief), fine rocky roughness, smooth spawn pad at the origin, flat boundary shelf. |
-| World physics | Terrain split into high-detail visual + low-detail collision mesh (fast DART physics). Lunar gravity `0 0 -1.62` (already present, preserved). Horizon catch-plane added so driving past the terrain edge does not void the world. |
+| World physics and presentation set | Terrain split into high-detail visual + low-detail collision mesh (fast DART physics). Lunar gravity `0 0 -1.62` (already present, preserved). Horizon catch-plane added so driving past the terrain edge does not void the world. Added static lunar habitat, equipment module, visible rock, and a forward physical obstacle with collision geometry for later sensor/replanning phases. |
 | Launch script | `scripts/launch-a.sh` rewritten: 10 staged startup steps with live `OK/FAIL`, real runtime validation (topic + TF checks, not assumptions), `HEADLESS`/`DEMO`/`EVIDENCE` modes, trap-based clean shutdown with orphan guard, log capture to `evidence/phase-a-launch-a/`. |
 | Sensor bridge | Bridge extended from 5 to 15 topic mappings: added depth camera, IMU, joint states, steer joints, mast pan/tilt. |
 | TF | Replaced the single approximate `chassis→lidar` static TF with an accurate 4-frame static tree taken from the model SDF (`chassis→sensor_head→{rgb_camera, depth_camera, lidar}`). |
 | Entry point | `launch-a` at the repo root (canonical `~/launch-a`), works from any directory. |
-| RViz | New `rviz/phase_a.rviz` config: Grid + TF + LaserScan + Camera image, fixed frame `odom` (previously RViz started with an empty default display). |
+| RViz | New `rviz/phase_a.rviz` config: Grid + TF + LaserScan + RGB camera + depth camera, fixed frame `odom` (previously RViz started with an empty default display). |
 | Teleop | `scripts/wasd_teleop.py`: same WASD/Space/Q controls, speeds corrected to the DiffDrive plugin limits (0.45 m/s / 1.0 rad/s — the old 2.0 m/s request was silently clamped), plus `--demo` automated drive test for headless validation. Teleop runs **in the foreground** (a backgrounded process loses its terminal — first version of the fix made WASD unusable). |
 | Sim time | `/clock` added to the bridge (standard Gazebo sim-time topic). The demo drive test now measures **simulation time**, not wall clock, so results are valid even when rendering/physics run slower than real-time (e.g. GPU shader warm-up with the large terrain). |
 | Drive diagnostics | Demo records `evidence/phase-a-launch-a/diag_drive.csv`: per-sample commanded vs measured velocity, rover pose, and **actual wheel joint velocities** — separates wheel slip/traction problems from sim-time lag. |
@@ -44,7 +46,8 @@ None. Phase A is the first phase. It reuses the existing repository assets
 ## 5. Processing/Data Flow
 
 ```
-lunar_world.sdf + terrain meshes ──> Gazebo Sim (lunar gravity, OG2 renderer)
+lunar_world.sdf + terrain + habitat/obstacle models ──> Gazebo Sim
+                                      (lunar gravity, OG2 renderer)
                                            │
 lunabot_v4/model.sdf ──(EntityFactory spawn at z=-2.308)──> Gazebo
                                            │
@@ -69,8 +72,8 @@ odometry + TF updated → RViz + ROS interfaces reflect the state.
 
 ## 6. Outputs
 
-- Gazebo GUI window: lunar terrain + rover (GUI camera at `0 -300 200`)
-- RViz2 window: TF tree, LiDAR scan, camera image (fixed frame `odom`)
+- Gazebo GUI window: lunar terrain + lunar habitat + rover + physical obstacle (GUI camera at `0 -300 200`)
+- RViz2 window: TF tree, LiDAR scan, RGB camera, and depth camera (fixed frame `odom`)
 - All topics in §8
 - TF tree in §10
 - Runtime logs: `evidence/phase-a-launch-a/{last_run,gazebo,bridge}.log`
@@ -236,8 +239,11 @@ AUTO RUN COMPLETE - overall result: PASS
 - LunaBot V4 (rocker-bogie, six wheels, solar panels, sensor mast) drops
   from ~5 cm and settles on the spawn pad; wheels may articulate slightly
   on the rough surface.
-- Sensor visualization gizmos on the sensor head (camera frustum, LiDAR
-  fan) when `<visualize>true</visualize>`.
+- The lunar habitat building and equipment module are visible in the
+  presentation area, with a colored physical obstacle on the forward route
+  and a rock landmark to the side.
+- Sensor visualization gizmos on the sensor head (camera frustum, depth
+  camera, LiDAR fan) when `<visualize>true</visualize>`.
 - With `HEADLESS=1`: no window; `gazebo.log` shows sensor/physics startup.
 
 ## 14. Expected RViz Output
@@ -249,7 +255,9 @@ Fixed frame `odom`:
   fan of the crater field around the rover; as the rover moves/turns the
   scan rotates.
 - **Camera** panel (`/lunabot/camera/image_raw`): live RGB view of the
-  lunar terrain in front of the rover (grey, cratered).
+  habitat/terrain in front of the rover.
+- **Depth Camera** panel (`/lunabot/depth/image_raw`): live depth returns
+  that later phases use to mark obstacles.
 - **Grid**: 10 m cells for scale.
 
 ## 15. Validation Procedure
@@ -271,7 +279,8 @@ Fixed frame `odom`:
 ## 16. Success Criteria
 
 - [ ] `~/launch-a` starts the whole stack alone from a clean state
-- [ ] Gazebo shows the lunar terrain (visual checklist PASS)
+- [ ] Gazebo shows the lunar terrain and habitat presentation set (visual checklist PASS)
+- [ ] The forward obstacle is a visible collision object, not a drawn/synthetic marker
 - [ ] Rover spawns on the terrain and stays stable
 - [ ] `/lunabot/odom`, `/lunabot/camera/image_raw`,
       `/lunabot/lidar/scan`, `/lunabot/imu` deliver messages

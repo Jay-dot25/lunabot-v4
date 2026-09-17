@@ -1,5 +1,5 @@
 LunaBot V4 - Phase A - static validation report
-date: 2026-09-12T16:05:24Z
+date: 2026-09-17T04:26:30Z
 ============================================================
 [PASS] world SDF XML well-formed
 [PASS] world name == lunar_world - got lunar_world
@@ -11,10 +11,13 @@ date: 2026-09-12T16:05:24Z
 [PASS] world plugin Contact
 [PASS] terrain model present
 [PASS] terrain static
-[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
-[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
+[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /tmp/lunabot-phase-a/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
+[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /tmp/lunabot-phase-a/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
 [PASS] horizon catch-plane present
 [PASS] GUI camera configured
+[PASS] lunar habitat presentation model present
+[PASS] habitat equipment presentation model present
+[PASS] physical forward obstacle present
 [PASS] model SDF XML well-formed
 [PASS] model name == lunabot_v4
 [PASS] 6 wheel joints - ['left_front_wheel_joint', 'left_middle_wheel_joint', 'left_rear_wheel_joint', 'right_front_wheel_joint', 'right_middle_wheel_joint', 'right_rear_wheel_joint']
@@ -67,6 +70,7 @@ date: 2026-09-12T16:05:24Z
 [PASS] rviz fixed frame odom
 [PASS] rviz displays LaserScan topic
 [PASS] rviz displays Image topic
+[PASS] rviz displays depth image
 [PASS] rviz TF display
 [PASS] docs/phase-a-launch-a.md exists
 [PASS] docs section ## 1. Objective
@@ -78,4 +82,4 @@ date: 2026-09-12T16:05:24Z
 [PASS] evidence README
 [PASS] verification checklist
 ============================================================
-RESULT: 76/76 checks passed
+RESULT: 80/80 checks passed

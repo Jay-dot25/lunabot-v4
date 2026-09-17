@@ -10,6 +10,9 @@ gatekeeper**: if any item fails, Phase A is not approved.
 [ ] Large visible crater formations (rims, some with central peaks)
 [ ] Uneven / elevated terrain (rolling relief, not flat)
 [ ] Rough lunar surface (fine rocky texture)
+[ ] Lunar habitat building and equipment module are visible
+[ ] Colored forward obstacle and side rock landmark are visible
+[ ] Forward obstacle has collision geometry and is a real world object
 [ ] Rover visibly located on the terrain (spawn pad, near origin)
 [ ] Rover looks small relative to the large terrain
 [ ] Gazebo camera view clearly shows the terrain
@@ -22,7 +25,8 @@ RViz check:
 ```
 [ ] TF tree: odom -> chassis -> sensor_head -> {rgb_camera, depth_camera, lidar}
 [ ] LaserScan: 360-degree fan of the crater field (red dots)
-[ ] Camera panel: live grey lunar view
+[ ] Camera panel: live habitat/terrain view
+[ ] Depth Camera panel: live depth image
 [ ] Driving with WASD moves the rover and the scan/TF follow
 ```
 
