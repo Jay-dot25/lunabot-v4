@@ -95,30 +95,31 @@
 [PASS] bash syntax: scripts/launch-i.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - SULT: 76/76 checks passed - ALL PASS
+[PASS] approved baseline remains green: tools/validate_phase_a.py - ==
+RESULT: 80/80 checks passed - ALL PASS
 ============================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-a-launch-a/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_b.py - LT: 103/103 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
 ============================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - 133/133 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - 149/149 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - ULT: 152/152 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-d-launch-d/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_e.py - 112/112 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_e.py - ULT: 112/112 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-e-launch-e/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_f.py - 122/122 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-e-launch-e/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_f.py - ULT: 122/122 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-f-launch-f/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_g.py - 131/131 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-f-launch-f/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_g.py - ULT: 131/131 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-g-launch-g/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_h.py - 144/144 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-g-launch-g/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_h.py - ULT: 144/144 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-i-fix2/evidence/phase-h-launch-h/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-h-launch-h/static_validation.txt
 [PASS] root launch-i resolves its real path
 [PASS] root launch-i execs scripts/launch-i.sh
 [PASS] Phase I does not invoke an earlier launcher

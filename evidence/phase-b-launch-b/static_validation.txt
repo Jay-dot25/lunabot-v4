@@ -100,9 +100,9 @@
 [PASS] doc docs/phase-b-launch-b.md section 22
 [PASS] doc docs/phase-b-launch-b.md section 23
 [PASS] collector launches Phase B directly
-[PASS] Phase A static baseline remains 76/76 - =====================
-RESULT: 76/76 checks passed - ALL PASS
+[PASS] Phase A static baseline remains 80/80 - ======================
+RESULT: 80/80 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
 
 RESULT: 103/103 checks passed

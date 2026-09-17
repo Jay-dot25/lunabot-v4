@@ -59,8 +59,11 @@ late-joining evidence and RViz subscribers.
 | `/cmd_vel_in` | `geometry_msgs/Twist` | planner output to inherited controller |
 | `/lunabot/navigation/status` | `std_msgs/String` | waiting/planning/following/goal status |
 
-The default Phase D demo creates an automatic goal 1.5 m ahead of the current
-map pose. A manually published `/goal_pose` replaces it. Occupied cells at or
+The GUI launch waits for an operator-selected goal; RViz provides a `Set
+Goal` tool and a selected-goal arrow, so the operator can click a real
+destination in the map before the rover moves. For regression only, `DEMO=1`
+enables the deterministic automatic goal 1.5 m ahead of the current map pose;
+a manually published `/goal_pose` replaces it. Occupied cells at or
 above 65 and unknown cells are blocked by default; a 0.25 m inflation radius
 keeps the rover away from mapped obstacles. Eight-connected A* uses the map
 resolution and map origin orientation rather than assuming an axis-aligned
@@ -170,8 +173,9 @@ Phase D RViz uses fixed frame `map` and displays:
 - `TF` including `map -> odom -> chassis` and the scoped LaserScan frame;
 - `Odometry` on `/lunabot/odom`.
 
-The default auto goal drives the rover. A replacement goal can be sent from a
-separate sourced terminal, for example:
+The GUI launch waits for the operator to click the RViz `Set Goal` tool; the
+regression command above enables the automatic goal. A replacement goal can
+also be sent from a separate sourced terminal, for example:
 
 ```bash
 ros2 topic pub --once /goal_pose geometry_msgs/msg/PoseStamped \

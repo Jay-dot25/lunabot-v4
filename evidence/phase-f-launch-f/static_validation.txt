@@ -65,22 +65,22 @@
 [PASS] bash syntax: scripts/launch-f.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - =
-RESULT: 76/76 checks passed - ALL PASS
+[PASS] approved baseline remains green: tools/validate_phase_a.py - ==
+RESULT: 80/80 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
 [PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - LT: 149/149 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_d.py - ULT: 152/152 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_e.py - LT: 112/112 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
+[PASS] approved baseline remains green: tools/validate_phase_e.py - ULT: 112/112 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-e-launch-e/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-e-launch-e/static_validation.txt
 [PASS] root launch-f resolves its real path
 [PASS] root launch-f execs scripts/launch-f.sh
 [PASS] Phase F does not invoke an earlier launcher

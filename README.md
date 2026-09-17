@@ -112,9 +112,11 @@ EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-d        # autonomous runtime gate
 EVIDENCE=1 ~/launch-d                          # GUI/RViz path validation
 ```
 
-Phase D uses no Nav2, AMCL, Cartographer, or second SLAM system. Runtime
-evidence is written to `evidence/phase-d-launch-d/`. Phase D was runtime
-validated and explicitly approved before Phase E began.
+Phase D uses no Nav2, AMCL, Cartographer, or second SLAM system. RViz also
+provides the operator-facing `Set Goal` tool on `/goal_pose`; the automatic
+goal remains only for regression mode. Runtime evidence is written to
+`evidence/phase-d-launch-d/`. Phase D was runtime validated and explicitly
+approved before Phase E began.
 
 ## Quickstart (Phase E)
 

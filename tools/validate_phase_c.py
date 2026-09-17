@@ -82,7 +82,7 @@ for rel, kind in [("src/lunabot_gazebo/worlds/lunar_world.sdf", "world"),
 # validator when this repository's Python environment permits it.
 for rel in ["tools/validate_phase_a.py", "tools/validate_phase_b.py"]:
     r = run([sys.executable, rel])
-    expected = "76/76" if rel.endswith("phase_a.py") else "103/103"
+    expected = "80/80" if rel.endswith("phase_a.py") else "103/103"
     check(f"existing static gate remains green: {rel}",
           r.returncode == 0 and expected in r.stdout, r.stdout[-180:].strip())
 

@@ -10,6 +10,7 @@
 #  Environment variables:
 #    HEADLESS=1    Gazebo without GUI, no RViz2
 #    DEMO=1        automated command -> controller -> rover test
+#    AUTO_GOAL=1   enable the deterministic regression goal (DEMO implies it)
 #    EVIDENCE=1    record control/odometry runtime evidence
 #
 #  Usage:
@@ -41,7 +42,7 @@ WORLD_NAME="lunar_world"
 HEADLESS="${HEADLESS:-0}"
 DEMO="${DEMO:-0}"
 EVIDENCE="${EVIDENCE:-0}"
-AUTO_GOAL="${AUTO_GOAL:-true}"
+AUTO_GOAL="${AUTO_GOAL:-false}"
 
 OVERALL="PASS"
 GAZEBO_PID=""

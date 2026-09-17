@@ -1,6 +1,3 @@
-================================================================
-LUNABOT V4 PHASE D STATIC VALIDATION
-================================================================
 [PASS] file exists: launch-a
 [PASS] file exists: launch-b
 [PASS] file exists: launch-c
@@ -49,16 +46,16 @@ LUNABOT V4 PHASE D STATIC VALIDATION
 [PASS] bash syntax: scripts/launch-d.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] existing static gate remains green: tools/validate_phase_a.py - =
-RESULT: 76/76 checks passed - ALL PASS
+[PASS] existing static gate remains green: tools/validate_phase_a.py - ==
+RESULT: 80/80 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
 [PASS] existing static gate remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
 ============================================================
-report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
-[PASS] existing static gate remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
+report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
+[PASS] existing static gate remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
 ================================================================
-report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
 [PASS] root launch-d resolves its real path
 [PASS] root launch-d execs scripts/launch-d.sh
 [PASS] Phase D does not invoke launch-a
@@ -102,6 +99,7 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] planner stops on goal
 [PASS] planner publishes auditable status
 [PASS] planner provides a deterministic auto goal
+[PASS] GUI defaults to operator-selected goal
 [PASS] planner uses transient-local map input
 [PASS] planner makes path/status late-join safe and republishes goals
 [PASS] planner has no direct Gazebo dependency
@@ -146,6 +144,8 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] Phase D RViz has explicit Camera
 [PASS] Phase D RViz uses best effort sensor QoS
 [PASS] Phase D RViz has explicit odometry
+[PASS] Phase D RViz provides Set Goal tool
+[PASS] Phase D RViz displays selected goal
 [PASS] Phase D RViz stores map/odom TF
 [PASS] docs contain installation
 [PASS] docs contain automated command
@@ -157,7 +157,5 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] docs contain relaunch
 [PASS] docs contain Phase E gate
 [PASS] validator is honest about runtime
-================================================================
-RESULT: 149/149 checks passed - ALL PASS
-================================================================
-report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt
+
+RESULT: 152/152 checks passed

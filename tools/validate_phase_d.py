@@ -79,7 +79,7 @@ for rel, kind in [("src/lunabot_gazebo/worlds/lunar_world.sdf", "world"),
         check(f"{kind} SDF well-formed", False, str(exc))
 
 # Earlier phase static gates remain part of the Phase D baseline.
-for rel, expected in [("tools/validate_phase_a.py", "76/76"),
+for rel, expected in [("tools/validate_phase_a.py", "80/80"),
                       ("tools/validate_phase_b.py", "103/103"),
                       ("tools/validate_phase_c.py", "133/133")]:
     r = run([sys.executable, rel])
@@ -150,6 +150,8 @@ check("planner publishes auditable status", "/lunabot/navigation/status" in plan
       "PLANNING_PASS" in planner and "NO_PATH" in planner)
 check("planner provides a deterministic auto goal", "auto_goal_distance" in planner and
       "AUTO_GOAL_SENT" in planner)
+check("GUI defaults to operator-selected goal", 'AUTO_GOAL="${AUTO_GOAL:-false}"' in launch and
+      'if [ "$DEMO" = "1" ]; then' in launch and "AUTO_GOAL=true" in launch)
 check("planner uses transient-local map input", "TRANSIENT_LOCAL" in planner and
       "map_qos" in planner)
 check("planner makes path/status late-join safe and republishes goals",
@@ -220,6 +222,10 @@ check("Phase D RViz has explicit LaserScan", "Value: /lunabot/lidar/scan" in rvi
 check("Phase D RViz has explicit Camera", "Value: /lunabot/camera/image_raw" in rviz)
 check("Phase D RViz uses best effort sensor QoS", rviz.count("Reliability Policy: Best Effort") >= 2)
 check("Phase D RViz has explicit odometry", "Value: /lunabot/odom" in rviz)
+check("Phase D RViz provides Set Goal tool", "rviz_default_plugins/SetGoal" in rviz and
+      "Topic: /goal_pose" in rviz)
+check("Phase D RViz displays selected goal", "Name: Selected Goal" in rviz and
+      "Value: /goal_pose" in rviz)
 check("Phase D RViz stores map/odom TF", "map:\n          odom:" in rviz)
 
 # Documentation and evidence contract.

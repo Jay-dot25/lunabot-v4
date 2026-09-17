@@ -84,10 +84,10 @@ for rel, kind in [("src/lunabot_gazebo/worlds/lunar_world.sdf", "world"),
     except Exception as exc:
         check(f"{kind} SDF well-formed", False, str(exc))
 
-for rel, expected in [("tools/validate_phase_a.py", "76/76"),
+for rel, expected in [("tools/validate_phase_a.py", "80/80"),
                       ("tools/validate_phase_b.py", "103/103"),
                       ("tools/validate_phase_c.py", "133/133"),
-                      ("tools/validate_phase_d.py", "149/149"),
+                      ("tools/validate_phase_d.py", "152/152"),
                       ("tools/validate_phase_e.py", "112/112")]:
     r = run([sys.executable, rel])
     check(f"approved baseline remains green: {rel}",

@@ -105,10 +105,10 @@ baseline_report_state = {
     path: (ROOT / path).read_bytes() if (ROOT / path).exists() else None
     for path in baseline_reports
 }
-for rel, expected, report in [("tools/validate_phase_a.py", "76/76", "evidence/phase-a-launch-a/static_validation.txt"),
+for rel, expected, report in [("tools/validate_phase_a.py", "80/80", "evidence/phase-a-launch-a/static_validation.txt"),
                               ("tools/validate_phase_b.py", "103/103", "evidence/phase-b-launch-b/static_validation.txt"),
                               ("tools/validate_phase_c.py", "133/133", "evidence/phase-c-launch-c/static_validation.txt"),
-                              ("tools/validate_phase_d.py", "149/149", "evidence/phase-d-launch-d/static_validation.txt"),
+                              ("tools/validate_phase_d.py", "152/152", "evidence/phase-d-launch-d/static_validation.txt"),
                               ("tools/validate_phase_e.py", "112/112", "evidence/phase-e-launch-e/static_validation.txt"),
                               ("tools/validate_phase_f.py", "122/122", "evidence/phase-f-launch-f/static_validation.txt"),
                               ("tools/validate_phase_g.py", "131/131", "evidence/phase-g-launch-g/static_validation.txt"),

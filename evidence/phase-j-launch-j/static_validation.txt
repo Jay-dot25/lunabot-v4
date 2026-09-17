@@ -54,9 +54,9 @@
 [PASS] bash syntax: scripts/launch-j.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved Phase I baseline remains green - 160/160 checks passed - ALL PASS
+[PASS] approved Phase I baseline remains green - ULT: 160/160 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-j-fix3/evidence/phase-i-launch-i/static_validation.txt
+report: /tmp/lunabot-phase-a/evidence/phase-i-launch-i/static_validation.txt
 [PASS] root launch-j resolves its real path
 [PASS] root launch-j execs scripts/launch-j.sh
 [PASS] Phase J is independent of launch-i
