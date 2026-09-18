@@ -112,7 +112,7 @@ report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
 [PASS] scoped LaserScan TF is runtime-validated
 [PASS] map motion has before and after samples
 [PASS] map motion gate compares real samples
-[PASS] Phase C demo evidence is labelled accurately
+[PASS] Phase C runtime evidence is labelled accurately
 [PASS] demo failures propagate to process exit
 [PASS] clean shutdown message is explicit
 [PASS] map saver package is detected without a false pass

@@ -28,9 +28,10 @@ from std_msgs.msg import String
 
 
 class OdometryMonitor(Node):
-    def __init__(self, evidence_dir):
+    def __init__(self, evidence_dir, phase_label='Phase B'):
         super().__init__('lunabot_odometry_monitor')
         self.evidence_dir = evidence_dir
+        self.phase_label = phase_label
         if evidence_dir:
             os.makedirs(evidence_dir, exist_ok=True)
         self.status_pub = self.create_publisher(
@@ -141,7 +142,7 @@ class OdometryMonitor(Node):
         passed, duration, rate, frames_ok = self._quality()
         avg_speed = self.sum_speed / self.samples if self.samples else 0.0
         lines = [
-            'LunaBot V4 - Phase B - odometry monitor report',
+            f'LunaBot V4 - {self.phase_label} - odometry monitor report',
             '================================================',
             f'generated_utc       : {time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}',
             f'samples             : {self.samples}',
@@ -167,11 +168,13 @@ class OdometryMonitor(Node):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='LunaBot Phase B odometry monitor')
+    parser = argparse.ArgumentParser(description='LunaBot odometry monitor')
     parser.add_argument('--evidence-dir', default='')
+    parser.add_argument('--phase-label', default='Phase B',
+                        help='phase name written to the evidence report')
     args, ros_args = parser.parse_known_args()
     rclpy.init(args=ros_args)
-    node = OdometryMonitor(args.evidence_dir)
+    node = OdometryMonitor(args.evidence_dir, args.phase_label)
 
     def stop(_signum, _frame):
         node.write_report()
