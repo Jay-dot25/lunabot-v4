@@ -9,10 +9,16 @@ IMU bridge, or sensor TF. Phase C is an independent launch: it starts Gazebo,
 the rover, bridge, static sensor TF, control node, odometry monitor,
 `slam_toolbox`, and RViz directly. It never invokes `launch-a` or `launch-b`.
 
-The Phase C runtime gate was completed on the Ubuntu ROS 2/Gazebo workstation.
-The run confirmed `/map`, `map -> odom`, motion while the map updates, the IMU,
-RViz topics, map saving, and clean relaunch. Phase C was explicitly approved
-before Phase D began.
+`slam_toolbox` is the selected implementation for this SLAM/localization
+stage. The reference proposal mentions RTAB-Map and Cartographer as candidate
+technologies; this repository intentionally uses `slam_toolbox` because it
+provides the required reproducible 2D LiDAR SLAM and localization behavior
+without adding a second, heavier mapping stack. The implementation must be
+described by what actually runs, not as RTAB-Map or Cartographer.
+
+Phase C remains pending until the Ubuntu ROS 2/Gazebo workstation confirms
+`/map`, `map -> odom`, motion-driven map updates, RViz visualization, map
+saving, clean shutdown, and a clean independent relaunch.
 
 ## 2. Data flow
 
@@ -223,8 +229,9 @@ down without orphaned processes. A clean relaunch is part of the Phase C gate.
 | `evidence/phase-c-launch-c/` | runtime evidence directory and checklist |
 
 ============================================================
-PHASE C COMPLETE — RUNTIME-VALIDATED AND APPROVED
+PHASE C — PENDING WORKSTATION RUNTIME VALIDATION
 ============================================================
 
-The workstation evidence and visual validation described above were completed.
-Phase D is now in progress under its own independent `~/launch-d` gate.
+The following gates must pass before Phase D begins: static validation,
+headless runtime, GUI inspection, evidence inspection, clean shutdown, and a
+clean independent relaunch.
