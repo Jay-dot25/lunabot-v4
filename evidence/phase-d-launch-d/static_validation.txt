@@ -66,7 +66,8 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] Phase D uses process groups
 [PASS] Phase D has a shutdown trap
 [PASS] Phase D shuts down navigation before SLAM
-[PASS] Phase D has bounded shutdown
+[PASS] Phase D has bounded process-group shutdown
+[PASS] Phase D orphan guard includes slam child
 [PASS] Phase D interrupts and cleans the goal wait
 [PASS] Phase D cleans stale navigation nodes
 [PASS] Phase D avoids head-based early passes
@@ -101,7 +102,8 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] planner provides a deterministic auto goal
 [PASS] GUI defaults to operator-selected goal
 [PASS] planner uses transient-local map input
-[PASS] planner makes path/status late-join safe and republishes goals
+[PASS] planner makes path/status/goal late-join safe
+[PASS] goal completion remains terminal until a new goal
 [PASS] planner has no direct Gazebo dependency
 [PASS] traditional baseline has no semantic terrain costs
 [PASS] Phase D uses the validated world
@@ -136,7 +138,7 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] runtime requires a non-empty path
 [PASS] runtime waits for goal reached
 [PASS] runtime compares map before/after A*
-[PASS] runtime saves Phase D map evidence
+[PASS] runtime saves fresh Phase D map evidence with bounded retry
 [PASS] demo failure affects exit code
 [PASS] Phase D RViz uses map fixed frame
 [PASS] Phase D RViz has SLAM Map
@@ -159,4 +161,4 @@ report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] docs contain Phase E gate
 [PASS] validator is honest about runtime
 
-RESULT: 153/153 checks passed
+RESULT: 155/155 checks passed

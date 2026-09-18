@@ -108,7 +108,10 @@ check("Phase D uses process groups", "setsid" in launch and "stop_group()" in la
 check("Phase D has a shutdown trap", "trap 'shutdown 130' INT TERM" in launch)
 check("Phase D shuts down navigation before SLAM", 'stop_group "$NAV_PID"' in launch and
       launch.index('stop_group "$NAV_PID"') < launch.index('stop_group "$SLAM_PID"'))
-check("Phase D has bounded shutdown", 'kill -KILL -"$pid"' in launch)
+check("Phase D has bounded process-group shutdown",
+      'kill -0 -"$pid"' in launch and 'kill -KILL -"$pid"' in launch)
+check("Phase D orphan guard includes slam child",
+      '"async_slam_toolbox_node"' in launch)
 check("Phase D interrupts and cleans the goal wait", "GOAL_WAIT_PID" in launch and
       'stop_group "$GOAL_WAIT_PID"' in launch)
 check("Phase D cleans stale navigation nodes", "scripts/astar_navigation.py" in launch)
@@ -154,9 +157,12 @@ check("GUI defaults to operator-selected goal", 'AUTO_GOAL="${AUTO_GOAL:-false}"
       'if [ "$DEMO" = "1" ]; then' in launch and "AUTO_GOAL=true" in launch)
 check("planner uses transient-local map input", "TRANSIENT_LOCAL" in planner and
       "map_qos" in planner)
-check("planner makes path/status late-join safe and republishes goals",
+check("planner makes path/status/goal late-join safe",
       planner.count("latched_qos") >= 1 and "self.status_pub" in planner and
-      "self.path_pub" in planner and "goal_pub.publish(self.goal_msg)" in planner)
+      "self.path_pub" in planner and
+      "create_publisher(PoseStamped, self.goal_topic, latched_qos)" in planner)
+check("goal completion remains terminal until a new goal",
+      "if self.reached:" in planner and "self._publish_stop()" in planner)
 check("planner has no direct Gazebo dependency", "ignition" not in planner.lower() and
       "gazebo" not in planner.lower())
 check("traditional baseline has no semantic terrain costs",
@@ -212,8 +218,9 @@ check("runtime requires a non-empty path", '[[ "$sample" == *"poses: []"* ]]' in
 check("runtime waits for goal reached", "wait_for_goal" in launch and "GOAL_REACHED" in launch)
 check("runtime compares map before/after A*", "map_before_navigation.txt" in launch and
       "map_after_navigation.txt" in launch and "map changed during A* navigation" in launch)
-check("runtime saves Phase D map evidence", "phase_d_map.yaml" in launch and
-      "map_saver_cli" in launch)
+check("runtime saves fresh Phase D map evidence with bounded retry",
+      "phase_d_map.yaml" in launch and "map_saver_cli" in launch and
+      'save_map_timeout:=30.0' in launch and 'rm -f "$EVIDENCE_DIR/phase_d_map.yaml"' in launch)
 check("demo failure affects exit code", "EXIT_CODE=1" in launch and
       "PHASE D RUN COMPLETE" in launch)
 

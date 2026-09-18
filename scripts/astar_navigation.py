@@ -102,10 +102,12 @@ class AStarNavigation(Node):
         latched_qos.reliability = ReliabilityPolicy.RELIABLE
         latched_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
         self.path_pub = self.create_publisher(Path, self.path_topic, latched_qos)
-        # Goals are commands, not latched state. Republish the active goal from
-        # the timer so diagnostics and RViz can observe it without relying on
-        # a transient-local command publisher.
-        self.goal_pub = self.create_publisher(PoseStamped, self.goal_topic, 10)
+        # The selected goal is active navigation state as well as a command.
+        # Publish it transient-local so late evidence/RViz subscribers can
+        # observe the actual goal even after the rover has reached it. The
+        # subscription remains volatile so RViz's ordinary Set Goal publisher
+        # stays compatible.
+        self.goal_pub = self.create_publisher(PoseStamped, self.goal_topic, latched_qos)
         self.cmd_pub = self.create_publisher(Twist, self.cmd_topic, 10)
         self.status_pub = self.create_publisher(String, self.status_topic, latched_qos)
 
@@ -400,8 +402,12 @@ class AStarNavigation(Node):
             self.publish_status('PLANNER_WAITING_FOR_GOAL')
             self._publish_stop()
             return
-        if not self.reached:
-            self.goal_pub.publish(self.goal_msg)
+        self.goal_pub.publish(self.goal_msg)
+        # Goal completion is terminal until a genuinely different goal arrives.
+        # Map/TF drift must not restart motion after GOAL_REACHED was emitted.
+        if self.reached:
+            self._publish_stop()
+            return
         now = self.get_clock().now()
         if (not self.path_points or
                 (now - self.last_plan).nanoseconds / 1e9 >= self.replan_period):

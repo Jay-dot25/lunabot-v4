@@ -70,11 +70,14 @@ stop_group() {
   local pid="${1:-}"
   [ -n "$pid" ] || return 0
   kill -TERM -"$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+  # Test the process group, not only its leader: `ros2 launch` may exit before
+  # its slam_toolbox child, which previously left an orphan after shutdown.
   for _ in $(seq 1 20); do
-    kill -0 "$pid" 2>/dev/null || return 0
+    kill -0 -"$pid" 2>/dev/null || break
     sleep 0.25
   done
-  kill -KILL -"$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null || true
+  kill -KILL -"$pid" 2>/dev/null || true
+  kill -KILL "$pid" 2>/dev/null || true
 }
 
 save_final_map() {
@@ -84,8 +87,9 @@ save_final_map() {
   [ -n "$SLAM_PID" ] || return 0
   MAP_SAVE_DONE=1
   say "      saving final map evidence..."
-  timeout 30 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_d_map" \
-    --ros-args -p save_map_timeout:=10.0 2>/dev/null \
+  rm -f "$EVIDENCE_DIR/phase_d_map.yaml" "$EVIDENCE_DIR/phase_d_map.pgm"
+  timeout 60 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_d_map" \
+    --ros-args -p save_map_timeout:=30.0 2>/dev/null \
     >> "$EVIDENCE_DIR/map_saver.log" 2>&1 || true
   if [ -s "$EVIDENCE_DIR/phase_d_map.yaml" ] && [ -s "$EVIDENCE_DIR/phase_d_map.pgm" ]; then
     say "      saved map evidence (YAML + PGM): PASS"
@@ -148,8 +152,12 @@ shutdown() {
     wait "$GAZEBO_PID" 2>/dev/null || true
     say "      Gazebo stopped."
   fi
-  for p in $(pgrep -f "lunar_world.sdf" 2>/dev/null || true); do
-    kill -9 "$p" 2>/dev/null || true
+  for pattern in "lunar_world.sdf" "scripts/astar_navigation.py" \
+                 "scripts/control_odometry.py" "scripts/odometry_monitor.py" \
+                 "async_slam_toolbox_node"; do
+    for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
+      [ "$p" = "$$" ] || kill -9 "$p" 2>/dev/null || true
+    done
   done
   echo "" >> "$LOG_FILE"
   echo "clean shutdown at $(date -u +%FT%TZ)" >> "$LOG_FILE"
@@ -261,7 +269,8 @@ fi
 # A prior interrupted `ros2 run` can leave its child bridge alive. Remove
 # only processes belonging to this Phase D command/node contract.
 for pattern in "ros_ign_bridge.*parameter_bridge" "ros_gz_bridge.*parameter_bridge" \
-               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" "slam_toolbox.*online_async"; do
+               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" \
+               "slam_toolbox.*online_async" "async_slam_toolbox_node"; do
   for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
     kill -TERM "$p" 2>/dev/null || true
   done
@@ -478,7 +487,7 @@ wait_for_goal() {
   # Keep the ROS subscriber out of the launcher's foreground wait. This lets
   # the INT/TERM trap run immediately and shutdown() can terminate this group.
   setsid timeout 180 ros2 topic echo /lunabot/navigation/status \
-    --qos-reliability best_effort --qos-durability transient_local \
+    --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
   GOAL_WAIT_PID=$!
   for _ in $(seq 1 180); do
@@ -527,12 +536,16 @@ type_ok() {
 topic_ok() {
   local sample=""
   local durability="volatile"
+  local reliability="best_effort"
   case "$2" in
-    /map|/plan|/lunabot/navigation/status) durability="transient_local" ;;
+    /map|/plan|/goal_pose|/lunabot/navigation/status)
+      durability="transient_local"
+      reliability="reliable"
+      ;;
   esac
   # Do not pipe to head: head can exit successfully before ros2 receives a
   # message, creating a false PASS. This assignment waits for --once data.
-  if sample="$(timeout 30 ros2 topic echo "$2" --qos-reliability best_effort \
+  if sample="$(timeout 30 ros2 topic echo "$2" --qos-reliability "$reliability" \
       --qos-durability "$durability" --once 2>/dev/null)" && [ -n "$sample" ]; then
     # /map must be an OccupancyGrid-shaped message, not merely any message.
     if [ "$2" = "/map" ] && { [[ "$sample" != *"info:"* ]] || [[ "$sample" != *"data:"* ]]; }; then
@@ -636,11 +649,11 @@ if [ "$EVIDENCE" = "1" ]; then
     > "$EVIDENCE_DIR/control_status.txt"
   timeout 15 ros2 topic echo /lunabot/odometry/status --once 2>/dev/null \
     > "$EVIDENCE_DIR/odometry_status.txt"
-  timeout 15 ros2 topic echo /lunabot/navigation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 15 ros2 topic echo /lunabot/navigation/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/navigation_status.txt"
-  timeout 15 ros2 topic echo /goal_pose --qos-reliability best_effort --once 2>/dev/null \
+  timeout 15 ros2 topic echo /goal_pose --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/goal_pose.txt"
-  timeout 15 ros2 topic echo /plan --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null \
+  timeout 15 ros2 topic echo /plan --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/plan.txt"
   timeout 25 ros2 topic echo /lunabot/odom --qos-reliability best_effort --once 2>/dev/null \
     > "$EVIDENCE_DIR/odom_sample.txt"
