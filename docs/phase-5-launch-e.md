@@ -127,3 +127,11 @@ SEGMENTATION_PASS
 /lunabot/terrain/overlay
 RGB-D
 
+
+## Habitat and Cost Contract (per master directive)
+
+World habitat: cylindrical base radius 2.2m height 2.3m + dome sphere radius 2.2m + airlock box 1.4x1.2x1.8m, collision+visual, scene ambient 0.12 0.12 0.14 background 0.01 0.01 0.02 shadows false, 6-10 rock props (8 present: presentation_rock_01..08).
+
+Graded cost map per directive: BEDROCK=5 REGOLITH=15 SHADOW=45 ROCK=70 CRATER=100, UNKNOWN=80 conservative, cost_weight 2.5, inflation around ROCK/CRATER.
+
+5-class segmentation: BEDROCK=0 REGOLITH=1 ROCK=2 CRATER=3 SHADOW=4 with OVERLAY_COLORS and lightweight DL model RGB+Depth.
