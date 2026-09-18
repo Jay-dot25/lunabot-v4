@@ -606,7 +606,7 @@ if [ "$DEMO" = "1" ]; then
     timeout 20 ros2 topic echo /map --once 2>/dev/null \
       > "$EVIDENCE_DIR/map_before_motion.txt" || true
   fi
-  python3 "$WASD_PATH" --demo --topic /cmd_vel_in "$EVIDENCE_DIR"
+  python3 "$WASD_PATH" --demo --topic /cmd_vel_in --phase-label "Phase C" "$EVIDENCE_DIR"
   demo_rc=$?
   if [ "$demo_rc" -ne 0 ]; then
     OVERALL="FAIL"

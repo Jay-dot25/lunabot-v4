@@ -197,6 +197,8 @@ check("map motion has before and after samples", "map_before_motion.txt" in laun
       "map_after_motion.txt" in launch)
 check("map motion gate compares real samples", "cmp -s" in launch and
       "live map updates during rover motion: PASS" in launch)
+check("Phase C demo evidence is labelled accurately",
+      '--phase-label "Phase C"' in launch and '--phase-label' in read("scripts/wasd_teleop.py"))
 check("demo failures propagate to process exit", "demo_rc" in launch and
       'shutdown "$EXIT_CODE"' in launch)
 check("clean shutdown message is explicit", "Launch C environment cleanly closed." in launch)

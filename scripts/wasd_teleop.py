@@ -103,14 +103,16 @@ class TeleopNode(Node):
                 sum(rv) / len(rv) if rv else 0.0)
 
 
-def run_demo(node, evidence_dir):
+def run_demo(node, evidence_dir, phase_label=None):
     """Run the controlled drive test while spinning rclpy in this thread.
 
     rclpy's global executor is not safe to lazily construct from a background
     thread on ROS 2 Humble. Synchronous spin_once keeps command publication and
     subscription callbacks in one executor context.
     """
-    phase_label = 'Phase B' if node.topic == '/cmd_vel_in' else 'Phase A'
+    # Later phases preserve the Phase B command boundary, so the topic alone
+    # cannot identify the active phase. Launchers may provide an evidence label.
+    phase_label = phase_label or ('Phase B' if node.topic == '/cmd_vel_in' else 'Phase A')
 
     def write_failure(reason):
         lines = [
@@ -270,6 +272,8 @@ def main():
                     help="run the automated drive test instead of interactive WASD")
     ap.add_argument("--topic", default="/cmd_vel",
                     help="Twist command topic (Phase A: /cmd_vel; Phase B: /cmd_vel_in)")
+    ap.add_argument("--phase-label", default=None,
+                    help="phase name written to demo evidence (for example 'Phase C')")
     ap.add_argument("evidence_dir", nargs="?", default="",
                     help="optional evidence dir for --demo results")
     args = ap.parse_args()
@@ -279,7 +283,7 @@ def main():
     rc = 1
     try:
         if args.demo:
-            rc = run_demo(node, args.evidence_dir)
+            rc = run_demo(node, args.evidence_dir, args.phase_label)
         else:
             rc = run_interactive(node)
     finally:
