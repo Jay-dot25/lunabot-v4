@@ -188,8 +188,8 @@ check('collector launches Phase B directly',
 
 # Baseline static validator remains present; run it when dependencies are available.
 r = run([sys.executable, 'tools/validate_phase_a.py'])
-check('Phase A static baseline remains 80/80',
-      r.returncode == 0 and '80/80' in r.stdout,
+check('Phase A static baseline remains fully passing',
+      r.returncode == 0 and 'ALL PASS' in r.stdout,
       r.stdout[-200:].strip())
 
 passed = sum(ok for _, ok, _ in checks)
