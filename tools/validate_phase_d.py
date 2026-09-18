@@ -79,12 +79,12 @@ for rel, kind in [("src/lunabot_gazebo/worlds/lunar_world.sdf", "world"),
         check(f"{kind} SDF well-formed", False, str(exc))
 
 # Earlier phase static gates remain part of the Phase D baseline.
-for rel, expected in [("tools/validate_phase_a.py", "80/80"),
-                      ("tools/validate_phase_b.py", "103/103"),
-                      ("tools/validate_phase_c.py", "133/133")]:
+for rel in ["tools/validate_phase_a.py", "tools/validate_phase_b.py",
+            "tools/validate_phase_c.py"]:
     r = run([sys.executable, rel])
     check(f"existing static gate remains green: {rel}",
-          r.returncode == 0 and expected in r.stdout, r.stdout[-180:].strip())
+          r.returncode == 0 and "ALL PASS" in r.stdout,
+          r.stdout[-180:].strip())
 
 launch = read("scripts/launch-d.sh")
 wrapper = read("launch-d")
@@ -159,6 +159,9 @@ check("planner makes path/status late-join safe and republishes goals",
       "self.path_pub" in planner and "goal_pub.publish(self.goal_msg)" in planner)
 check("planner has no direct Gazebo dependency", "ignition" not in planner.lower() and
       "gazebo" not in planner.lower())
+check("traditional baseline has no semantic terrain costs",
+      not any(term in planner.lower() for term in
+              ["semantic_map", "terrain_cost", "bedrock", "regolith", "crater", "shadow"]))
 
 # Phase A/B/C runtime contract carried forward.
 check("Phase D uses the validated world", 'WORLD_PATH="$WORLD_DIR/lunar_world.sdf"' in launch)
@@ -180,7 +183,9 @@ check("Phase D keeps scoped LaserScan TF", '"sensor_head|lunabot_v4/sensor_head/
 check("Phase D keeps controller input boundary", "--input-topic /cmd_vel_in" in launch)
 check("Phase D keeps controller output boundary", "--output-topic /cmd_vel" in launch)
 check("Phase D keeps watchdog", "--watchdog-sec 0.5" in launch)
-check("Phase D starts odometry monitor", "odometry_monitor.py" in launch and "ODOM_PID" in launch)
+check("Phase D starts accurately labelled odometry monitor",
+      "odometry_monitor.py" in launch and "ODOM_PID" in launch and
+      '--phase-label "Phase D"' in launch)
 check("Phase D keeps Fortress IMU plugin", "ignition-gazebo-imu-system" in world and
       "ignition::gazebo::systems::Imu" in world)
 check("model odometry contract is unchanged", "<odom_topic>/lunabot/odom</odom_topic>" in model and

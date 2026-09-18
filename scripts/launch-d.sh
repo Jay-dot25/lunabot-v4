@@ -397,7 +397,7 @@ log "[8/14] control OK (pid $CONTROL_PID)"
 # ------------------------------------------------------------
 echo "[9/14] Starting odometry monitor...................."
 : > "$EVIDENCE_DIR/odometry_monitor.log"
-setsid python3 "$ODOM_PATH" --evidence-dir "$EVIDENCE_DIR" \
+setsid python3 "$ODOM_PATH" --evidence-dir "$EVIDENCE_DIR" --phase-label "Phase D" \
   >> "$EVIDENCE_DIR/odometry_monitor.log" 2>&1 &
 ODOM_PID=$!
 sleep 2

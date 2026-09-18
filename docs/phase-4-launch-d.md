@@ -13,10 +13,12 @@ rover, bridge, scoped sensor TF, control node, odometry monitor,
 `slam_toolbox`, A* navigation, and RViz directly. It does not invoke Phase C
 or any earlier launch command.
 
-The runtime gate was completed on the workstation. A real run confirmed a
-non-empty A* path, autonomous motion to a goal, live map updates, all inherited
-Phase B/C sensor checks, map evidence, and clean shutdown/relaunch. Phase D was
-explicitly approved before Phase E began.
+Phase D is the traditional geometric-navigation baseline for later comparison
+with LunaBot's semantic terrain-aware planner. It uses occupancy values and
+obstacle inflation only; it must not consume semantic terrain classes or costs.
+The runtime gate remains pending until the workstation confirms a non-empty A*
+path, autonomous goal completion, live map updates, evidence, and clean
+shutdown/relaunch.
 
 ## 2. Data flow
 
@@ -256,6 +258,5 @@ all process groups without orphaned nodes.
 PHASE D IMPLEMENTATION — PENDING RUNTIME VALIDATION
 ============================================================
 
-Phase D workstation runtime, map evidence, clean shutdown, and clean relaunch
-were explicitly approved before Phase E implementation began. Phase E must
-complete its own runtime gate before Phase F.
+Phase D workstation runtime, map evidence, GUI behavior, clean shutdown, and
+clean relaunch must be approved before Phase E implementation begins.

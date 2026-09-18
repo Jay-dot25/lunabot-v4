@@ -46,16 +46,16 @@
 [PASS] bash syntax: scripts/launch-d.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] existing static gate remains green: tools/validate_phase_a.py - ==
-RESULT: 80/80 checks passed - ALL PASS
+[PASS] existing static gate remains green: tools/validate_phase_a.py - =
+RESULT: 93/93 checks passed - ALL PASS
 ============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
 [PASS] existing static gate remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
 ============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
-[PASS] existing static gate remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] existing static gate remains green: tools/validate_phase_c.py - LT: 134/134 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] root launch-d resolves its real path
 [PASS] root launch-d execs scripts/launch-d.sh
 [PASS] Phase D does not invoke launch-a
@@ -103,6 +103,7 @@ report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
 [PASS] planner uses transient-local map input
 [PASS] planner makes path/status late-join safe and republishes goals
 [PASS] planner has no direct Gazebo dependency
+[PASS] traditional baseline has no semantic terrain costs
 [PASS] Phase D uses the validated world
 [PASS] Phase D resolves its A* planner path
 [PASS] Phase D preserves spawn height
@@ -118,7 +119,7 @@ report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
 [PASS] Phase D keeps controller input boundary
 [PASS] Phase D keeps controller output boundary
 [PASS] Phase D keeps watchdog
-[PASS] Phase D starts odometry monitor
+[PASS] Phase D starts accurately labelled odometry monitor
 [PASS] Phase D keeps Fortress IMU plugin
 [PASS] model odometry contract is unchanged
 [PASS] runtime validates real topic messages
@@ -158,4 +159,4 @@ report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
 [PASS] docs contain Phase E gate
 [PASS] validator is honest about runtime
 
-RESULT: 152/152 checks passed
+RESULT: 153/153 checks passed
