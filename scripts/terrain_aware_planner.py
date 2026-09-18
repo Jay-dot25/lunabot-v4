@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""LunaBot V4 Phase H: terrain-aware weighted A* path planning.
+"""LunaBot V4 Phase H: terrain-aware weighted A* path planning (5-class).
 
-This node consumes the Phase G terrain cost map and the existing navigation goal
-and publishes a cost-aware path. It deliberately does not publish velocity:
-Phase I will integrate terrain-aware planning into autonomous motion after this
-path-planning contract is independently validated.
+Consumes Phase G graded cost map:
+  BEDROCK 5, REGOLITH 15, SHADOW 45, ROCK 70, CRATER 100
+
+Publishes cost-aware path that optimizes distance + terrain cost:
+  step_cost = distance * (1 + cost_weight * cell_cost/100)
+
+Goal: longer low-cost route through BEDROCK/REGOLITH should beat shorter
+high-cost route through ROCK/CRATER. Tested via weighted A*.
+
+Does NOT publish velocity - Phase I integrates.
 """
 
 from __future__ import annotations
@@ -27,20 +33,17 @@ import tf2_ros
 
 
 class TerrainAwarePlanner(Node):
-    """Plan through traversable cells while minimizing terrain cost."""
-
     def __init__(self) -> None:
         super().__init__("lunabot_terrain_aware_planner")
         self.declare_parameter("cost_map_topic", "/lunabot/terrain/cost_map")
         self.declare_parameter("goal_topic", "/goal_pose")
         self.declare_parameter("odom_topic", "/lunabot/odom")
         self.declare_parameter("plan_topic", "/lunabot/terrain/plan")
-        self.declare_parameter(
-            "status_topic", "/lunabot/terrain/planner/status")
+        self.declare_parameter("status_topic", "/lunabot/terrain/planner/status")
         self.declare_parameter("map_frame", "map")
         self.declare_parameter("base_frame", "chassis")
-        self.declare_parameter("blocked_cost", 100)
-        self.declare_parameter("cost_weight", 2.0)
+        self.declare_parameter("blocked_cost", 100)  # CRATER=100 blocked, ROCK=70 traversable high cost
+        self.declare_parameter("cost_weight", 2.5)  # increased to prefer low-cost routes
         self.declare_parameter("unknown_cost", 80)
         self.declare_parameter("replan_period", 1.0)
 
@@ -75,11 +78,9 @@ class TerrainAwarePlanner(Node):
         self.cost_map: Optional[OccupancyGrid] = None
         self.goal: Optional[PoseStamped] = None
         self.odom: Optional[Odometry] = None
-        # Simulation time starts at zero; subtracting a warm-up duration can
-        # produce a negative rclpy Time. The first timer tick will plan after
-        # the configured replan period instead.
         self.last_plan_time = self.get_clock().now()
         self.last_status = ""
+        self.plan_count = 0
         self.publish_status("TERRAIN_PLANNER_WAITING_FOR_COST_MAP")
         self.timer = self.create_timer(0.1, self._tick)
 
@@ -114,8 +115,6 @@ class TerrainAwarePlanner(Node):
         )
 
     def _goal_callback(self, msg: PoseStamped) -> None:
-        # A* republishes its active goal for late observers. Do not reset the
-        # terrain planner's goal state or status for an identical message.
         if self.goal is not None and self._same_goal(msg, self.goal):
             return
         self.goal = msg
@@ -203,6 +202,7 @@ class TerrainAwarePlanner(Node):
         open_set = [(0.0, start)]
         came_from = {}
         scores = {start: 0.0}
+        cost_along_path = {start: 0}
         while open_set:
             _, current = heapq.heappop(open_set)
             if current == goal:
@@ -210,22 +210,24 @@ class TerrainAwarePlanner(Node):
                 while current in came_from:
                     current = came_from[current]
                     path.append(current)
-                return list(reversed(path)), scores[goal]
+                return list(reversed(path)), scores[goal], cost_along_path[goal]
             for dx, dy in neighbors:
                 nxt = (current[0] + dx, current[1] + dy)
                 cell_cost = self._cell_cost(nxt)
                 if cell_cost is None:
                     continue
                 distance = math.sqrt(2.0) if dx and dy else 1.0
+                # Graded cost: BEDROCK 5 is cheap, ROCK 70 expensive, CRATER 100 blocked
                 step = distance * (1.0 + self.cost_weight * cell_cost / 100.0)
                 tentative = scores[current] + step
                 if tentative >= scores.get(nxt, float("inf")):
                     continue
                 came_from[nxt] = current
                 scores[nxt] = tentative
+                cost_along_path[nxt] = cost_along_path[current] + cell_cost
                 heuristic = math.hypot(goal[0] - nxt[0], goal[1] - nxt[1])
                 heapq.heappush(open_set, (tentative + heuristic, nxt))
-        return [], float("inf")
+        return [], float("inf"), 0
 
     def _plan(self) -> None:
         if self.cost_map is None or self.goal is None:
@@ -247,15 +249,20 @@ class TerrainAwarePlanner(Node):
         if start_cell is None or goal_cell is None:
             self.publish_status("TERRAIN_PLANNER_NO_SAFE_START_OR_GOAL")
             return
-        cells, total_cost = self._weighted_astar(start_cell, goal_cell)
+        cells, total_cost, sum_cost = self._weighted_astar(start_cell, goal_cell)
         if not cells:
             self.publish_status("TERRAIN_PLANNER_NO_PATH")
             return
         path = Path()
         path.header.frame_id = self.map_frame
         path.header.stamp = self.get_clock().now().to_msg()
+        path_length = 0.0
+        prev_world = None
         for index, cell in enumerate(cells):
             x, y = self._grid_to_world(cell)
+            if prev_world is not None:
+                path_length += math.hypot(x - prev_world[0], y - prev_world[1])
+            prev_world = (x, y)
             pose = PoseStamped()
             pose.header = path.header
             pose.pose.position.x = x
@@ -270,9 +277,14 @@ class TerrainAwarePlanner(Node):
             path.poses.append(pose)
         self.plan_pub.publish(path)
         self.last_plan_time = self.get_clock().now()
+        self.plan_count += 1
+        avg_cost = sum_cost / max(1, len(cells))
         self.publish_status(
             f"TERRAIN_PLAN_PASS cells={len(cells)} weighted_cost={total_cost:.2f} "
-            f"frame={self.map_frame} cost_weight={self.cost_weight:.2f}")
+            f"avg_cost={avg_cost:.1f} path_length={path_length:.2f} "
+            f"frame={self.map_frame} cost_weight={self.cost_weight:.2f} "
+            f"plans={self.plan_count} graded=BEDROCK=5,REGOLITH=15,SHADOW=45,ROCK=70,CRATER=100"
+        )
 
     def _tick(self) -> None:
         if (self.get_clock().now() - self.last_plan_time).nanoseconds < int(self.replan_period * 1e9):

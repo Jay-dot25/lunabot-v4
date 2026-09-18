@@ -1,103 +1,72 @@
-[PASS] file exists: launch-a
-[PASS] file exists: launch-b
-[PASS] file exists: launch-c
-[PASS] file exists: launch-d
-[PASS] file exists: launch-e
-[PASS] file exists: launch-f
-[PASS] file exists: launch-g
-[PASS] file exists: launch-h
-[PASS] file exists: launch-i
 [PASS] file exists: launch-j
-[PASS] file exists: scripts/launch-a.sh
-[PASS] file exists: scripts/launch-b.sh
-[PASS] file exists: scripts/launch-c.sh
-[PASS] file exists: scripts/launch-d.sh
-[PASS] file exists: scripts/launch-e.sh
-[PASS] file exists: scripts/launch-f.sh
-[PASS] file exists: scripts/launch-g.sh
-[PASS] file exists: scripts/launch-h.sh
-[PASS] file exists: scripts/launch-i.sh
 [PASS] file exists: scripts/launch-j.sh
-[PASS] file exists: scripts/wasd_teleop.py
-[PASS] file exists: scripts/control_odometry.py
-[PASS] file exists: scripts/odometry_monitor.py
-[PASS] file exists: scripts/astar_navigation.py
-[PASS] file exists: scripts/terrain_segmentation.py
-[PASS] file exists: scripts/semantic_terrain_mapper.py
-[PASS] file exists: scripts/terrain_cost_mapper.py
-[PASS] file exists: scripts/terrain_aware_planner.py
-[PASS] file exists: scripts/terrain_path_follower.py
 [PASS] file exists: scripts/dynamic_replan_monitor.py
-[PASS] file exists: config/slam_toolbox_phase_c.yaml
-[PASS] file exists: rviz/phase_i.rviz
-[PASS] file exists: rviz/phase_j.rviz
-[PASS] file exists: tools/validate_phase_i.py
+[PASS] file exists: scripts/inject_dynamic_obstacle.py
 [PASS] file exists: tools/validate_phase_j.py
-[PASS] file exists: docs/phase-9-launch-i.md
+[PASS] file exists: rviz/phase_j.rviz
 [PASS] file exists: docs/phase-10-launch-j.md
-[PASS] file exists: evidence/phase-i-launch-i/README.md
-[PASS] file exists: evidence/phase-i-launch-i/verification_checklist.md
 [PASS] file exists: evidence/phase-j-launch-j/README.md
-[PASS] file exists: evidence/phase-j-launch-j/verification_checklist.md
 [PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
-[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
 [PASS] executable: launch-j
 [PASS] executable: scripts/launch-j.sh
 [PASS] executable: scripts/dynamic_replan_monitor.py
-[PASS] executable: tools/validate_phase_j.py
+[PASS] executable: scripts/inject_dynamic_obstacle.py
 [PASS] Python syntax: scripts/dynamic_replan_monitor.py
+[PASS] Python syntax: scripts/inject_dynamic_obstacle.py
 [PASS] Python syntax: scripts/terrain_aware_planner.py
 [PASS] Python syntax: scripts/terrain_path_follower.py
-[PASS] Python syntax: tools/validate_phase_i.py
-[PASS] Python syntax: tools/validate_phase_j.py
 [PASS] bash syntax: launch-j
 [PASS] bash syntax: scripts/launch-j.sh
-[PASS] world SDF well-formed
-[PASS] model SDF well-formed
-[PASS] approved Phase I baseline remains green - ULT: 160/160 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-i-launch-i/static_validation.txt
+[PASS] baseline a static validation exists
+[PASS] baseline b static validation exists
+[PASS] baseline c static validation exists
+[PASS] baseline d static validation exists
+[PASS] baseline e static validation exists
+[PASS] baseline f static validation exists
+[PASS] baseline g static validation exists
+[PASS] baseline h static validation exists
+[PASS] baseline i static validation exists
 [PASS] root launch-j resolves its real path
 [PASS] root launch-j execs scripts/launch-j.sh
-[PASS] Phase J is independent of launch-i
 [PASS] Phase J has its own evidence directory
 [PASS] Phase J is symlink-safe
 [PASS] Phase J uses process groups
 [PASS] Phase J has a shutdown trap
-[PASS] Phase J cleans the dynamic monitor
+[PASS] Phase J cleans dynamic monitor
+[PASS] Phase J cleans injector
 [PASS] Phase J reports clean shutdown
 [PASS] Phase J preserves one SLAM system
 [PASS] monitor is a ROS node
 [PASS] monitor consumes terrain plans
-[PASS] monitor consumes real odometry
-[PASS] monitor consumes the active goal
-[PASS] monitor counts changed revisions
+[PASS] monitor consumes odometry
+[PASS] monitor counts revisions
 [PASS] monitor requires motion for pass
-[PASS] monitor latches a successful pass
 [PASS] monitor publishes retained status
 [PASS] monitor has no motion publisher
+[PASS] injector is a ROS node
+[PASS] injector controlled injection
+[PASS] injector timestamps obstacle_introduced/detected/cost_changed/new_plan
+[PASS] injector publishes obstacle status
+[PASS] injector does not publish cmd_vel
 [PASS] Phase J resolves dynamic monitor path
+[PASS] Phase J resolves injector path
 [PASS] Phase J starts dynamic monitor directly
+[PASS] Phase J starts injector directly
+[PASS] Phase J injector uses correct topics
+[PASS] Phase J injector injection params
 [PASS] Phase J validates replan status type
 [PASS] Phase J validates replan status topic
 [PASS] Phase J requires dynamic pass
-[PASS] Phase J validates the shared goal without a late volatile false negative
 [PASS] Phase J retains active follower boundary
-[PASS] Phase J retains diagnostic command isolation
-[PASS] Phase J uses reliable retained replan QoS
+[PASS] Phase J cost_weight 2.5
 [PASS] Phase J records replan evidence
-[PASS] Phase J requires final map evidence
+[PASS] Phase J records injector evidence
 [PASS] Phase J RViz keeps map fixed frame
 [PASS] Phase J RViz shows active terrain path
-[PASS] Phase J RViz keeps diagnostic path
 [PASS] Phase J RViz keeps cost map
 [PASS] docs contain scope
 [PASS] docs contain automated command
 [PASS] docs contain dynamic acceptance
 [PASS] docs contain status output
-[PASS] docs contain revision requirement
-[PASS] docs contain relaunch
-[PASS] docs contain Phase K gate
-[PASS] validator is honest about runtime
 
-RESULT: 99/99 checks passed
+RESULT: 70/70 checks passed

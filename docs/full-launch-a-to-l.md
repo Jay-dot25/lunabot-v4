@@ -563,12 +563,16 @@ RGB + depth -> terrain_segmentation.py
             └─ /lunabot/terrain/segmentation/status
 ```
 
-Labels are:
+Labels per 5-class contract (BEDROCK=0 REGOLITH=1 ROCK=2 CRATER=3 SHADOW=4):
 
 ```text
-0  unknown
-1  terrain
-2  obstacle
+0 BEDROCK
+1 REGOLITH
+2 ROCK
+3 CRATER
+4 SHADOW
+Overlay colors: BEDROCK light grey, REGOLITH sandy brown, ROCK red, CRATER bluish, SHADOW near black
+Lightweight DL model: TinyLunarSeg CNN if torch available + simulation-trained heuristic fallback, RGB+Depth
 ```
 
 ### Commands
@@ -643,13 +647,16 @@ can fuse the sensed LiDAR obstacle overlay.
 - `scripts/terrain_cost_mapper.py`
 - `rviz/phase_g.rviz`
 
-### Cost values
+### Cost values — Graded 5-class per directive
 
 ```text
-20   normal terrain candidate
-80   unknown/caution
-100  obstacle
-inflation halo  -> high cost around obstacle cells
+BEDROCK  (10) -> 5   safe
+REGOLITH (30) -> 15  moderate
+SHADOW   (50) -> 45  caution
+ROCK     (70) -> 70  hazardous
+CRATER   (100)->100 hazardous / non-traversable
+Unknown -> 80 conservative
+inflation halo SHADOW_COST to ROCK_COST around ROCK/CRATER
 ```
 
 ### Commands
@@ -754,28 +761,30 @@ controller boundary evidence, map evidence, and clean relaunch.
 
 ---
 
-## Phase J — Dynamic replanning
+## Phase J — Dynamic replanning with controlled obstacle injection
 
 ### Function
 
-Phase J detects changed terrain-plan revisions while the rover is moving and
-requires the active follower to continue through a newly generated plan.
+Phase J demonstrates compelling dynamic obstacle handling with controlled injection via scripts/inject_dynamic_obstacle.py:
+
+ ROVER MOVING -> NEW OBSTACLE APPEARS -> CURRENT PATH BECOMES UNSAFE -> COST MAP CHANGES -> NEW PLAN GENERATED -> ROVER TAKES NEW ROUTE
+
+Captures timestamps obstacle_introduced/detected/cost_changed/new_plan, injection_distance 2.0 min_motion 0.1 auto_inject true, cost_weight 2.5.
 
 ### Main code
 
 - `scripts/launch-j.sh`
 - `scripts/dynamic_replan_monitor.py`
+- `scripts/inject_dynamic_obstacle.py`
 - `scripts/terrain_path_follower.py`
 - `rviz/phase_j.rviz`
 
 ### Data path
 
 ```text
-changed /lunabot/terrain/plan revisions
-              -> dynamic_replan_monitor.py
-              -> /lunabot/autonomy/replan_status
-              -> terrain_path_follower.py
-              -> /cmd_vel_in -> controller -> /cmd_vel
+Plan + Goal + Odom + Cost Map -> injector -> Gazebo spawn -> sensors -> E/F/G -> new plan
+changed /lunabot/terrain/plan revisions -> dynamic_replan_monitor.py -> /lunabot/autonomy/replan_status + /lunabot/dynamic_obstacle/status
+              -> terrain_path_follower.py -> /cmd_vel_in -> controller -> /cmd_vel
 ```
 
 ### Commands
@@ -797,30 +806,36 @@ relaunch. A static or synthetic plan change is not sufficient.
 
 ---
 
-## Phase K — Runtime evaluation
+## Phase K — Runtime evaluation with real metrics + Traditional vs LunaBot
 
 ### Function
 
-Phase K evaluates the integrated system rather than adding a new navigation
-algorithm. It combines plan, replan, controller, motion, odometry, and goal
-status into an auditable result.
+Phase K implements quantitative evaluation per directive:
+
+Metrics:
+ 1. Path length Σ sqrt(dx²+dy²) from odometry
+ 2. Success via goal tolerance 0.35
+ 3. Collision count (CRATER_COST)
+ 4. Hazardous exposure ROCK+CRATER %
+ 5. Replanning time (obstacle_detected -> new_plan from injector)
+ 6. Terrain cost cumulative/average
+ 7. Replan count
+
+Supports Traditional (Phase D) vs LunaBot (E-H-I) experiment with consistent start/goal/terrain. LunaBot longer low-cost beats shorter high-cost via cost_weight 2.5.
+
+Includes injector with timestamps, goal_topic cost_map_topic dynamic_obstacle_topic, goal_tolerance 0.35.
 
 ### Main code
 
 - `scripts/launch-k.sh`
 - `scripts/phase_k_evaluator.py`
+- `scripts/inject_dynamic_obstacle.py`
 - `rviz/phase_k.rviz`
 
 ### Evaluation inputs
 
 ```text
-terrain plan
-replan status
-integrated autonomy status
-controller status
-odometry
-/cmd_vel_in
-/cmd_vel
+terrain plan, replan status, integrated autonomy status, controller status, odometry (Σ sqrt), /goal_pose, /lunabot/terrain/cost_map (graded 5,15,45,70,100), /lunabot/dynamic_obstacle/status (timestamps), /cmd_vel_in, /cmd_vel
 ```
 
 ### Commands

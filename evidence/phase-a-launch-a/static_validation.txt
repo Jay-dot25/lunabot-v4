@@ -1,5 +1,5 @@
 LunaBot V4 - Phase A - static validation report
-date: 2026-09-17T04:39:44Z
+date: 2026-09-18T05:55:34Z
 ============================================================
 [PASS] world SDF XML well-formed
 [PASS] world name == lunar_world - got lunar_world
@@ -11,8 +11,8 @@ date: 2026-09-17T04:39:44Z
 [PASS] world plugin Contact
 [PASS] terrain model present
 [PASS] terrain static
-[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /tmp/lunabot-phase-a/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
-[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /tmp/lunabot-phase-a/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
+[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
+[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
 [PASS] horizon catch-plane present
 [PASS] GUI camera configured
 [PASS] lunar habitat presentation model present

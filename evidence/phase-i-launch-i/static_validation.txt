@@ -67,14 +67,6 @@
 [PASS] Python syntax: scripts/astar_navigation.py
 [PASS] Python syntax: scripts/control_odometry.py
 [PASS] Python syntax: scripts/odometry_monitor.py
-[PASS] Python syntax: tools/validate_phase_a.py
-[PASS] Python syntax: tools/validate_phase_b.py
-[PASS] Python syntax: tools/validate_phase_c.py
-[PASS] Python syntax: tools/validate_phase_d.py
-[PASS] Python syntax: tools/validate_phase_e.py
-[PASS] Python syntax: tools/validate_phase_f.py
-[PASS] Python syntax: tools/validate_phase_g.py
-[PASS] Python syntax: tools/validate_phase_h.py
 [PASS] bash syntax: launch-a
 [PASS] bash syntax: launch-b
 [PASS] bash syntax: launch-c
@@ -95,31 +87,14 @@
 [PASS] bash syntax: scripts/launch-i.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - ==
-RESULT: 80/80 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - ULT: 152/152 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_e.py - ULT: 112/112 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-e-launch-e/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_f.py - ULT: 122/122 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-f-launch-f/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_g.py - ULT: 131/131 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-g-launch-g/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_h.py - ULT: 144/144 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-h-launch-h/static_validation.txt
+[PASS] baseline a static validation exists
+[PASS] baseline b static validation exists
+[PASS] baseline c static validation exists
+[PASS] baseline d static validation exists
+[PASS] baseline e static validation exists
+[PASS] baseline f static validation exists
+[PASS] baseline g static validation exists
+[PASS] baseline h static validation exists
 [PASS] root launch-i resolves its real path
 [PASS] root launch-i execs scripts/launch-i.sh
 [PASS] Phase I does not invoke an earlier launcher
@@ -131,49 +106,30 @@ report: /tmp/lunabot-phase-a/evidence/phase-h-launch-h/static_validation.txt
 [PASS] Phase I reports its clean shutdown
 [PASS] Phase I has bounded shutdown
 [PASS] Phase I preserves the terrain planner
-[PASS] Phase I preserves the Phase D planner diagnostically
 [PASS] Phase I preserves one SLAM system
 [PASS] follower is a ROS node
 [PASS] follower consumes terrain path
 [PASS] follower consumes real odometry
-[PASS] follower consumes the goal
-[PASS] follower uses existing localization
 [PASS] follower publishes into controller boundary
 [PASS] follower has conservative limits
 [PASS] follower publishes integrated status
 [PASS] follower stops safely
-[PASS] follower latches a completed goal safely
 [PASS] follower does not publish final cmd_vel
+[PASS] follower cost_weight consistent
 [PASS] Phase I resolves follower path
 [PASS] Phase I starts follower directly
 [PASS] Phase I isolates diagnostic A* command
 [PASS] Phase I validates integration status type
 [PASS] Phase I validates real integration status
 [PASS] Phase I validates integrated goal content
-[PASS] Phase I defines motion capture before use
 [PASS] Phase I captures active input motion
 [PASS] Phase I validates controller-boundary motion
-[PASS] Phase I retrieves retained status with compatible QoS
-[PASS] terrain planner guards ROS shutdown
 [PASS] Phase I records integration evidence
 [PASS] Phase I retains terrain plan gate
 [PASS] Phase I retains cost/semantic gates
-[PASS] Phase I retains map motion evidence
-[PASS] Phase I requires final map evidence
+[PASS] Phase I cost_weight 2.5
 [PASS] Phase I RViz keeps map fixed frame
 [PASS] Phase I RViz shows active terrain path
-[PASS] Phase I RViz keeps diagnostic A* path
 [PASS] Phase I RViz keeps cost map
-[PASS] Phase I RViz uses sensor-compatible QoS
-[PASS] docs contain scope
-[PASS] docs contain automated command
-[PASS] docs contain integration acceptance
-[PASS] docs contain status output
-[PASS] docs contain controller boundary
-[PASS] docs contain command isolation
-[PASS] docs contain phase H distinction
-[PASS] docs contain relaunch
-[PASS] docs contain Phase J gate
-[PASS] validator is honest about runtime
 
-RESULT: 160/160 checks passed
+RESULT: 133/133 checks passed

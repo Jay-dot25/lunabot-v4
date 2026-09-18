@@ -1,192 +1,98 @@
-# Phase L — Final Mission Demonstration (`launch-l`)
+# Phase L — Final Mission Demonstration (`launch-l`) — J+K+goal+obstacle+semantic nav
 
-## 1. Revised presentation target
+## 1. Scope and gate
 
-The final project demonstration is a GUI mission, not only a headless
-regression. It must show a Gazebo lunar habitat scene beside RViz and let the
-operator select the rover's destination. The rover must sense a real obstacle
-in front of it, update the obstacle/cost map, replan around it, and reach the
-selected goal.
+Phase L final mission combines J+K+goal+obstacle detection+semantic navigation with real measured values and reproducibility.
 
-The final screen should contain:
+Combines:
+- Phase J controlled dynamic obstacle injection (inject_dynamic_obstacle.py with timestamps obstacle_introduced/detected/cost_changed/new_plan, injection_distance 2.0 min_motion 0.1 auto_inject true)
+- Phase K real metrics (path length Σ sqrt(dx²+dy²) from odometry, success via goal tolerance 0.35, collision count, hazardous exposure ROCK+CRATER %, replanning time, avg/cumulative terrain cost, replan count)
+- Goal detection, obstacle detection, semantic navigation (5-class BEDROCK 0 REGOLITH 1 ROCK 2 CRATER 3 SHADOW 4, graded costs BEDROCK=5 REGOLITH=15 SHADOW=45 ROCK=70 CRATER=100, cost_weight 2.5)
+- Traditional vs LunaBot experiment consistency
+- Reproducibility: 2 independent GUI runs with FINAL_DEMO=1 AUTO_GOAL=false REQUIRE_MANUAL_GOAL=true
 
-- Gazebo: lunar terrain, habitat structures, rover, and physical obstacles;
-- RViz: SLAM map, LiDAR returns, sensed obstacle map, cost map, goal marker,
-  terrain-aware path, and active replanned path;
-- visible status/evidence for goal selection, obstacle detection, replanning,
-  and goal completion.
+Mission observer phase_l_mission.py observes terrain plan, replanning, integrated goal, aggregate evaluation, manual goal, obstacle status, real goal, map, with topics dynamic_obstacle_topic cost_map_topic semantic_map_topic.
 
-Phase L preserves the approved Phase A-K control, SLAM, mapping, planning,
-replanning, evaluation, and shutdown infrastructure. It adds a real LiDAR
-obstacle detector and a retained final mission supervisor. Both are
-observation/perception or status nodes and do not publish velocity.
+Publishes /lunabot/mission/status MISSION_DEMO_PASS.
 
-## 2. Final modes
+## 2. Data flow
 
-### Manual presentation mode
+```
+Injector (controlled obstacle) -> Gazebo -> sensors -> E/F/G (5-class graded) -> H (weighted A* cost_weight 2.5) -> I (follower -> /cmd_vel_in -> controller -> /cmd_vel) -> K evaluator (real metrics) -> L mission observer (MISSION_DEMO_PASS)
+```
 
-This is the acceptance mode shown to a person:
+## 3. Interface
+
+| Interface | Type |
+|---|---|
+| `/lunabot/terrain/plan` | Path |
+| `/lunabot/terrain/cost_map` | OccupancyGrid graded 5,15,45,70,100 cost_map_topic |
+| `/lunabot/terrain/semantic_map` | OccupancyGrid 5-class semantic_map_topic |
+| `/lunabot/dynamic_obstacle/status` | String dynamic_obstacle_topic with timestamps |
+| `/lunabot/obstacles/status` | String OBSTACLE_DETECTED |
+| `/goal_pose` | PoseStamped goal_topic |
+| `/lunabot/evaluation/status` | String EVALUATION_PASS |
+| `/lunabot/mission/status` | String MISSION_DEMO_PASS |
+
+Params: goal_topic /goal_pose, cost_map_topic /lunabot/terrain/cost_map, dynamic_obstacle_topic /lunabot/dynamic_obstacle/status, semantic_map_topic /lunabot/terrain/semantic_map, goal_tolerance 0.35, cost_weight 2.5, injection_distance 2.0 min_motion 0.1 auto_inject true
+
+## 4. Installation
 
 ```bash
-cd ~/lunabot-v4
 source /opt/ros/humble/setup.bash
-FINAL_DEMO=1 AUTO_GOAL=false EVIDENCE=1 ~/launch-l
+cd ~/lunabot-v4
+ln -sfn "$PWD/launch-l" ~/launch-l
+chmod +x launch-l scripts/launch-l.sh scripts/phase_l_mission.py scripts/phase_k_evaluator.py scripts/inject_dynamic_obstacle.py
 ```
 
-Gazebo and RViz open. In RViz, select the `Set Goal` tool, click a destination
-on the map, and drag to choose the desired final heading. The rover then
-plans and drives to that manually selected goal.
-
-### Automated regression mode
-
-This mode is retained for repeatable infrastructure testing. It deliberately
-uses an automatic test goal and does not replace the manual presentation gate:
-
-```bash
-DEMO=1 AUTO_GOAL=true REQUIRE_MANUAL_GOAL=false \
-  EVIDENCE=1 HEADLESS=1 ~/launch-l
-```
-
-## 3. Data flow
-
-```text
-Gazebo lunar habitat + physical obstacle
-              │
-              ├── /lunabot/lidar/scan
-              ├── /lunabot/depth/image_raw
-              └── /lunabot/camera/image_raw
-                       │
-                       ▼
-              LiDAR obstacle detector
-                       │
-          ┌────────────┴────────────┐
-          ▼                         ▼
- /lunabot/obstacles/status  /lunabot/obstacles/map
-          │                         │
-          └────────────┬────────────┘
-                       ▼
-              terrain cost map overlay
-                       │
-                       ▼
-              terrain-aware planner
-                       │
-                       ▼
-       /cmd_vel_in -> controller -> /cmd_vel
-
-RViz Set Goal -> /goal_pose -> planner/follower
-```
-
-The physical forward obstacle is part of the Gazebo world. It is not a
-synthetic status message. The detector observes real LaserScan returns,
-publishes a map-frame obstacle overlay, and reports distance/bearing evidence.
-The cost mapper incorporates those cells and inflates them before planning.
-
-## 4. Mission acceptance contract
-
-The retained `/lunabot/mission/status` publisher requires:
-
-- a non-empty terrain plan;
-- `DYNAMIC_REPLAN_PASS`;
-- `INTEGRATION_GOAL_REACHED`;
-- retained Phase K `EVALUATION_PASS`;
-- a real `/goal_pose` sample;
-- a real `/map` sample;
-- `OBSTACLE_DETECTED` from the LiDAR detector;
-- `MANUAL_GOAL_SELECTED` in manual presentation mode.
-
-A successful result contains:
-
-```text
-MISSION_DEMO_PASS plan=1 replan=1 goal=1 evaluation=1 \
-  goal_pose=1 map=1 obstacle=1 manual_goal=1
-```
-
-The automated regression mode sets `REQUIRE_MANUAL_GOAL=false` only so it can
-exercise the rest of the stack without an operator. The final presentation
-must use manual mode.
-
-## 5. RViz presentation configuration
-
-`rviz/phase_l.rviz` provides:
-
-- `map` fixed frame;
-- SLAM map;
-- LiDAR scan;
-- sensed obstacle map;
-- forward obstacle markers;
-- terrain semantic and cost maps;
-- selected goal pose;
-- diagnostic A* path;
-- terrain-aware and active paths;
-- camera and terrain overlay views;
-- RViz `Set Goal` tool publishing `/goal_pose`.
-
-## 6. Validation
-
-Static validation:
+## 5. Static validation
 
 ```bash
 python3 tools/validate_phase_l.py
 ```
 
-Manual final mission gate:
+Checks injector path/PID/shutdown, cost_weight 2.5, injector startup block, evaluator expanded goal_topic cost_map_topic dynamic_obstacle_topic goal_tolerance 0.35, mission observer expanded dynamic_obstacle_topic cost_map_topic semantic_map_topic, no cmd_vel, 23 stages, real metrics.
+
+## 6. Automated headless
 
 ```bash
-FINAL_DEMO=1 AUTO_GOAL=false EVIDENCE=1 ~/launch-l
+EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-l
 ```
 
-The run must contain:
+For final manual mission:
 
-```text
-manual RViz goal selection: PASS
-obstacle detector content: PASS
-OBSTACLE_DETECTED
-DYNAMIC_REPLAN_PASS
-final mission demonstration: PASS
-MISSION_DEMO_PASS
-saved map evidence (YAML + PGM): PASS
-PHASE L RUN COMPLETE - overall result: PASS
-Launch L environment cleanly closed.
+```bash
+FINAL_DEMO=1 AUTO_GOAL=false REQUIRE_MANUAL_GOAL=true EVIDENCE=1 ~/launch-l
 ```
 
-The final gate must be repeated after a clean shutdown. Two independent GUI
-runs are required for final presentation approval. Automated headless runs are
-useful regression checks but do not substitute for the manual-goal gate.
+And reproducibility second run same command.
 
-## 7. Evidence
+Must validate:
+- MISSION_DEMO_PASS
+- EVALUATION_PASS with real metrics
+- DYNAMIC_REPLAN_PASS
+- OBSTACLE_DETECTED
+- obstacle_introduced/detected/cost_changed/new_plan timestamps in dynamic_obstacle.log
+- 5-class graded costs
+- FINAL_DEMO mode
 
-Runtime evidence is written to `evidence/phase-l-launch-l/`:
+## 7. Traditional vs LunaBot experiment
 
-| File | Meaning |
-|---|---|
-| `obstacles.log` | real LiDAR obstacle detector diagnostics |
-| `obstacle_status.txt` | detected/clear obstacle status |
-| `obstacle_map.txt` | sensed obstacle map sample |
-| `mission.log` | final mission observer diagnostics |
-| `mission_status.txt` | retained mission status sample |
-| `mission_wait_status.txt` | live `MISSION_DEMO_PASS` stream |
-| `goal_selection_wait_status.txt` | real manual goal sample |
-| `evaluation_status.txt` | aggregate Phase K evaluation |
-| `replan_status.txt` | dynamic replanning result |
-| `phase_l_map.yaml` / `phase_l_map.pgm` | final map evidence |
-| `static_validation.txt` | static Phase L report |
-| `last_run.log` | ordered launcher result |
+Consistent start/goal/terrain, compare Traditional (D) vs LunaBot (E-H-I) path length, hazardous %, avg cost.
 
-Do not hand-edit runtime evidence. Inspect `obstacles.log`, `mission.log`,
-`evaluation.log`, `replan.log`, `integration.log`, and `last_run.log` when a
-gate fails.
+## 8. Evidence
 
-## 8. Acceptance checklist
+evidence/phase-l-launch-l/: mission.log, mission_status.txt, evaluation_status.txt with real measured values, dynamic_obstacle.log with timestamps, cost_map_sample.txt, semantic_map_sample.txt, map evidence, static_validation.txt
 
-- [ ] Habitat scene, rover, physical obstacles, and lunar terrain are visible in Gazebo.
-- [ ] RViz provides a working Set Goal tool and displays the selected goal.
-- [ ] Manual goal is selected with `AUTO_GOAL=false`.
-- [ ] Real LiDAR obstacle detection reports a forward obstacle.
-- [ ] Obstacle cells appear in the obstacle/cost map.
-- [ ] The terrain path changes around the sensed obstacle.
-- [ ] Rover reaches the manually selected goal.
-- [ ] Controller boundary and odometry evidence pass.
-- [ ] Final YAML/PGM map evidence passes.
-- [ ] Two independent GUI runs and clean relaunch pass.
+## 9. Reproducibility
 
-Phase L is the final phase; no later phase is defined.
+2 independent GUI runs with FINAL_DEMO=1 AUTO_GOAL=false REQUIRE_MANUAL_GOAL=true, both must achieve MISSION_DEMO_PASS.
+
+## 10. Acceptance
+
+- [ ] J+K+goal+obstacle detection+semantic nav combined
+- [ ] Real measured values: path length Σ sqrt(dx²+dy²), success via goal tolerance 0.35, collisions, hazardous ROCK+CRATER %, replanning time, avg/cumulative terrain cost, replan count
+- [ ] Controlled obstacle injection with timestamps obstacle_introduced/detected/cost_changed/new_plan
+- [ ] 5-class BEDROCK=0 REGOLITH=1 ROCK=2 CRATER=3 SHADOW=4, graded costs 5,15,45,70,100, cost_weight 2.5
+- [ ] Reproducibility 2 independent GUI runs FINAL_DEMO=1 AUTO_GOAL=false REQUIRE_MANUAL_GOAL=true
+- [ ] No game interface yet, stops after L

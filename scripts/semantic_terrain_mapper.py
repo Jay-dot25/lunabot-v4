@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""LunaBot V4 Phase F: semantic terrain map fusion.
+"""LunaBot V4 Phase F: 5-class semantic terrain map fusion.
 
-The node fuses the Phase E RGB-D segmentation mask with depth and the
-approved map->chassis localization transform. It accumulates observations in a
-fixed map-frame grid and publishes a single auditable OccupancyGrid:
+Fuses Phase E 5-class segmentation (BEDROCK, REGOLITH, ROCK, CRATER, SHADOW)
+with depth and map->chassis TF into a persistent map-frame grid.
 
+Outputs:
+  /lunabot/terrain/semantic_map (OccupancyGrid, 5 classes encoded as distinct values)
+  /lunabot/terrain/semantic_map/status
+
+Encoding (preserves semantics, not collapsed to terrain/obstacle):
   -1 = unknown
-   25 = terrain candidate
-  100 = obstacle candidate
+   10 = BEDROCK (0)
+   30 = REGOLITH (1)
+   70 = ROCK (2)
+   100 = CRATER (3)
+   50 = SHADOW (4)
 
-This is a semantic terrain map, not a second localization or SLAM system. It
-uses the existing slam_toolbox TF and does not publish velocity or modify the
-planner/controller path.
+This preserves the 5-class contribution for Phase G cost mapping.
+Hazardous classes (ROCK, CRATER) dominate in cell accumulation.
 """
 
 from __future__ import annotations
@@ -22,7 +28,7 @@ from typing import Optional
 
 import rclpy
 from geometry_msgs.msg import Quaternion
-from nav_msgs.msg import OccupancyGrid, Odometry
+from nav_msgs.msg import OccupancyGrid
 from rclpy.duration import Duration
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
@@ -33,22 +39,55 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 import tf2_ros
 
+# 5-class input from Phase E
+BEDROCK = 0
+REGOLITH = 1
+ROCK = 2
+CRATER = 3
+SHADOW = 4
 
-UNKNOWN = 0
-TERRAIN = 1
-OBSTACLE = 2
+# Semantic map encoding (OccupancyGrid values)
+UNKNOWN_GRID = -1
+BEDROCK_GRID = 10
+REGOLITH_GRID = 30
+SHADOW_GRID = 50
+ROCK_GRID = 70
+CRATER_GRID = 100
+
+INPUT_TO_GRID = {
+    BEDROCK: BEDROCK_GRID,
+    REGOLITH: REGOLITH_GRID,
+    ROCK: ROCK_GRID,
+    CRATER: CRATER_GRID,
+    SHADOW: SHADOW_GRID,
+}
+
+GRID_TO_CLASS = {
+    BEDROCK_GRID: BEDROCK,
+    REGOLITH_GRID: REGOLITH,
+    ROCK_GRID: ROCK,
+    CRATER_GRID: CRATER,
+    SHADOW_GRID: SHADOW,
+}
+
+# Priority for accumulation: higher priority overwrites lower
+PRIORITY = {
+    UNKNOWN_GRID: 0,
+    BEDROCK_GRID: 1,
+    REGOLITH_GRID: 2,
+    SHADOW_GRID: 3,
+    ROCK_GRID: 4,
+    CRATER_GRID: 5,
+}
 
 
 class SemanticTerrainMapper(Node):
-    """Accumulate RGB-D segmentation labels in the existing map frame."""
-
     def __init__(self) -> None:
         super().__init__("lunabot_semantic_terrain_mapper")
         self.declare_parameter("mask_topic", "/lunabot/terrain/segmentation")
         self.declare_parameter("depth_topic", "/lunabot/depth/image_raw")
         self.declare_parameter("map_topic", "/lunabot/terrain/semantic_map")
-        self.declare_parameter(
-            "status_topic", "/lunabot/terrain/semantic_map/status")
+        self.declare_parameter("status_topic", "/lunabot/terrain/semantic_map/status")
         self.declare_parameter("map_frame", "map")
         self.declare_parameter("base_frame", "chassis")
         self.declare_parameter("resolution", 0.10)
@@ -82,6 +121,7 @@ class SemanticTerrainMapper(Node):
             Image, self.mask_topic, self._mask_callback, qos_profile_sensor_data)
         self.depth_sub = self.create_subscription(
             Image, self.depth_topic, self._depth_callback, qos_profile_sensor_data)
+
         map_qos = QoSProfile(depth=1)
         map_qos.reliability = ReliabilityPolicy.RELIABLE
         map_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
@@ -89,19 +129,19 @@ class SemanticTerrainMapper(Node):
         status_qos = QoSProfile(depth=1)
         status_qos.reliability = ReliabilityPolicy.RELIABLE
         status_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
-        self.status_pub = self.create_publisher(
-            String, self.status_topic, status_qos)
+        self.status_pub = self.create_publisher(String, self.status_topic, status_qos)
 
         self.tf_buffer = tf2_ros.Buffer(cache_time=Duration(seconds=30.0))
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
         self.latest_mask: Optional[Image] = None
         self.latest_depth: Optional[Image] = None
         self.last_mask_stamp = 0
-        self.last_process_ns = 0
         self.frame_count = 0
         self.observation_count = 0
         self.last_status = ""
-        self.cells = [UNKNOWN] * (self.width * self.height)
+        # Store grid values directly
+        self.cells = [UNKNOWN_GRID] * (self.width * self.height)
         self.timer = self.create_timer(1.0 / self.update_rate, self._process_latest)
         self.publish_status("SEMANTIC_MAP_WAITING_FOR_SEGMENTATION")
 
@@ -149,14 +189,23 @@ class SemanticTerrainMapper(Node):
         return math.nan
 
     @staticmethod
-    def _mask_at(msg: Image, x: int, y: int) -> int:
+    def _mask_at(msg: Image, x: int, y: int) -> Optional[int]:
         if msg.width <= 0 or msg.height <= 0 or msg.step <= 0:
-            return UNKNOWN
+            return None
         offset = y * msg.step + x
         if offset >= len(msg.data):
-            return UNKNOWN
+            return None
         value = int(msg.data[offset])
-        return value if value in (TERRAIN, OBSTACLE) else UNKNOWN
+        if value in (BEDROCK, REGOLITH, ROCK, CRATER, SHADOW):
+            return value
+        # Backward compat: old 3-class 0,1,2 -> map to new
+        if value == 0:
+            return BEDROCK  # old unknown -> bedrock for compat, but we treat as unknown elsewhere
+        if value == 1:
+            return BEDROCK
+        if value == 2:
+            return ROCK
+        return None
 
     def _lookup_robot_pose(self):
         try:
@@ -186,10 +235,7 @@ class SemanticTerrainMapper(Node):
         msg.info.origin.position.x = self.origin_x
         msg.info.origin.position.y = self.origin_y
         msg.info.origin.orientation.w = 1.0
-        # OccupancyGrid is used as a compact semantic grid: 25 is terrain,
-        # 100 is obstacle, and -1 is not yet observed.
-        msg.data = [-1 if value == UNKNOWN else 25 if value == TERRAIN else 100
-                    for value in self.cells]
+        msg.data = self.cells.copy()
         self.map_pub.publish(msg)
 
     def _process_latest(self) -> None:
@@ -212,7 +258,7 @@ class SemanticTerrainMapper(Node):
             depth_y = min(depth.height - 1, int(y * depth.height / mask.height))
             for x in range(0, mask.width, self.sample_stride):
                 label = self._mask_at(mask, x, y)
-                if label == UNKNOWN:
+                if label is None:
                     continue
                 depth_x = min(depth.width - 1, int(x * depth.width / mask.width))
                 distance = self._depth_at(depth, depth_x, depth_y)
@@ -226,21 +272,30 @@ class SemanticTerrainMapper(Node):
                 index = self._grid_index(map_x, map_y)
                 if index is None:
                     continue
-                # Obstacle evidence dominates terrain evidence in a cell.
-                if label == OBSTACLE or self.cells[index] == UNKNOWN:
-                    self.cells[index] = label
+                grid_val = INPUT_TO_GRID[label]
+                # Hazard dominance: higher priority overwrites
+                current = self.cells[index]
+                if PRIORITY.get(grid_val, 0) >= PRIORITY.get(current, 0):
+                    self.cells[index] = grid_val
                 samples += 1
 
         self.frame_count += 1
         self.observation_count += samples
-        terrain_cells = sum(value == TERRAIN for value in self.cells)
-        obstacle_cells = sum(value == OBSTACLE for value in self.cells)
+        bedrock_cells = sum(v == BEDROCK_GRID for v in self.cells)
+        regolith_cells = sum(v == REGOLITH_GRID for v in self.cells)
+        rock_cells = sum(v == ROCK_GRID for v in self.cells)
+        crater_cells = sum(v == CRATER_GRID for v in self.cells)
+        shadow_cells = sum(v == SHADOW_GRID for v in self.cells)
+        unknown_cells = sum(v == UNKNOWN_GRID for v in self.cells)
+
         self._publish_map()
         self.publish_status(
             f"SEMANTIC_MAP_PASS frames={self.frame_count} "
             f"observations={self.observation_count} samples={samples} "
-            f"terrain_cells={terrain_cells} obstacle_cells={obstacle_cells} "
-            f"resolution={self.resolution:.2f} frame={self.map_frame}")
+            f"bedrock={bedrock_cells} regolith={regolith_cells} rock={rock_cells} "
+            f"crater={crater_cells} shadow={shadow_cells} unknown={unknown_cells} "
+            f"resolution={self.resolution:.2f} frame={self.map_frame} classes=5"
+        )
 
 
 def main(args=None) -> None:

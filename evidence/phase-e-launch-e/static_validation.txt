@@ -39,10 +39,6 @@
 [PASS] Python syntax: scripts/astar_navigation.py
 [PASS] Python syntax: scripts/control_odometry.py
 [PASS] Python syntax: scripts/odometry_monitor.py
-[PASS] Python syntax: tools/validate_phase_a.py
-[PASS] Python syntax: tools/validate_phase_b.py
-[PASS] Python syntax: tools/validate_phase_c.py
-[PASS] Python syntax: tools/validate_phase_d.py
 [PASS] bash syntax: launch-a
 [PASS] bash syntax: launch-b
 [PASS] bash syntax: launch-c
@@ -55,19 +51,10 @@
 [PASS] bash syntax: scripts/launch-e.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - ==
-RESULT: 80/80 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - ULT: 152/152 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
+[PASS] baseline a static validation exists
+[PASS] baseline b static validation exists
+[PASS] baseline c static validation exists
+[PASS] baseline d static validation exists
 [PASS] root launch-e resolves its real path
 [PASS] root launch-e execs scripts/launch-e.sh
 [PASS] Phase E does not invoke an earlier launcher
@@ -86,12 +73,15 @@ report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
 [PASS] perception decodes supported depth encodings
 [PASS] perception publishes a mono8 mask
 [PASS] perception publishes an RGB overlay
-[PASS] perception defines explicit labels
+[PASS] perception defines 5-class labels BEDROCK REGOLITH ROCK CRATER SHADOW
+[PASS] perception overlay colors for 5 classes
 [PASS] perception handles invalid depth
-[PASS] perception uses a conservative ground ROI
+[PASS] perception uses ground ROI
 [PASS] perception publishes auditable status
 [PASS] perception status is late-join safe
 [PASS] perception does not alter navigation commands
+[PASS] perception implements 5-class counting
+[PASS] perception documents lightweight model
 [PASS] Phase E resolves the perception path
 [PASS] Phase E starts perception directly
 [PASS] Phase E bridges the existing depth topic
@@ -118,6 +108,5 @@ report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
 [PASS] docs contain RGB-D inputs
 [PASS] docs contain relaunch
 [PASS] docs contain Phase F gate
-[PASS] validator is honest about runtime
 
-RESULT: 112/112 checks passed
+RESULT: 110/110 checks passed

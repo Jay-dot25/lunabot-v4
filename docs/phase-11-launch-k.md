@@ -1,64 +1,46 @@
-# Phase K — Testing and Evaluation (`launch-k`)
+# Phase K — Testing and Evaluation (`launch-k`) — Real Metrics + Traditional vs LunaBot
 
 ## 1. Scope and gate
 
-Phase K preserves the explicitly approved Phase J dynamic-replanning stack and
-adds an independent runtime evaluator. The evaluator observes the real plan,
-dynamic-replan status, integrated goal result, controller status, odometry, and
-both sides of the `/cmd_vel_in -> /cmd_vel` boundary. It publishes an aggregate
-result but never publishes velocity or changes navigation state.
+Phase K implements quantitative evaluation per master directive and PDF:
 
-Phase K is independently launchable as `~/launch-k`. It is not a wrapper
-around `launch-j` and does not add another SLAM, localization, or navigation
-stack.
+Metrics:
+ 1. Path length Σ sqrt(dx²+dy²) from odometry (total_motion)
+ 2. Success via goal tolerance 0.35 (distance_to_goal < tolerance or INTEGRATION_GOAL_REACHED)
+ 3. Collision count (entering CRATER_COST cells)
+ 4. Hazardous exposure ROCK+CRATER % (hazardous_distance / path_length *100)
+ 5. Replanning time (obstacle_detected -> new_plan from injector timestamps)
+ 6. Terrain cost: cumulative and average cost along trajectory
+ 7. Replan count (plan revisions)
 
-Static validation is not runtime acceptance. The runtime gate must produce a
-real `EVALUATION_PASS`, preserve the Phase A-J contracts, save final map
-evidence, shut down cleanly, and pass a clean relaunch.
+Also supports Traditional (Phase D A* without terrain awareness) vs LunaBot (E-H-I) experiment with consistent start/goal/terrain.
 
-## 2. Evaluation data flow
+Publishes /lunabot/evaluation/status EVALUATION_PASS with real measured values.
 
-```text
-terrain plan ───────────────┐
-dynamic replan status ──────┤
-integrated autonomy status ┤
-controller status ──────────┤
-odometry ────────────────────┤──> Phase K evaluator
-/cmd_vel_in ────────────────┤        │
-/cmd_vel ───────────────────┘        ▼
-                              /lunabot/evaluation/status
+## 2. Data flow
+
+```
+Odom -> path length Σ sqrt(dx²+dy²)
+Goal + Odom -> success via goal_tolerance 0.35
+Cost Map + Odom -> hazardous exposure, collisions, avg/cumulative terrain cost
+Dynamic obstacle status -> replanning time
+Plan revisions -> replan count
 ```
 
-The evaluator requires all of the following:
-
-- a non-empty terrain-aware plan;
-- `DYNAMIC_REPLAN_PASS`;
-- `INTEGRATION_GOAL_REACHED`;
-- an active controller status;
-- nonzero `/cmd_vel_in` motion;
-- nonzero `/cmd_vel` output;
-- at least 0.05 m of real odometry motion.
-
-A successful status contains `EVALUATION_PASS` and the measured sample and
-motion metrics. The evaluator is observation-only and cannot compete with the
-approved Phase J motion source.
-
-## 3. Interface contract
+## 3. Interface
 
 | Interface | Type | Role |
 |---|---|---|
-| `/lunabot/terrain/plan` | `nav_msgs/Path` | terrain-plan evaluation input |
-| `/lunabot/autonomy/replan_status` | `std_msgs/String` | dynamic-replanning result |
-| `/lunabot/autonomy/status` | `std_msgs/String` | integrated goal result |
-| `/lunabot/control/status` | `std_msgs/String` | controller health |
-| `/lunabot/odom` | `nav_msgs/Odometry` | measured motion |
-| `/cmd_vel_in` | `geometry_msgs/Twist` | follower-side motion sample |
-| `/cmd_vel` | `geometry_msgs/Twist` | controller-side motion sample |
-| `/lunabot/evaluation/status` | `std_msgs/String` | aggregate evaluation result |
+| `/lunabot/terrain/plan` | Path | plan_seen |
+| `/lunabot/autonomy/replan_status` | String | DYNAMIC_REPLAN_PASS |
+| `/lunabot/autonomy/status` | String | INTEGRATION_GOAL_REACHED |
+| `/lunabot/odom` | Odometry | total_motion Σ sqrt |
+| `/goal_pose` | PoseStamped | goal_topic |
+| `/lunabot/terrain/cost_map` | OccupancyGrid | cost_map_topic |
+| `/lunabot/dynamic_obstacle/status` | String | dynamic_obstacle_topic with timestamps |
+| `/lunabot/evaluation/status` | String | EVALUATION_PASS with metrics |
 
-The evaluator uses reliable transient-local QoS for retained status and plan
-messages and sensor-compatible best-effort QoS for odometry. It creates no
-motion publisher.
+Evaluator params: goal_topic /goal_pose, cost_map_topic /lunabot/terrain/cost_map, dynamic_obstacle_topic /lunabot/dynamic_obstacle/status, goal_tolerance 0.35, cost_weight 2.5
 
 ## 4. Installation
 
@@ -66,85 +48,46 @@ motion publisher.
 source /opt/ros/humble/setup.bash
 cd ~/lunabot-v4
 ln -sfn "$PWD/launch-k" ~/launch-k
-chmod +x launch-k scripts/launch-k.sh scripts/phase_k_evaluator.py
+chmod +x launch-k scripts/launch-k.sh scripts/phase_k_evaluator.py scripts/inject_dynamic_obstacle.py
 ```
 
 ## 5. Static validation
 
 ```bash
-cd ~/lunabot-v4
 python3 tools/validate_phase_k.py
 ```
 
-The validator checks the approved Phase J baseline, independent launch-k
-resolution, evaluator inputs and output, command isolation, evidence paths,
-and honest runtime gating. It does not claim that a real evaluation passed.
+Checks evaluator real metrics: path length from odometry sqrt, success via goal tolerance, hazardous exposure ROCK+CRATER, replanning time, terrain cost, goal_topic cost_map_topic dynamic_obstacle_topic, goal_tolerance 0.35, injector injection_distance 2.0 min_motion 0.1 auto_inject true, cost_weight 2.5.
 
-## 6. Automated headless runtime gate
-
-```bash
-cd ~/lunabot-v4
-EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-k
-```
-
-The run must contain:
-
-```text
- dynamic terrain-plan replanning: PASS
- terrain-integrated goal reached: PASS
- aggregate runtime evaluation: PASS
- EVALUATION_PASS
- nonzero /cmd_vel_in motion evidence: PASS
- controller output /cmd_vel motion evidence: PASS
- live map updates during autonomous navigation: PASS
- saved map evidence (YAML + PGM): PASS
- PHASE K RUN COMPLETE - overall result: PASS
- Launch K environment cleanly closed.
-```
-
-## 7. Evidence
-
-Runtime evidence is written to `evidence/phase-k-launch-k/`:
-
-| File | Meaning |
-|---|---|
-| `evaluation.log` | evaluator diagnostics and measured metrics |
-| `evaluation_status.txt` | aggregate evaluation status sample |
-| `evaluation_wait_status.txt` | live stream proving `EVALUATION_PASS` |
-| `replan_status.txt` | dynamic-replanning status sample |
-| `terrain_plan.txt` | active terrain plan sample |
-| `cmd_vel_in_motion.txt` | follower input evidence |
-| `cmd_vel_motion.txt` | controller output evidence |
-| `controller_boundary_status.txt` | Phase B boundary evidence |
-| `odometry_report.txt` | measured motion and continuity |
-| `phase_k_map.yaml` / `phase_k_map.pgm` | final map evidence |
-| `static_validation.txt` | static Phase K report |
-| `last_run.log` | ordered launcher and validation result |
-
-Do not hand-edit runtime evidence. Inspect `evaluation.log`,
-`replan.log`, `integration.log`, `navigation.log`, and `last_run.log` when a
-gate fails.
-
-## 8. Clean relaunch gate
-
-After the first evaluation run, repeat:
+## 6. Automated headless
 
 ```bash
 EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-k
 ```
 
-Both independent runs must produce `EVALUATION_PASS`, preserve dynamic
-replanning and goal completion, and stop all process groups.
+Validates EVALUATION_PASS with real metrics, dynamic_obstacle.log timestamps, aggregate evaluation.
 
-## 9. Acceptance checklist
+## 7. Traditional vs LunaBot experiment
 
-- [ ] Phase J static and runtime approval remains intact.
-- [ ] Evaluator is independently launched and observation-only.
-- [ ] Plan, replanning, goal, controller, odometry, and both command-boundary
-      samples are real.
-- [ ] `EVALUATION_PASS` is received on `/lunabot/evaluation/status`.
-- [ ] Final map evidence, clean shutdown, and clean relaunch pass.
+Consistent start/goal/terrain:
+- Traditional: launch-d A* without terrain costs
+- LunaBot: launch-e..i with graded costs 5,15,45,70,100
 
-Phase K was explicitly runtime-approved after two independent passing
-headless evaluation runs, aggregate `EVALUATION_PASS`, final map evidence,
-clean shutdown, and clean relaunch. Phase L may now begin.
+Compare path length, hazardous %, avg cost, success. LunaBot longer low-cost beats shorter high-cost.
+
+## 8. Evidence
+
+evidence/phase-k-launch-k/: evaluation.log, evaluation_status.txt with path_length, success, collisions, replans, replanning_time, hazard_pct, avg_cost, total_cost, motion, dynamic_obstacle.log, etc.
+
+## 9. Clean relaunch
+
+Launch K environment cleanly closed. Second run.
+
+## 10. Acceptance
+
+- [ ] Real metrics: path length Σ sqrt(dx²+dy²) from odometry
+- [ ] Success via goal tolerance 0.35
+- [ ] Collision count, hazardous exposure ROCK+CRATER %, replanning time, avg/cumulative terrain cost, replan count
+- [ ] Traditional vs LunaBot experiment
+- [ ] Injector with timestamps
+- [ ] cost_weight 2.5 graded

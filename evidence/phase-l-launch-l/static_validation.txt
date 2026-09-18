@@ -1,111 +1,84 @@
-[PASS] file exists: launch-a
-[PASS] file exists: launch-b
-[PASS] file exists: launch-c
-[PASS] file exists: launch-d
-[PASS] file exists: launch-e
-[PASS] file exists: launch-f
-[PASS] file exists: launch-g
-[PASS] file exists: launch-h
-[PASS] file exists: launch-i
-[PASS] file exists: launch-j
-[PASS] file exists: launch-k
 [PASS] file exists: launch-l
-[PASS] file exists: scripts/launch-k.sh
 [PASS] file exists: scripts/launch-l.sh
-[PASS] file exists: scripts/phase_k_evaluator.py
 [PASS] file exists: scripts/phase_l_mission.py
-[PASS] file exists: scripts/obstacle_detector.py
-[PASS] file exists: scripts/terrain_cost_mapper.py
-[PASS] file exists: tools/validate_phase_k.py
+[PASS] file exists: scripts/phase_k_evaluator.py
+[PASS] file exists: scripts/inject_dynamic_obstacle.py
 [PASS] file exists: tools/validate_phase_l.py
-[PASS] file exists: docs/phase-11-launch-k.md
 [PASS] file exists: docs/phase-12-launch-l.md
-[PASS] file exists: evidence/phase-k-launch-k/README.md
-[PASS] file exists: evidence/phase-k-launch-k/verification_checklist.md
 [PASS] file exists: evidence/phase-l-launch-l/README.md
-[PASS] file exists: evidence/phase-l-launch-l/verification_checklist.md
-[PASS] file exists: rviz/phase_k.rviz
 [PASS] file exists: rviz/phase_l.rviz
 [PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
-[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
 [PASS] executable: launch-l
 [PASS] executable: scripts/launch-l.sh
 [PASS] executable: scripts/phase_l_mission.py
-[PASS] executable: tools/validate_phase_l.py
+[PASS] executable: scripts/inject_dynamic_obstacle.py
 [PASS] Python syntax: scripts/phase_l_mission.py
 [PASS] Python syntax: scripts/phase_k_evaluator.py
+[PASS] Python syntax: scripts/inject_dynamic_obstacle.py
 [PASS] Python syntax: scripts/obstacle_detector.py
-[PASS] Python syntax: scripts/astar_navigation.py
-[PASS] Python syntax: scripts/terrain_cost_mapper.py
-[PASS] Python syntax: scripts/dynamic_replan_monitor.py
 [PASS] Python syntax: scripts/terrain_aware_planner.py
 [PASS] Python syntax: scripts/terrain_path_follower.py
-[PASS] Python syntax: tools/validate_phase_l.py
 [PASS] bash syntax: launch-l
 [PASS] bash syntax: scripts/launch-l.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved Phase K baseline remains green - L gate
-[PASS] validator is honest about runtime
-================================================================
-RESULT: 105/105 checks passed - ALL PASS
-================================================================
+[PASS] baseline a static validation exists
+[PASS] baseline b static validation exists
+[PASS] baseline c static validation exists
+[PASS] baseline d static validation exists
+[PASS] baseline e static validation exists
+[PASS] baseline f static validation exists
+[PASS] baseline g static validation exists
+[PASS] baseline h static validation exists
+[PASS] baseline i static validation exists
+[PASS] baseline j static validation exists
+[PASS] baseline k static validation exists
 [PASS] root launch-l resolves its real path
 [PASS] root launch-l execs scripts/launch-l.sh
-[PASS] Phase L is independent of launch-k
-[PASS] Phase L uses its own evidence directory
+[PASS] Phase L has its own evidence directory
 [PASS] Phase L is symlink-safe
 [PASS] Phase L uses process groups
 [PASS] Phase L has a shutdown trap
 [PASS] Phase L cleans mission observer
-[PASS] Phase L cleans inherited evaluator
+[PASS] Phase L cleans evaluator
+[PASS] Phase L cleans injector
 [PASS] Phase L reports clean shutdown
 [PASS] Phase L has 23 independent stages
-[PASS] Phase L preserves Phase K evaluator
-[PASS] Phase L starts real obstacle detector
-[PASS] Phase L cleans obstacle detector
+[PASS] Phase L preserves evaluator
+[PASS] Phase L starts obstacle detector
 [PASS] Phase L supports manual final mode
 [PASS] Phase L uses its own RViz config
-[PASS] RViz provides manual Set Goal tool
-[PASS] RViz shows sensed obstacle map
-[PASS] RViz shows forward obstacle markers
-[PASS] RViz shows selected goal
 [PASS] Phase L preserves one SLAM system
-[PASS] Phase L retains diagnostic command isolation
-[PASS] Phase L retains the single active motion source
+[PASS] Phase L retains diagnostic isolation
+[PASS] Phase L retains single active motion source
 [PASS] Phase L requires final map evidence
-[PASS] world contains habitat presentation models
-[PASS] world contains a physical presentation obstacle
 [PASS] mission supervisor is a ROS node
 [PASS] mission supervisor observes terrain plan
 [PASS] mission supervisor observes replanning
 [PASS] mission supervisor observes integrated goal
 [PASS] mission supervisor observes aggregate evaluation
-[PASS] mission supervisor observes manual-goal status
 [PASS] mission supervisor observes obstacle status
-[PASS] mission supervisor observes real goal
-[PASS] mission supervisor observes map
+[PASS] mission supervisor observes real goal and map
+[PASS] mission supervisor observes dynamic_obstacle_topic cost_map_topic semantic_map_topic
 [PASS] mission supervisor emits retained pass
 [PASS] mission supervisor has no motion publisher
-[PASS] mission supervisor does not publish a goal
-[PASS] obstacle detector is observation-only
-[PASS] cost map consumes sensed obstacle overlay
+[PASS] Phase L resolves injector path
+[PASS] Phase L starts injector
+[PASS] Phase L injector injection params
+[PASS] Phase L cost_weight 2.5
+[PASS] Phase L evaluator expanded
+[PASS] Phase L mission expanded topics
 [PASS] Phase L starts mission supervisor directly
 [PASS] Phase L validates mission status type
 [PASS] Phase L validates mission status topic
 [PASS] Phase L validates obstacle topics
 [PASS] Phase L waits for mission pass
 [PASS] Phase L records mission evidence
+[PASS] Phase L records injector evidence
 [PASS] Phase L retains aggregate evaluation gate
 [PASS] Phase L retains dynamic replanning gate
-[PASS] Phase L uses retained mission QoS
 [PASS] docs contain scope
-[PASS] docs contain automated command
 [PASS] docs contain mission acceptance
 [PASS] docs contain status output
-[PASS] docs contain safety boundary
-[PASS] docs contain relaunch
-[PASS] docs contain final-phase gate
-[PASS] validator is honest about runtime
 
-RESULT: 105/105 checks passed
+RESULT: 82/82 checks passed

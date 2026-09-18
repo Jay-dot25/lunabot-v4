@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
-"""LunaBot V4 Phase G: semantic terrain cost-map generation.
+"""LunaBot V4 Phase G: 5-class semantic terrain cost-map generation.
 
-This node converts the approved Phase F semantic terrain grid into a numeric
-traversability cost grid. It is intentionally not connected to A* yet; Phase H
-will consume this output for terrain-aware planning.
+Converts the Phase F 5-class semantic grid into graded traversability costs
+per master directive:
 
-Cost values are 0..100:
-  20 = observed terrain candidate
-  80 = unknown / caution
-  100 = obstacle or inflated obstacle
+  BEDROCK  (10)  ->  5   safe
+  REGOLITH (30)  -> 15   moderate
+  SHADOW   (50)  -> 45   less desirable / caution
+  ROCK     (70)  -> 70   hazardous
+  CRATER   (100) -> 100  hazardous / non-traversable
 
-Obstacle inflation adds a conservative cost halo without changing the source
-semantic map. The node publishes no velocity or localization output.
+Unknown/unobserved cells receive conservative treatment (80).
+
+Adds inflation around high-cost terrain (ROCK, CRATER).
+
+Publishes:
+  /lunabot/terrain/cost_map
+  /lunabot/terrain/cost_map/status
+
+No velocity or localization output.
 """
 
 from __future__ import annotations
@@ -26,26 +33,43 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 
+# Semantic grid values from Phase F
+UNKNOWN_GRID = -1
+BEDROCK_GRID = 10
+REGOLITH_GRID = 30
+SHADOW_GRID = 50
+ROCK_GRID = 70
+CRATER_GRID = 100
 
-UNKNOWN = -1
-TERRAIN_VALUE = 25
-OBSTACLE_VALUE = 100
+# Cost values per directive (graded)
+BEDROCK_COST = 5
+REGOLITH_COST = 15
+SHADOW_COST = 45
+ROCK_COST = 70
+CRATER_COST = 100
+UNKNOWN_COST = 80
+
+# Mapping semantic -> cost
+SEMANTIC_TO_COST = {
+    BEDROCK_GRID: BEDROCK_COST,
+    REGOLITH_GRID: REGOLITH_COST,
+    SHADOW_GRID: SHADOW_COST,
+    ROCK_GRID: ROCK_COST,
+    CRATER_GRID: CRATER_COST,
+}
 
 
 class TerrainCostMapper(Node):
-    """Convert semantic terrain labels into an inflated cost grid."""
-
     def __init__(self) -> None:
         super().__init__("lunabot_terrain_cost_mapper")
         self.declare_parameter("semantic_topic", "/lunabot/terrain/semantic_map")
         self.declare_parameter("obstacle_topic", "/lunabot/obstacles/map")
         self.declare_parameter("cost_topic", "/lunabot/terrain/cost_map")
-        self.declare_parameter(
-            "status_topic", "/lunabot/terrain/cost_map/status")
-        self.declare_parameter("terrain_cost", 20)
-        self.declare_parameter("unknown_cost", 80)
-        self.declare_parameter("obstacle_cost", 100)
-        self.declare_parameter("inflation_radius", 0.30)
+        self.declare_parameter("status_topic", "/lunabot/terrain/cost_map/status")
+        self.declare_parameter("terrain_cost", BEDROCK_COST)  # kept for compat
+        self.declare_parameter("unknown_cost", UNKNOWN_COST)
+        self.declare_parameter("obstacle_cost", CRATER_COST)
+        self.declare_parameter("inflation_radius", 0.35)
 
         get = self.get_parameter
         self.semantic_topic = str(get("semantic_topic").value)
@@ -64,13 +88,13 @@ class TerrainCostMapper(Node):
             OccupancyGrid, self.semantic_topic, self._semantic_callback, input_qos)
         self.obstacle_sub = self.create_subscription(
             OccupancyGrid, self.obstacle_topic, self._obstacle_callback, input_qos)
+
         output_qos = QoSProfile(depth=1)
         output_qos.reliability = ReliabilityPolicy.RELIABLE
         output_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
-        self.cost_pub = self.create_publisher(
-            OccupancyGrid, self.cost_topic, output_qos)
-        self.status_pub = self.create_publisher(
-            String, self.status_topic, output_qos)
+        self.cost_pub = self.create_publisher(OccupancyGrid, self.cost_topic, output_qos)
+        self.status_pub = self.create_publisher(String, self.status_topic, output_qos)
+
         self.frame_count = 0
         self.last_status = ""
         self.last_cost_map: Optional[OccupancyGrid] = None
@@ -88,26 +112,31 @@ class TerrainCostMapper(Node):
         self.get_logger().info(text)
 
     def _base_cost(self, value: int) -> int:
-        if value >= OBSTACLE_VALUE:
-            return self.obstacle_cost
-        if value == TERRAIN_VALUE or 0 < value < OBSTACLE_VALUE:
-            return self.terrain_cost
-        return self.unknown_cost
+        # New 5-class mapping
+        if value in SEMANTIC_TO_COST:
+            return SEMANTIC_TO_COST[value]
+        # Backward compat: old 25 -> bedrock, 100 -> crater/rock
+        if value == 25:
+            return BEDROCK_COST
+        if value >= 90:
+            return CRATER_COST
+        if value > 0:
+            return REGOLITH_COST
+        return UNKNOWN_COST
 
-    def _inflate(self, costs: list[int], width: int, height: int,
-                 resolution: float) -> tuple[int, int]:
+    def _inflate(self, costs: list[int], width: int, height: int, resolution: float) -> tuple[int, int]:
         radius_cells = int(math.ceil(self.inflation_radius / max(resolution, 1e-6)))
         if radius_cells <= 0:
             return 0, 0
-        obstacles = [i for i, value in enumerate(costs)
-                     if value >= self.obstacle_cost]
+        # Inflate around ROCK and CRATER (cost >= ROCK_COST)
+        obstacles = [i for i, v in enumerate(costs) if v >= ROCK_COST]
         inflated = 0
         for index in obstacles:
             ox, oy = index % width, index // width
             for dy in range(-radius_cells, radius_cells + 1):
                 for dx in range(-radius_cells, radius_cells + 1):
-                    distance = math.hypot(dx, dy)
-                    if distance > radius_cells:
+                    dist = math.hypot(dx, dy)
+                    if dist > radius_cells:
                         continue
                     x, y = ox + dx, oy + dy
                     if x < 0 or y < 0 or x >= width or y >= height:
@@ -115,12 +144,13 @@ class TerrainCostMapper(Node):
                     target = y * width + x
                     if target == index:
                         continue
-                    # The halo remains high-cost but drops with distance; an
-                    # existing obstacle or higher cost is never overwritten.
-                    halo = max(self.terrain_cost + 1,
-                               int(self.obstacle_cost - 35.0 * distance / radius_cells))
+                    # Halo cost decreases with distance, never overwrites higher
+                    # ROCK_COST=70, CRATER=100 -> halo 45-70 range
+                    halo = max(SHADOW_COST, int(ROCK_COST + (CRATER_COST - ROCK_COST) * 0.5 - 25.0 * dist / radius_cells))
+                    # Ensure halo at least SHADOW_COST and less than obstacle
+                    halo = max(SHADOW_COST, min(ROCK_COST, halo))
                     if halo > costs[target]:
-                        costs[target] = min(self.obstacle_cost, halo)
+                        costs[target] = halo
                         inflated += 1
         return len(obstacles), inflated
 
@@ -138,44 +168,55 @@ class TerrainCostMapper(Node):
         if width <= 0 or height <= 0 or len(msg.data) < width * height:
             self.publish_status("COST_MAP_INVALID_SEMANTIC_MAP")
             return
-        costs = [self._base_cost(int(value)) for value in msg.data[:width * height]]
+
+        costs = [self._base_cost(int(v)) for v in msg.data[:width * height]]
+
         sensed_obstacles = 0
         overlay = self.last_obstacle_map
         if overlay is not None:
-            # Phase L's obstacle overlay uses the same fixed map geometry as
-            # the semantic grid. Ignore incompatible samples rather than
-            # corrupting the planner's map.
             same_geometry = (
                 int(overlay.info.width) == width and
                 int(overlay.info.height) == height and
                 abs(float(overlay.info.resolution) - float(msg.info.resolution)) < 1e-6 and
                 abs(float(overlay.info.origin.position.x) - float(msg.info.origin.position.x)) < 1e-6 and
                 abs(float(overlay.info.origin.position.y) - float(msg.info.origin.position.y)) < 1e-6 and
-                len(overlay.data) >= width * height)
+                len(overlay.data) >= width * height
+            )
             if same_geometry:
-                for index, value in enumerate(overlay.data[:width * height]):
-                    if int(value) >= OBSTACLE_VALUE:
-                        if costs[index] < self.obstacle_cost:
+                for idx, val in enumerate(overlay.data[:width * height]):
+                    if int(val) >= 90:  # obstacle detected
+                        if costs[idx] < CRATER_COST:
                             sensed_obstacles += 1
-                        costs[index] = self.obstacle_cost
-        obstacle_count, inflated_count = self._inflate(
-            costs, width, height, float(msg.info.resolution))
+                        costs[idx] = CRATER_COST
+
+        obstacle_count, inflated_count = self._inflate(costs, width, height, float(msg.info.resolution))
+
         output = OccupancyGrid()
         output.header = msg.header
         output.header.stamp = self.get_clock().now().to_msg()
         output.info = msg.info
         output.data = costs
+
         self.last_cost_map = output
         self.cost_pub.publish(output)
         self.frame_count += 1
-        unknown_count = sum(value == self.unknown_cost for value in costs)
-        terrain_count = sum(value == self.terrain_cost for value in costs)
+
+        # Counts per cost
+        bedrock_cells = sum(v == BEDROCK_COST for v in costs)
+        regolith_cells = sum(v == REGOLITH_COST for v in costs)
+        shadow_cells = sum(v == SHADOW_COST for v in costs)
+        rock_cells = sum(v == ROCK_COST for v in costs)
+        crater_cells = sum(v == CRATER_COST for v in costs)
+        unknown_cells = sum(v == UNKNOWN_COST for v in costs)
+
         self.publish_status(
             f"COST_MAP_PASS frames={self.frame_count} width={width} height={height} "
-            f"terrain_cells={terrain_count} unknown_cells={unknown_count} "
+            f"bedrock={bedrock_cells} regolith={regolith_cells} shadow={shadow_cells} "
+            f"rock={rock_cells} crater={crater_cells} unknown={unknown_cells} "
             f"obstacle_cells={obstacle_count} sensed_obstacles={sensed_obstacles} "
             f"inflated_cells={inflated_count} resolution={msg.info.resolution:.2f} "
-            f"frame={msg.header.frame_id}")
+            f"frame={msg.header.frame_id} costs=BEDROCK=5,REGOLITH=15,SHADOW=45,ROCK=70,CRATER=100"
+        )
 
 
 def main(args=None) -> None:

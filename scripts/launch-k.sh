@@ -38,6 +38,7 @@ COST_PATH="$REPO_DIR/scripts/terrain_cost_mapper.py"
 TERRAIN_PLANNER_PATH="$REPO_DIR/scripts/terrain_aware_planner.py"
 FOLLOWER_PATH="$REPO_DIR/scripts/terrain_path_follower.py"
 REPLAN_MONITOR_PATH="$REPO_DIR/scripts/dynamic_replan_monitor.py"
+INJECTOR_PATH="$REPO_DIR/scripts/inject_dynamic_obstacle.py"
 EVALUATOR_PATH="$REPO_DIR/scripts/phase_k_evaluator.py"
 RVIZ_CONFIG="$REPO_DIR/rviz/phase_k.rviz"
 EVIDENCE_DIR="$REPO_DIR/evidence/phase-k-launch-k"
@@ -64,6 +65,7 @@ COST_PID=""
 TERRAIN_PLANNER_PID=""
 FOLLOWER_PID=""
 REPLAN_MONITOR_PID=""
+INJECTOR_PID=""
 EVALUATOR_PID=""
 GOAL_WAIT_PID=""
 TF_PIDS=()
@@ -150,6 +152,10 @@ shutdown() {
   if [ -n "$FOLLOWER_PID" ]; then
     stop_group "$FOLLOWER_PID"
     wait "$FOLLOWER_PID" 2>/dev/null || true
+  fi
+  if [ -n "$INJECTOR_PID" ]; then
+    stop_group "$INJECTOR_PID"
+    wait "$INJECTOR_PID" 2>/dev/null || true
   fi
   if [ -n "$REPLAN_MONITOR_PID" ]; then
     stop_group "$REPLAN_MONITOR_PID"
@@ -240,7 +246,7 @@ say "Launch mode: $([ "$HEADLESS" = 1 ] && echo HEADLESS || echo GUI) | demo=$([
 echo "[1/21] Checking Phase A baseline + Phase K files....."
 missing=0
 for f in "$WORLD_PATH" "$MODEL_PATH" "$WASD_PATH" "$CONTROL_PATH" "$ODOM_PATH" "$SLAM_CONFIG" "$NAV_PATH" \
-         "$RVIZ_CONFIG" "$PERCEPTION_PATH" "$MAPPER_PATH" "$COST_PATH" "$TERRAIN_PLANNER_PATH" "$FOLLOWER_PATH" "$REPLAN_MONITOR_PATH" "$EVALUATOR_PATH" "$WORLD_DIR/meshes/lunar_terrain.obj" \
+         "$RVIZ_CONFIG" "$PERCEPTION_PATH" "$MAPPER_PATH" "$COST_PATH" "$TERRAIN_PLANNER_PATH" "$FOLLOWER_PATH" "$REPLAN_MONITOR_PATH" "$INJECTOR_PATH" "$EVALUATOR_PATH" "$WORLD_DIR/meshes/lunar_terrain.obj" \
          "$WORLD_DIR/meshes/lunar_terrain_collision.obj"; do
   if [ ! -f "$f" ]; then
     say "      MISSING: $f"
@@ -478,7 +484,7 @@ setsid python3 "$TERRAIN_PLANNER_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
   -p status_topic:=/lunabot/terrain/planner/status \
   -p map_frame:=map -p base_frame:=chassis \
-  -p cost_weight:=2.0 -p replan_period:=1.0 \
+  -p cost_weight:=2.5 -p replan_period:=1.0 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/terrain_planner.log" 2>&1 &
 TERRAIN_PLANNER_PID=$!
@@ -508,7 +514,29 @@ echo "      dynamic replanning monitor running (PID $REPLAN_MONITOR_PID)"
 log "[11/21] dynamic replanning monitor OK (pid $REPLAN_MONITOR_PID)"
 
 # ------------------------------------------------------------
-# [12/21] Phase K runtime evaluator
+# [11b/21] Phase K dynamic obstacle injector
+# ------------------------------------------------------------
+echo "[11b/21] Starting dynamic obstacle injector........"
+: > "$EVIDENCE_DIR/dynamic_obstacle.log"
+setsid python3 "$INJECTOR_PATH" --ros-args \
+  -p plan_topic:=/lunabot/terrain/plan \
+  -p goal_topic:=/goal_pose \
+  -p odom_topic:=/lunabot/odom \
+  -p cost_map_topic:=/lunabot/terrain/cost_map \
+  -p obstacle_status_topic:=/lunabot/obstacles/status \
+  -p planner_status_topic:=/lunabot/terrain/planner/status \
+  -p status_topic:=/lunabot/dynamic_obstacle/status \
+  -p injection_distance:=2.0 -p min_motion:=0.1 -p auto_inject:=true \
+  -p use_sim_time:=true \
+  >> "$EVIDENCE_DIR/dynamic_obstacle.log" 2>&1 &
+INJECTOR_PID=$!
+sleep 2
+kill -0 "$INJECTOR_PID" 2>/dev/null || abort "dynamic obstacle injector exited; see $EVIDENCE_DIR/dynamic_obstacle.log"
+echo "      dynamic obstacle injector running (PID $INJECTOR_PID)"
+log "[11b/21] dynamic obstacle injector OK (pid $INJECTOR_PID)"
+
+# ------------------------------------------------------------
+# [12/21] Phase K runtime evaluator (real metrics)
 # ------------------------------------------------------------
 echo "[12/21] Starting runtime evaluation monitor........"
 : > "$EVIDENCE_DIR/evaluation.log"
@@ -518,10 +546,13 @@ setsid python3 "$EVALUATOR_PATH" --ros-args \
   -p autonomy_topic:=/lunabot/autonomy/status \
   -p control_topic:=/lunabot/control/status \
   -p odom_topic:=/lunabot/odom \
+  -p goal_topic:=/goal_pose \
+  -p cost_map_topic:=/lunabot/terrain/cost_map \
+  -p dynamic_obstacle_topic:=/lunabot/dynamic_obstacle/status \
   -p cmd_input_topic:=/cmd_vel_in \
   -p cmd_output_topic:=/cmd_vel \
   -p status_topic:=/lunabot/evaluation/status \
-  -p minimum_motion:=0.05 \
+  -p minimum_motion:=0.05 -p goal_tolerance:=0.35 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/evaluation.log" 2>&1 &
 EVALUATOR_PID=$!

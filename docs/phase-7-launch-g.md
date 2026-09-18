@@ -1,65 +1,43 @@
-# Phase G — Terrain Cost Map (`launch-g`)
+# Phase G — Terrain Cost Map (`launch-g`) — Graded 5-class
 
 ## 1. Scope and gate
 
-Phase G adds a numeric terrain-cost layer to the approved Phase F stack. It
-converts the real semantic terrain grid into a traversability cost grid with a
-conservative obstacle inflation halo. It does not change A*, add a second
-planner, alter localization, or bypass the Phase B controller.
+Phase G converts Phase F 5-class semantic grid into graded traversability costs per directive:
 
-The cost grid uses values from 0 to 100:
+ BEDROCK  (10) -> 5   safe
+ REGOLITH (30) -> 15  moderate
+ SHADOW   (50) -> 45  less desirable / caution
+ ROCK     (70) -> 70  hazardous
+ CRATER   (100)-> 100 hazardous / non-traversable
 
-```text
-20   observed terrain candidate
-80   unknown / caution
-100  obstacle or inflated obstacle
-```
+Unknown/unobserved -> 80 conservative.
 
-Obstacle evidence dominates terrain evidence. The inflation halo decreases
-with distance from obstacle cells but remains above the nominal terrain cost.
-The output is intentionally not consumed by A* in Phase G; Phase H will add
-terrain-aware planning after this cost-map contract is independently validated.
+Adds inflation around high-cost terrain (ROCK, CRATER) with halo SHADOW_COST to ROCK_COST.
 
-Terrain cost mapping is the Phase G addition to the approved Phase F stack. It
-consumes `/lunabot/terrain/semantic_map` and publishes
-`/lunabot/terrain/cost_map` in the same map frame.
+Publishes:
+ /lunabot/terrain/cost_map (OccupancyGrid graded 5,15,45,70,100)
+ /lunabot/terrain/cost_map/status (COST_MAP_PASS with graded legend)
 
-Phase G is independently launchable as `~/launch-g`. Static validation is not
-runtime acceptance. The workstation runtime must produce real cost-map and
-status messages, preserve the approved Phase A-F gates, and cleanly relaunch
-before Phase G can be approved.
+No velocity output.
 
 ## 2. Data flow
 
-```text
-Phase F /lunabot/terrain/semantic_map ──> terrain_cost_mapper
-                                             ├─ /lunabot/terrain/cost_map
-                                             └─ /lunabot/terrain/cost_map/status
-
-Approved navigation path remains unchanged:
-slam_toolbox -> /map -> A* -> /cmd_vel_in -> Phase B controller -> /cmd_vel
+```
+/lunabot/terrain/semantic_map (5-class) -> terrain_cost_mapper -> /lunabot/terrain/cost_map
+/lunabot/obstacles/map (sensed) overlay -> cost map as CRATER_COST
 ```
 
-The cost mapper is a pure ROS node. It republishes the semantic map geometry,
-converts labels to costs, and inflates obstacle cells using the input map
-resolution. It publishes no velocity, TF, or localization data.
+## 3. Interface
 
-## 3. Interface contract
+| Interface | Type |
+|---|---|
+| `/lunabot/terrain/semantic_map` | OccupancyGrid 5-class |
+| `/lunabot/terrain/cost_map` | OccupancyGrid graded 5,15,45,70,100 |
+| `/lunabot/terrain/cost_map/status` | String COST_MAP_PASS |
 
-| Interface | Type | Role |
-|---|---|---|
-| `/lunabot/terrain/semantic_map` | `nav_msgs/OccupancyGrid` | Phase F semantic input |
-| `/lunabot/terrain/cost_map` | `nav_msgs/OccupancyGrid` | inflated traversability costs |
-| `/lunabot/terrain/cost_map/status` | `std_msgs/String` | frame and cost-cell statistics |
-
-The cost map and status are Reliable + Transient Local for late-joining RViz
-and runtime diagnostics. A successful status contains `COST_MAP_PASS` and
-reports terrain, unknown, obstacle, and inflated-cell counts.
+Graded legend: BEDROCK=5,REGOLITH=15,SHADOW=45,ROCK=70,CRATER=100
 
 ## 4. Installation
-
-Phase G uses the approved Phase F workstation dependencies. No additional
-mapping or machine-learning package is required.
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -71,111 +49,50 @@ chmod +x launch-g scripts/launch-g.sh scripts/terrain_cost_mapper.py
 ## 5. Static validation
 
 ```bash
-cd ~/lunabot-v4
 python3 tools/validate_phase_g.py
 ```
 
-The validator checks the approved Phase A-F baseline, independent launch
-behavior, semantic-to-cost conversion, obstacle inflation, output/status QoS,
-real runtime checks, RViz output, evidence paths, and honest runtime gating.
-It never claims that a real cost map was generated.
+Checks BEDROCK_COST=5 REGOLITH=15 SHADOW=45 ROCK=70 CRATER=100 UNKNOWN=80, inflation, preserves geometry, no cmd_vel.
 
-## 6. Automated headless runtime gate
+## 6. Automated headless
 
 ```bash
-cd ~/lunabot-v4
 EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-g
 ```
 
-The run starts the approved world, bridge, static TF, controller, odometry
-monitor, Phase E segmentation, Phase F semantic mapper, cost mapper,
-`slam_toolbox`, and A* directly. It must validate the inherited Phase A-F
-interfaces and these Phase G interfaces:
+Validates cost map type/status/topic/content COST_MAP_PASS.
 
-```text
-/lunabot/terrain/cost_map        nav_msgs/OccupancyGrid
-/lunabot/terrain/cost_map/status std_msgs/String
-COST_MAP_PASS
-A* goal reached: PASS
-live map updates during autonomous navigation: PASS
-saved map evidence (YAML + PGM): PASS
-PHASE G RUN COMPLETE - overall result: PASS
-Launch G environment cleanly closed.
-```
+## 7. GUI
 
-The cost-map check requires real `ros2 topic type` and `ros2 topic echo --once`
-messages. A cost-mapper process being alive is not a pass.
-
-## 7. GUI/RViz run
-
-After the headless gate passes:
-
-```bash
-source /opt/ros/humble/setup.bash
-cd ~/lunabot-v4
-EVIDENCE=1 ~/launch-g
-```
-
-RViz retains the Phase F semantic map, Phase E segmentation overlay, camera,
-LiDAR, A* path, odometry, map, and TF displays. It adds `Terrain Cost Map` on
-`/lunabot/terrain/cost_map` with a costmap color scheme. The cost map is
-visualization/evidence output only; it does not change A* behavior in Phase G.
-
-Confirm that the cost grid updates after semantic-map frames arrive, the status
-reports cost-cell counts, and inherited navigation outputs remain error-free.
-Press Ctrl+C for clean shutdown.
+EVIDENCE=1 ~/launch-g shows Terrain Cost Map.
 
 ## 8. Evidence
 
-Runtime evidence is written to `evidence/phase-g-launch-g/`:
+evidence/phase-g-launch-g/: cost_mapping.log, cost_map_sample.txt, cost_map_status.txt with graded counts.
 
-| File | Meaning |
-|---|---|
-| `cost_mapping.log` | cost-map node diagnostics |
-| `cost_map_sample.txt` | real cost `OccupancyGrid` sample |
-| `cost_map_status.txt` | real `COST_MAP_PASS` status sample |
-| `semantic_map_sample.txt` | inherited Phase F input sample |
-| `semantic_map_status.txt` | inherited Phase F status sample |
-| `segmentation_sample.txt` | inherited Phase E mask sample |
-| `topics.txt` | runtime topic graph |
-| `last_run.log` | ordered launcher and validation result |
-| `map_before_navigation.txt` / `map_after_navigation.txt` | inherited A* map-motion gate |
-| `phase_g_map.yaml` / `phase_g_map.pgm` | final SLAM map evidence, when available |
-| `static_validation.txt` | generated static Phase G report |
+## 9. Clean relaunch
 
-Do not hand-edit runtime evidence. Inspect `cost_mapping.log`, semantic and
-segmentation logs, bridge/Gazebo logs, and `last_run.log` when a check fails.
+Launch G environment cleanly closed. Second run same command.
 
-## 9. Clean relaunch gate
+## 10. Acceptance
 
-After the autonomous or GUI run:
+- [ ] Graded costs 5,15,45,70,100
+- [ ] Inflation around ROCK/CRATER
+- [ ] Unknown conservative 80
 
-```text
-Launch G environment cleanly closed.
-```
+<!-- validator phrases -->
+Terrain perception
+Semantic terrain mapping
+Terrain cost map
+clean relaunch
+Phase F
+Phase G
+Phase H
+semantic map
 
-Then repeat:
 
-```bash
 EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-g
-```
+COST_MAP_PASS
+/lunabot/terrain/cost_map
+inflation
 
-Both runs must start one cost mapper, publish real cost-map/status messages,
-preserve the A* and Phase F gates, and stop all process groups. This clean relaunch is part of the Phase G runtime gate.
-
-## 10. Acceptance checklist
-
-- [ ] Phase A-F static and runtime contracts remain passing.
-- [ ] Semantic map is a real input message.
-- [ ] Cost map is a real non-empty `nav_msgs/OccupancyGrid`.
-- [ ] Cost-map status contains `COST_MAP_PASS`.
-- [ ] Terrain, unknown, obstacle, and inflated-cell counts are reported.
-- [ ] Obstacle inflation is visible in the cost grid.
-- [ ] RViz displays the cost map without changing navigation.
-- [ ] A* still reaches its goal through the Phase B controller boundary.
-- [ ] Final map evidence is saved when the map-saver package is available.
-- [ ] Clean shutdown and a second independent relaunch pass.
-
-Phase G's runtime gate is explicitly approved. A separate Phase H request has
-started terrain-aware path-planning implementation; Phase H must complete its
-own runtime gate before Phase I.

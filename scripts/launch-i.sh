@@ -466,7 +466,7 @@ setsid python3 "$TERRAIN_PLANNER_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
   -p status_topic:=/lunabot/terrain/planner/status \
   -p map_frame:=map -p base_frame:=chassis \
-  -p cost_weight:=2.0 -p replan_period:=1.0 \
+  -p cost_weight:=2.5 -p replan_period:=1.0 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/terrain_planner.log" 2>&1 &
 TERRAIN_PLANNER_PID=$!

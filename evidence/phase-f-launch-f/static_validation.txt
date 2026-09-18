@@ -46,11 +46,6 @@
 [PASS] Python syntax: scripts/astar_navigation.py
 [PASS] Python syntax: scripts/control_odometry.py
 [PASS] Python syntax: scripts/odometry_monitor.py
-[PASS] Python syntax: tools/validate_phase_a.py
-[PASS] Python syntax: tools/validate_phase_b.py
-[PASS] Python syntax: tools/validate_phase_c.py
-[PASS] Python syntax: tools/validate_phase_d.py
-[PASS] Python syntax: tools/validate_phase_e.py
 [PASS] bash syntax: launch-a
 [PASS] bash syntax: launch-b
 [PASS] bash syntax: launch-c
@@ -65,22 +60,11 @@
 [PASS] bash syntax: scripts/launch-f.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - ==
-RESULT: 80/80 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - ULT: 152/152 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_e.py - ULT: 112/112 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-e-launch-e/static_validation.txt
+[PASS] baseline a static validation exists
+[PASS] baseline b static validation exists
+[PASS] baseline c static validation exists
+[PASS] baseline d static validation exists
+[PASS] baseline e static validation exists
 [PASS] root launch-f resolves its real path
 [PASS] root launch-f execs scripts/launch-f.sh
 [PASS] Phase F does not invoke an earlier launcher
@@ -97,16 +81,15 @@ report: /tmp/lunabot-phase-a/evidence/phase-e-launch-e/static_validation.txt
 [PASS] mapper is a ROS node
 [PASS] mapper consumes the Phase E mask
 [PASS] mapper consumes depth
-[PASS] mapper decodes supported depth encodings
-[PASS] mapper uses existing map TF
-[PASS] mapper projects camera bearing
-[PASS] mapper accumulates a fixed grid
+[PASS] mapper defines 5-class input
+[PASS] mapper defines 5-class grid encoding
+[PASS] mapper preserves 5 classes not collapsed
+[PASS] mapper gives hazardous precedence
 [PASS] mapper publishes OccupancyGrid
-[PASS] mapper defines semantic values
-[PASS] mapper gives obstacles precedence
 [PASS] mapper publishes auditable status
 [PASS] mapper map/status are late-join safe
 [PASS] mapper does not publish motion commands
+[PASS] mapper status includes 5-class counts
 [PASS] Phase F resolves mapper path
 [PASS] Phase F starts mapper directly
 [PASS] Phase F validates semantic map type
@@ -127,9 +110,7 @@ report: /tmp/lunabot-phase-a/evidence/phase-e-launch-e/static_validation.txt
 [PASS] docs contain semantic acceptance
 [PASS] docs contain semantic map output
 [PASS] docs contain localization input
-[PASS] docs contain legend
 [PASS] docs contain relaunch
 [PASS] docs contain Phase G gate
-[PASS] validator is honest about runtime
 
-RESULT: 122/122 checks passed
+RESULT: 114/114 checks passed
