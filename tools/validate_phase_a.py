@@ -91,10 +91,30 @@ def validate_sdfs():
     horizon = world.find("./model[@name='lunar_horizon']")
     check("horizon catch-plane present", horizon is not None)
     check("GUI camera configured", world.find("gui/camera") is not None)
-    habitat = world.find("./model[@name='lunar_habitat_main']")
+    scene = world.find("scene")
+    check("lunar scene configuration present", scene is not None)
+    if scene is not None:
+        check("lunar scene ambient light", scene.findtext("ambient") == "0.12 0.12 0.14 1")
+        check("lunar scene near-black background", scene.findtext("background") == "0.01 0.01 0.02 1")
+        check("lunar scene shadows disabled", scene.findtext("shadows") == "false")
+
+    habitat = world.find("./model[@name='lunar_habitat']")
     equipment = world.find("./model[@name='lunar_habitat_equipment']")
     obstacle = world.find("./model[@name='presentation_obstacle_forward']")
-    check("lunar habitat presentation model present", habitat is not None)
+    check("lunar_habitat model present and static", habitat is not None and
+          habitat.findtext("static") == "true")
+    if habitat is not None:
+        link = habitat.find("link")
+        collisions = {e.get("name"): e for e in link.findall("collision")} if link is not None else {}
+        visuals = {e.get("name"): e for e in link.findall("visual")} if link is not None else {}
+        for component, primitive in (("base", "cylinder"), ("dome", "sphere"),
+                                     ("airlock", "cylinder")):
+            collision = collisions.get(f"{component}_collision")
+            visual = visuals.get(f"{component}_visual")
+            check(f"habitat {component} collision geometry", collision is not None and
+                  collision.find(f"geometry/{primitive}") is not None)
+            check(f"habitat {component} visual geometry", visual is not None and
+                  visual.find(f"geometry/{primitive}") is not None)
     check("habitat equipment presentation model present", equipment is not None)
     check("physical forward obstacle present", obstacle is not None and
           obstacle.find("link/collision") is not None)
