@@ -247,6 +247,13 @@ def validate_obj(path, expect_color):
 
 # ---------------------------------------------------------------- 5. scripts
 def validate_scripts():
+    launch_text = open(LAUNCH).read()
+    check("Gazebo starts running in headless mode (-r -s)",
+          'gazebo -r -s -v 3' in launch_text)
+    check("Gazebo starts running in GUI mode (-r)",
+          'gazebo -r -v 3' in launch_text)
+    check("runtime topic checks reject empty samples",
+          '&& [ -n "$sample" ]' in launch_text)
     for sh in (LAUNCH, ENTRYP, os.path.join(EVIDENCE, "collect_evidence.sh")):
         if not os.path.isfile(sh):
             check(f"bash syntax: {os.path.relpath(sh, REPO)}", False, "missing")

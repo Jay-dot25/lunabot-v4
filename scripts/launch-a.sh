@@ -195,10 +195,13 @@ export GZ_SIM_RESOURCE_PATH="$WORLD_DIR${GZ_SIM_RESOURCE_PATH:+:$GZ_SIM_RESOURCE
 export IGN_GAZEBO_RESOURCE_PATH="$GZ_SIM_RESOURCE_PATH"
 
 : > "$EVIDENCE_DIR/gazebo.log"
+# -r is essential: server-only Gazebo otherwise loads the world paused, so
+# sensor topics may exist while /clock, odometry, dynamic TF, and motion never
+# advance. Use it in GUI mode too so behavior does not depend on pressing Play.
 if [ "$HEADLESS" = "1" ]; then
-  setsid "$IGN" gazebo -s -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
+  setsid "$IGN" gazebo -r -s -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
 else
-  setsid "$IGN" gazebo -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
+  setsid "$IGN" gazebo -r -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
 fi
 GAZEBO_PID=$!
 
@@ -323,7 +326,10 @@ fi
 # ------------------------------------------------------------
 echo "[9/10] Runtime validation..........................."
 topic_ok() {  # <name> <topic>
-  if timeout 30 ros2 topic echo "$2" --once 2>/dev/null | head -n 3 >/dev/null; then
+  # Do not pipe directly into head: without pipefail, head exits successfully
+  # even when ros2 times out without receiving a message (a false PASS).
+  local sample
+  if sample="$(timeout 30 ros2 topic echo "$2" --once 2>/dev/null)" && [ -n "$sample" ]; then
     echo "      $1: PASS"
     log "validation PASS: $2"
   else
@@ -333,7 +339,9 @@ topic_ok() {  # <name> <topic>
   fi
 }
 tf_ok() {  # <name> <parent> <child>
-  if timeout 30 ros2 run tf2_ros tf2_echo "$2" "$3" 2>/dev/null | grep -qm1 "Translation:"; then
+  local sample
+  sample="$(timeout 30 ros2 run tf2_ros tf2_echo "$2" "$3" 2>/dev/null || true)"
+  if grep -qm1 "Translation:" <<< "$sample"; then
     echo "      $1: PASS"
     log "validation PASS: TF $2->$3"
   else
@@ -409,7 +417,7 @@ echo "  /clock                        rosgraph_msgs/Clock        (sim time)"
 echo "  /lunabot/odom                 nav_msgs/Odometry"
 echo "  /lunabot/camera/image_raw     sensor_msgs/Image          (RGB 640x480 @20Hz)"
 echo "  /lunabot/depth/image_raw      sensor_msgs/Image          (depth @15Hz)"
-echo "  Gazebo lunar_habitat_main    static habitat presentation model"
+echo "  Gazebo lunar_habitat         static cylindrical habitat, dome, and airlock"
 echo "  Gazebo presentation_obstacle_forward  physical LiDAR obstacle"
 echo "  /lunabot/lidar/scan           sensor_msgs/LaserScan      (720 beams @10Hz)"
 echo "  /lunabot/imu                  sensor_msgs/Imu            (@100Hz)"

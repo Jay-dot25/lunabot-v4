@@ -1,5 +1,5 @@
 LunaBot V4 - Phase A - static validation report
-date: 2026-09-18T06:47:22Z
+date: 2026-09-18T07:09:26Z
 ============================================================
 [PASS] world SDF XML well-formed
 [PASS] world name == lunar_world - got lunar_world
@@ -68,6 +68,9 @@ date: 2026-09-18T06:47:22Z
 [PASS] lunar_terrain_collision.obj: face indices in bounds - 10000
 [PASS] lunar_terrain_collision.obj: extent ~400x400 m - [396.0, 396.0, 14.2]
 [PASS] lunar_terrain_collision.obj: relief within [-12, +10] m - z=[-9.32, 4.92]
+[PASS] Gazebo starts running in headless mode (-r -s)
+[PASS] Gazebo starts running in GUI mode (-r)
+[PASS] runtime topic checks reject empty samples
 [PASS] bash syntax: scripts/launch-a.sh
 [PASS] bash syntax: launch-a
 [PASS] bash syntax: evidence/phase-a-launch-a/collect_evidence.sh
@@ -92,4 +95,4 @@ date: 2026-09-18T06:47:22Z
 [PASS] evidence README
 [PASS] verification checklist
 ============================================================
-RESULT: 90/90 checks passed
+RESULT: 93/93 checks passed
