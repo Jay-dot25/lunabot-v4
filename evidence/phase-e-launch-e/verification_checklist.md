@@ -21,8 +21,10 @@ EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-e
 - [ ] `/lunabot/terrain/segmentation` is a real `sensor_msgs/msg/Image`.
 - [ ] `/lunabot/terrain/overlay` is a real `sensor_msgs/msg/Image`.
 - [ ] `/lunabot/terrain/segmentation/status` is a real `std_msgs/msg/String`.
-- [ ] Segmentation status contains `SEGMENTATION_PASS`.
-- [ ] Mask and overlay evidence files are non-empty.
+- [ ] Segmentation status contains `SEGMENTATION_PASS`, `model=lunabot_mlp_v1`, `trained=true`, and exact `BEDROCK, REGOLITH, ROCK, CRATER, SHADOW` counts.
+- [ ] Mask values are restricted to the exact `mono8` label range 0..4.
+- [ ] Mask and overlay evidence files are non-empty and visibly derive from live RGB-D.
+- [ ] Suitable viewpoints meaningfully distinguish all five classes; zero counts in one frame are not fabricated into evidence.
 - [ ] `A* goal reached: PASS` remains true.
 - [ ] Live map updates and final map evidence pass when map saver is installed.
 - [ ] `PHASE E RUN COMPLETE - overall result: PASS` is printed.
@@ -36,8 +38,9 @@ Command:
 EVIDENCE=1 ~/launch-e
 ```
 
-- [ ] Terrain Segmentation Overlay displays `/lunabot/terrain/overlay`.
-- [ ] Terrain Segmentation Mask can be enabled on `/lunabot/terrain/segmentation`.
+- [ ] Semantic Overlay displays `/lunabot/terrain/overlay` with the five-color legend.
+- [ ] Terrain Segmentation Mask can be enabled on `/lunabot/terrain/segmentation` with range 0..4.
+- [ ] Overlay is compared to RGB/depth and is spatially meaningful rather than a renamed single class.
 - [ ] Camera, LiDAR, map, A* path, odometry, and TF remain error-free.
 - [ ] Ctrl+C closes all Phase E process groups.
 
@@ -48,5 +51,6 @@ EVIDENCE=1 ~/launch-e
 - [ ] The second run again produces `SEGMENTATION_PASS`.
 - [ ] No stale Gazebo, bridge, perception, SLAM, planner, or controller process remains.
 
-This checklist is approved for Phase E. Phase F must not begin until a
-separate explicit Phase F request and gate.
+This is the uncompleted Phase E acceptance checklist, not an approval record.
+No later phase may begin until every static, runtime, GUI/evidence, regression,
+relaunch, and stale-process item has passed.

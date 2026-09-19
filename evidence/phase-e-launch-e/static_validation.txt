@@ -3,121 +3,99 @@
 [PASS] file exists: launch-c
 [PASS] file exists: launch-d
 [PASS] file exists: launch-e
-[PASS] file exists: scripts/launch-a.sh
-[PASS] file exists: scripts/launch-b.sh
-[PASS] file exists: scripts/launch-c.sh
-[PASS] file exists: scripts/launch-d.sh
 [PASS] file exists: scripts/launch-e.sh
-[PASS] file exists: scripts/wasd_teleop.py
-[PASS] file exists: scripts/control_odometry.py
-[PASS] file exists: scripts/odometry_monitor.py
-[PASS] file exists: scripts/astar_navigation.py
 [PASS] file exists: scripts/terrain_segmentation.py
-[PASS] file exists: config/slam_toolbox_phase_c.yaml
-[PASS] file exists: rviz/phase_a.rviz
-[PASS] file exists: rviz/phase_b.rviz
-[PASS] file exists: rviz/phase_c.rviz
-[PASS] file exists: rviz/phase_d.rviz
+[PASS] file exists: tools/train_terrain_mlp.py
+[PASS] file exists: models/terrain_mlp_v1.json
 [PASS] file exists: rviz/phase_e.rviz
-[PASS] file exists: tools/validate_phase_a.py
-[PASS] file exists: tools/validate_phase_b.py
-[PASS] file exists: tools/validate_phase_c.py
-[PASS] file exists: tools/validate_phase_d.py
-[PASS] file exists: docs/phase-3-launch-c.md
-[PASS] file exists: docs/phase-4-launch-d.md
 [PASS] file exists: docs/phase-5-launch-e.md
-[PASS] file exists: evidence/phase-d-launch-d/README.md
 [PASS] file exists: evidence/phase-e-launch-e/README.md
 [PASS] file exists: evidence/phase-e-launch-e/verification_checklist.md
-[PASS] file exists: src/lunabot_gazebo/worlds/lunar_world.sdf
-[PASS] file exists: src/lunabot_gazebo/models/lunabot_v4/model.sdf
 [PASS] executable: launch-e
 [PASS] executable: scripts/launch-e.sh
 [PASS] executable: scripts/terrain_segmentation.py
+[PASS] executable: tools/train_terrain_mlp.py
 [PASS] executable: tools/validate_phase_e.py
 [PASS] Python syntax: scripts/terrain_segmentation.py
-[PASS] Python syntax: scripts/astar_navigation.py
-[PASS] Python syntax: scripts/control_odometry.py
-[PASS] Python syntax: scripts/odometry_monitor.py
-[PASS] Python syntax: tools/validate_phase_a.py
-[PASS] Python syntax: tools/validate_phase_b.py
-[PASS] Python syntax: tools/validate_phase_c.py
-[PASS] Python syntax: tools/validate_phase_d.py
-[PASS] bash syntax: launch-a
-[PASS] bash syntax: launch-b
-[PASS] bash syntax: launch-c
-[PASS] bash syntax: launch-d
+[PASS] Python syntax: tools/train_terrain_mlp.py
+[PASS] Python syntax: tools/validate_phase_e.py
 [PASS] bash syntax: launch-e
-[PASS] bash syntax: scripts/launch-a.sh
-[PASS] bash syntax: scripts/launch-b.sh
-[PASS] bash syntax: scripts/launch-c.sh
-[PASS] bash syntax: scripts/launch-d.sh
 [PASS] bash syntax: scripts/launch-e.sh
-[PASS] world SDF well-formed
-[PASS] model SDF well-formed
-[PASS] approved baseline remains green: tools/validate_phase_a.py - ==
-RESULT: 80/80 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
-============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
-[PASS] approved baseline remains green: tools/validate_phase_d.py - ULT: 152/152 checks passed - ALL PASS
-================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-d-launch-d/static_validation.txt
-[PASS] root launch-e resolves its real path
-[PASS] root launch-e execs scripts/launch-e.sh
-[PASS] Phase E does not invoke an earlier launcher
-[PASS] Phase E has its own evidence directory
-[PASS] Phase E is symlink-safe
-[PASS] Phase E uses process groups
-[PASS] Phase E has a shutdown trap
-[PASS] Phase E cleans perception process
-[PASS] Phase E has bounded shutdown
-[PASS] Phase E reports its clean shutdown
-[PASS] Phase E preserves the Phase D planner
-[PASS] Phase E preserves one SLAM system
-[PASS] perception is a ROS node
-[PASS] perception consumes RGB images
-[PASS] perception consumes depth images
-[PASS] perception decodes supported depth encodings
-[PASS] perception publishes a mono8 mask
-[PASS] perception publishes an RGB overlay
-[PASS] perception defines explicit labels
-[PASS] perception handles invalid depth
-[PASS] perception uses a conservative ground ROI
-[PASS] perception publishes auditable status
-[PASS] perception status is late-join safe
-[PASS] perception does not alter navigation commands
-[PASS] Phase E resolves the perception path
-[PASS] Phase E starts perception directly
-[PASS] Phase E bridges the existing depth topic
-[PASS] Phase E keeps the existing RGB topic
-[PASS] Phase E validates depth at runtime
-[PASS] Phase E validates mask type
-[PASS] Phase E validates overlay type
-[PASS] Phase E validates status type
-[PASS] Phase E validates real segmentation messages
-[PASS] Phase E validates segmentation content
-[PASS] Phase E records segmentation evidence
-[PASS] Phase E retains the A* goal gate
-[PASS] Phase E retains map motion evidence
-[PASS] Phase E RViz keeps map fixed frame
-[PASS] Phase E RViz keeps A* path
-[PASS] Phase E RViz shows segmentation overlay
-[PASS] Phase E RViz includes mask display
-[PASS] Phase E RViz uses sensor-compatible QoS
-[PASS] docs contain scope
-[PASS] docs contain automated command
-[PASS] docs contain segmentation acceptance
-[PASS] docs contain mask output
-[PASS] docs contain overlay output
-[PASS] docs contain RGB-D inputs
-[PASS] docs contain relaunch
-[PASS] docs contain Phase F gate
-[PASS] validator is honest about runtime
+[PASS] Phase A static baseline remains green
+[PASS] Phase B static baseline remains green
+[PASS] Phase C static baseline remains green
+[PASS] Phase D static baseline remains green
+[PASS] model artifact parses as JSON
+[PASS] model format is versioned
+[PASS] model exact class order
+[PASS] model exact seven features
+[PASS] model architecture is 7-12-8-5
+[PASS] model uses ReLU
+[PASS] artifact records supervised training
+[PASS] artifact records balanced-sized split
+[PASS] held-out synthetic accuracy exceeds 90%
+[PASS] artifact has five-row confusion matrix
+[PASS] model tensor w1 shape (7, 12)
+[PASS] model tensor b1 shape (12,)
+[PASS] model tensor w2 shape (12, 8)
+[PASS] model tensor b2 shape (8,)
+[PASS] model tensor w3 shape (8, 5)
+[PASS] model tensor b3 shape (5,)
+[PASS] trainer contains deterministic RNG
+[PASS] trainer contains backpropagation
+[PASS] trainer contains training epochs
+[PASS] trainer contains held-out metric
+[PASS] trainer contains simulation-domain disclosure
+[PASS] trainer does not require NumPy
+[PASS] trainer exact labels
+[PASS] node uses NumPy inference
+[PASS] node uses first trained layer
+[PASS] node uses second trained layer
+[PASS] node uses output layer
+[PASS] node uses class selection
+[PASS] node uses depth geometry
+[PASS] node uses local texture
+[PASS] node uses row feature metadata
+[PASS] node exact label constants
+[PASS] node rejects mismatched model labels
+[PASS] node supports common RGB encodings
+[PASS] node supports metric depth encodings
+[PASS] node publishes mono8 mask and rgb8 overlay
+[PASS] node reports all class counts
+[PASS] node publishes trained-model status
+[PASS] node status is transient local
+[PASS] node never publishes velocity
+[PASS] obsolete three-class contract absent
+[PASS] wrapper resolves path and execs launcher
+[PASS] launcher does not invoke prior launcher
+[PASS] launcher requires model artifact
+[PASS] launcher checks NumPy dependency
+[PASS] launcher passes model path
+[PASS] manual goal is default
+[PASS] DEMO explicitly enables auto goal
+[PASS] launcher validates semantic messages
+[PASS] launcher requires processed-frame status
+[PASS] launcher preserves Phase D A*
+[PASS] launcher preserves Phase B boundary
+[PASS] launcher uses process groups and bounded cleanup
+[PASS] launcher saves fresh map
+[PASS] RViz keeps map and A* displays
+[PASS] RViz shows semantic overlay
+[PASS] RViz provides semantic mask
+[PASS] RViz mask scale includes label 4
+[PASS] RViz includes exact five-class legend
+[PASS] docs disclose: 7-12-8-5
+[PASS] docs disclose: 92.800%
+[PASS] docs disclose: synthetic
+[PASS] docs disclose: not real-world accuracy
+[PASS] docs disclose: manual goal default
+[PASS] docs disclose: Phase E remains incomplete
+[PASS] docs disclose: stale processes
+[PASS] docs disclose: BEDROCK
+[PASS] docs disclose: REGOLITH
+[PASS] docs disclose: ROCK
+[PASS] docs disclose: CRATER
+[PASS] docs disclose: SHADOW
+[PASS] docs do not claim approval
 
-RESULT: 112/112 checks passed
+RESULT: 99/99 checks passed

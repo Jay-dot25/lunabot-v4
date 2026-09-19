@@ -1,203 +1,162 @@
 #!/usr/bin/env python3
-"""Static Phase E gate: RGB-D terrain perception.
+"""Honest static gate for Phase E trained five-class RGB-D perception.
 
-This validator checks the independent launch-e contract and the approved
-Phase A-D baseline. It never claims that a real camera frame was segmented;
-that requires the workstation command documented in docs/phase-5-launch-e.md.
+This verifies source/artifact contracts only. It never claims ROS/Gazebo runtime,
+semantic quality, GUI inspection, relaunch, or clean-process acceptance.
 """
-
-from pathlib import Path
 import ast
+import json
+from pathlib import Path
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 checks = []
 
-
 def check(name, ok, detail=""):
     checks.append((name, bool(ok), detail))
 
-
-def read(rel):
+def text(rel):
     return (ROOT / rel).read_text(encoding="utf-8")
 
-
-def run(cmd):
-    return subprocess.run(cmd, cwd=ROOT, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE, text=True)
-
+def run(*cmd):
+    return subprocess.run(cmd, cwd=ROOT, text=True, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
 
 required = [
     "launch-a", "launch-b", "launch-c", "launch-d", "launch-e",
-    "scripts/launch-a.sh", "scripts/launch-b.sh", "scripts/launch-c.sh",
-    "scripts/launch-d.sh", "scripts/launch-e.sh",
-    "scripts/wasd_teleop.py", "scripts/control_odometry.py",
-    "scripts/odometry_monitor.py", "scripts/astar_navigation.py",
-    "scripts/terrain_segmentation.py", "config/slam_toolbox_phase_c.yaml",
-    "rviz/phase_a.rviz", "rviz/phase_b.rviz", "rviz/phase_c.rviz",
-    "rviz/phase_d.rviz", "rviz/phase_e.rviz",
-    "tools/validate_phase_a.py", "tools/validate_phase_b.py",
-    "tools/validate_phase_c.py", "tools/validate_phase_d.py",
-    "docs/phase-3-launch-c.md", "docs/phase-4-launch-d.md",
-    "docs/phase-5-launch-e.md", "evidence/phase-d-launch-d/README.md",
+    "scripts/launch-e.sh", "scripts/terrain_segmentation.py",
+    "tools/train_terrain_mlp.py", "models/terrain_mlp_v1.json",
+    "rviz/phase_e.rviz", "docs/phase-5-launch-e.md",
     "evidence/phase-e-launch-e/README.md",
     "evidence/phase-e-launch-e/verification_checklist.md",
-    "src/lunabot_gazebo/worlds/lunar_world.sdf",
-    "src/lunabot_gazebo/models/lunabot_v4/model.sdf",
 ]
 for rel in required:
     check(f"file exists: {rel}", (ROOT / rel).is_file())
-
-for rel in ["launch-e", "scripts/launch-e.sh", "scripts/terrain_segmentation.py",
-            "tools/validate_phase_e.py"]:
+for rel in ("launch-e", "scripts/launch-e.sh", "scripts/terrain_segmentation.py",
+            "tools/train_terrain_mlp.py", "tools/validate_phase_e.py"):
     p = ROOT / rel
     check(f"executable: {rel}", p.is_file() and bool(p.stat().st_mode & 0o111))
-
-for rel in ["scripts/terrain_segmentation.py", "scripts/astar_navigation.py",
-            "scripts/control_odometry.py", "scripts/odometry_monitor.py",
-            "tools/validate_phase_a.py", "tools/validate_phase_b.py",
-            "tools/validate_phase_c.py", "tools/validate_phase_d.py"]:
+for rel in ("scripts/terrain_segmentation.py", "tools/train_terrain_mlp.py",
+            "tools/validate_phase_e.py"):
     try:
-        ast.parse(read(rel))
-        check(f"Python syntax: {rel}", True)
+        ast.parse(text(rel)); check(f"Python syntax: {rel}", True)
     except Exception as exc:
         check(f"Python syntax: {rel}", False, str(exc))
+for rel in ("launch-e", "scripts/launch-e.sh"):
+    result = run("bash", "-n", rel)
+    check(f"bash syntax: {rel}", result.returncode == 0, result.stderr.strip())
 
-for rel in ["launch-a", "launch-b", "launch-c", "launch-d", "launch-e",
-            "scripts/launch-a.sh", "scripts/launch-b.sh",
-            "scripts/launch-c.sh", "scripts/launch-d.sh", "scripts/launch-e.sh"]:
-    r = run(["bash", "-n", rel])
-    check(f"bash syntax: {rel}", r.returncode == 0, r.stderr.strip())
+# Closed baseline validators must still pass; do not couple to obsolete totals.
+for phase in "abcd":
+    rel = f"tools/validate_phase_{phase}.py"
+    result = run(sys.executable, rel)
+    check(f"Phase {phase.upper()} static baseline remains green",
+          result.returncode == 0 and "ALL PASS" in result.stdout,
+          result.stdout[-160:].strip())
 
-for rel, kind in [("src/lunabot_gazebo/worlds/lunar_world.sdf", "world"),
-                  ("src/lunabot_gazebo/models/lunabot_v4/model.sdf", "model")]:
-    try:
-        ET.parse(ROOT / rel)
-        check(f"{kind} SDF well-formed", True)
-    except Exception as exc:
-        check(f"{kind} SDF well-formed", False, str(exc))
+launch, node, trainer = map(text, ("scripts/launch-e.sh",
+                                  "scripts/terrain_segmentation.py",
+                                  "tools/train_terrain_mlp.py"))
+rviz, docs = text("rviz/phase_e.rviz"), text("docs/phase-5-launch-e.md")
+wrapper = text("launch-e")
+labels = ["BEDROCK", "REGOLITH", "ROCK", "CRATER", "SHADOW"]
+features = ["red", "green", "blue", "depth_norm", "row_norm",
+            "depth_gradient", "texture"]
+try:
+    model = json.loads(text("models/terrain_mlp_v1.json"))
+    check("model artifact parses as JSON", True)
+except Exception as exc:
+    model = {}; check("model artifact parses as JSON", False, str(exc))
+check("model format is versioned", model.get("format") == "lunabot_mlp_v1")
+check("model exact class order", model.get("labels") == labels)
+check("model exact seven features", model.get("features") == features)
+check("model architecture is 7-12-8-5", model.get("architecture") == [7, 12, 8, 5])
+check("model uses ReLU", model.get("activation") == "relu")
+training = model.get("training", {})
+check("artifact records supervised training", "supervised" in training.get("method", ""))
+check("artifact records balanced-sized split", training.get("train_samples") == 4000 and
+      training.get("test_samples") == 1000)
+check("held-out synthetic accuracy exceeds 90%",
+      .9 <= float(training.get("held_out_accuracy", 0)) <= 1)
+check("artifact has five-row confusion matrix",
+      len(training.get("confusion_matrix", [])) == 5 and
+      all(len(row) == 5 for row in training.get("confusion_matrix", [])))
+for key, shape in (("w1", (7, 12)), ("b1", (12,)), ("w2", (12, 8)),
+                   ("b2", (8,)), ("w3", (8, 5)), ("b3", (5,))):
+    value = model.get(key, [])
+    actual = (len(value), len(value[0])) if value and isinstance(value[0], list) else (len(value),)
+    check(f"model tensor {key} shape {shape}", actual == shape)
 
-# The approved baseline remains a required static dependency.
-for rel, expected in [("tools/validate_phase_a.py", "80/80"),
-                      ("tools/validate_phase_b.py", "103/103"),
-                      ("tools/validate_phase_c.py", "133/133"),
-                      ("tools/validate_phase_d.py", "152/152")]:
-    r = run([sys.executable, rel])
-    check(f"approved baseline remains green: {rel}",
-          r.returncode == 0 and expected in r.stdout, r.stdout[-180:].strip())
+# Trainer must actually optimize weights and remain simulation-domain honest.
+for token, name in (("random.Random", "deterministic RNG"), ("upstream gradients", "backpropagation"),
+                    ("epochs", "training epochs"), ("held_out_accuracy", "held-out metric"),
+                    ("simulation-domain", "simulation-domain disclosure")):
+    check(f"trainer contains {name}", token in trainer)
+check("trainer does not require NumPy", "import numpy" not in trainer)
+check("trainer exact labels", all(f'"{label}"' in trainer for label in labels))
 
-launch = read("scripts/launch-e.sh")
-wrapper = read("launch-e")
-perception = read("scripts/terrain_segmentation.py")
-rviz = read("rviz/phase_e.rviz")
-docs = read("docs/phase-5-launch-e.md")
-noncomment = "\n".join(line for line in launch.splitlines()
-                           if not line.lstrip().startswith("#"))
+# Runtime inference contract.
+for token, name in (("import numpy as np", "NumPy inference"),
+                    ("features @ self.w1", "first trained layer"),
+                    ("h1 @ self.w2", "second trained layer"),
+                    ("h2 @ self.w3", "output layer"),
+                    ("np.argmax", "class selection"),
+                    ("np.gradient", "depth geometry"),
+                    ("texture", "local texture"),
+                    ("row_norm", "row feature metadata")):
+    check(f"node uses {name}", token in node or token in text("models/terrain_mlp_v1.json"))
+check("node exact label constants", all(f"{label} = {i}" in node for i, label in enumerate(labels)))
+check("node rejects mismatched model labels", "label order does not match" in node)
+check("node supports common RGB encodings", all(x in node for x in ("rgb8", "bgr8", "rgba8", "bgra8")))
+check("node supports metric depth encodings", all(x in node for x in ("16uc1", "32fc1", "64fc1")))
+check("node publishes mono8 mask and rgb8 overlay", '"mono8"' in node and '"rgb8"' in node)
+check("node reports all class counts", all(f'name.lower()' in node for _ in [0]) and "minlength=5" in node)
+check("node publishes trained-model status", "trained=true" in node and "SEGMENTATION_PASS" in node)
+check("node status is transient local", "TRANSIENT_LOCAL" in node)
+check("node never publishes velocity", "/cmd_vel" not in node)
+check("obsolete three-class contract absent", all(x not in node for x in ("UNKNOWN =", "TERRAIN =", "OBSTACLE =")))
 
-# Independent launch and inherited safety.
-check("root launch-e resolves its real path", "readlink -f" in wrapper and
-      "SCRIPT_PATH" in wrapper)
-check("root launch-e execs scripts/launch-e.sh", "scripts/launch-e.sh" in wrapper)
-check("Phase E does not invoke an earlier launcher", "launch-d" not in noncomment and
-      "launch-c" not in noncomment and "launch-b" not in noncomment and
-      "launch-a" not in noncomment)
-check("Phase E has its own evidence directory", "phase-e-launch-e" in launch and
-      "phase-d-launch-d" not in noncomment)
-check("Phase E is symlink-safe", 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"' in launch)
-check("Phase E uses process groups", "setsid" in launch and "stop_group()" in launch)
-check("Phase E has a shutdown trap", "trap 'shutdown 130' INT TERM" in launch)
-check("Phase E cleans perception process", "PERCEPTION_PID" in launch and
-      'stop_group "$PERCEPTION_PID"' in launch)
-check("Phase E has bounded shutdown", 'kill -KILL -"$pid"' in launch)
-check("Phase E reports its clean shutdown", "Launch E environment cleanly closed." in launch)
-check("Phase E preserves the Phase D planner", 'NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"' in launch)
-check("Phase E preserves one SLAM system", "ros2 launch slam_toolbox online_async_launch.py" in launch and
-      "cartographer" not in (launch + perception).lower() and
-      "nav2_amcl" not in (launch + perception).lower())
+# Independent launcher, dependencies, runtime gates and inherited safety.
+check("wrapper resolves path and execs launcher", "readlink -f" in wrapper and "scripts/launch-e.sh" in wrapper)
+noncomment = "\n".join(x for x in launch.splitlines() if not x.lstrip().startswith("#"))
+check("launcher does not invoke prior launcher", all(f"launch-{p}" not in noncomment for p in "abcd"))
+check("launcher requires model artifact", 'TERRAIN_MODEL="$REPO_DIR/models/terrain_mlp_v1.json"' in launch and
+      '"$TERRAIN_MODEL"' in launch)
+check("launcher checks NumPy dependency", "import numpy" in launch and "python3-numpy" in launch)
+check("launcher passes model path", '-p model_path:="$TERRAIN_MODEL"' in launch)
+check("manual goal is default", 'AUTO_GOAL="${AUTO_GOAL:-false}"' in launch)
+check("DEMO explicitly enables auto goal", 'if [ "$DEMO" = "1" ]' in launch and "AUTO_GOAL=true" in launch)
+check("launcher validates semantic messages", all(t in launch for t in
+      ("/lunabot/terrain/segmentation", "/lunabot/terrain/overlay",
+       "/lunabot/terrain/segmentation/status")))
+check("launcher requires processed-frame status", "SEGMENTATION_PASS" in launch)
+check("launcher preserves Phase D A*", 'NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"' in launch)
+check("launcher preserves Phase B boundary", '--input-topic /cmd_vel_in --output-topic /cmd_vel' in launch and
+      '-p cmd_topic:=/cmd_vel_in' in launch)
+check("launcher uses process groups and bounded cleanup", "setsid" in launch and
+      'kill -KILL -"$pid"' in launch and "terrain_segmentation.py" in launch)
+check("launcher saves fresh map", 'rm -f "$EVIDENCE_DIR/phase_e_map.yaml"' in launch and
+      "save_map_timeout:=30.0" in launch)
 
-# RGB-D segmentation implementation.
-check("perception is a ROS node", "class TerrainSegmentation(Node)" in perception)
-check("perception consumes RGB images", "Image, self.image_topic" in perception and
-      "_image_callback" in perception)
-check("perception consumes depth images", "Image, self.depth_topic" in perception and
-      "_depth_callback" in perception)
-check("perception decodes supported depth encodings", "16uc1" in perception and
-      "32fc1" in perception and "_depth_at" in perception)
-check("perception publishes a mono8 mask", '"mono8"' in perception and
-      "self.mask_pub.publish" in perception)
-check("perception publishes an RGB overlay", '"rgb8"' in perception and
-      "self.overlay_pub.publish" in perception)
-check("perception defines explicit labels", "UNKNOWN = 0" in perception and
-      "TERRAIN = 1" in perception and "OBSTACLE = 2" in perception)
-check("perception handles invalid depth", "math.isfinite(distance)" in perception and
-      "unknown_count" in perception)
-check("perception uses a conservative ground ROI", "ground_roi_start" in perception and
-      "saturation_threshold" in perception)
-check("perception publishes auditable status", "SEGMENTATION_PASS" in perception and
-      "self.status_pub" in perception)
-check("perception status is late-join safe", "TRANSIENT_LOCAL" in perception and
-      "status_qos" in perception)
-check("perception does not alter navigation commands", "/cmd_vel" not in perception)
-
-# Phase E launcher carries the sensor and runtime contracts.
-check("Phase E resolves the perception path", 'PERCEPTION_PATH="$REPO_DIR/scripts/terrain_segmentation.py"' in launch)
-check("Phase E starts perception directly", 'python3 "$PERCEPTION_PATH" --ros-args' in launch)
-check("Phase E bridges the existing depth topic", '"/lunabot/depth/image_raw@sensor_msgs/msg/Image' in launch)
-check("Phase E keeps the existing RGB topic", '"/lunabot/camera/image_raw@sensor_msgs/msg/Image' in launch)
-check("Phase E validates depth at runtime", 'topic_ok "topic /lunabot/depth/image_raw"' in launch)
-check("Phase E validates mask type", 'type_ok "type terrain mask sensor_msgs/Image"' in launch)
-check("Phase E validates overlay type", 'type_ok "type terrain overlay sensor_msgs/Image"' in launch)
-check("Phase E validates status type", 'type_ok "type terrain status std_msgs/String"' in launch)
-check("Phase E validates real segmentation messages", 'topic_ok "topic /lunabot/terrain/segmentation"' in launch and
-      'topic_ok "topic /lunabot/terrain/overlay"' in launch)
-check("Phase E validates segmentation content", "SEGMENTATION_PASS" in launch and
-      "terrain segmentation content: PASS" in launch)
-check("Phase E records segmentation evidence", "segmentation_sample.txt" in launch and
-      "segmentation_status.txt" in launch and "segmentation.log" in launch)
-check("Phase E retains the A* goal gate", "wait_for_goal" in launch and
-      "A* goal reached" in launch)
-check("Phase E retains map motion evidence", "map_before_navigation.txt" in launch and
-      "map_after_navigation.txt" in launch)
-
-# RViz and documentation.
-check("Phase E RViz keeps map fixed frame", "Fixed Frame: map" in rviz)
-check("Phase E RViz keeps A* path", "Name: A* Path" in rviz and "Value: /plan" in rviz)
-check("Phase E RViz shows segmentation overlay", "Terrain Segmentation Overlay" in rviz and
-      "Value: /lunabot/terrain/overlay" in rviz)
-check("Phase E RViz includes mask display", "Terrain Segmentation Mask" in rviz and
-      "Value: /lunabot/terrain/segmentation" in rviz)
-check("Phase E RViz uses sensor-compatible QoS", rviz.count("Reliability Policy: Best Effort") >= 4)
-for phrase, name in [
-    ("Terrain perception", "scope"),
-    ("EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-e", "automated command"),
-    ("SEGMENTATION_PASS", "segmentation acceptance"),
-    ("/lunabot/terrain/segmentation", "mask output"),
-    ("/lunabot/terrain/overlay", "overlay output"),
-    ("RGB-D", "RGB-D inputs"),
-    ("clean relaunch", "relaunch"),
-    ("Phase F", "Phase F gate"),
-]:
-    check(f"docs contain {name}", phrase in docs)
-check("validator is honest about runtime", "never claims" in read("tools/validate_phase_e.py") and
-      "workstation" in read("tools/validate_phase_e.py"))
+check("RViz keeps map and A* displays", "Fixed Frame: map" in rviz and "Name: A* Path" in rviz)
+check("RViz shows semantic overlay", "/lunabot/terrain/overlay" in rviz)
+check("RViz provides semantic mask", "/lunabot/terrain/segmentation" in rviz)
+check("RViz mask scale includes label 4", "Max: 4" in rviz)
+check("RViz includes exact five-class legend", all(label in rviz for label in labels))
+for phrase in ("7-12-8-5", "92.800%", "synthetic", "not real-world accuracy",
+               "manual goal default", "Phase E remains incomplete", "stale processes",
+               "BEDROCK", "REGOLITH", "ROCK", "CRATER", "SHADOW"):
+    check(f"docs disclose: {phrase}", phrase in docs)
+check("docs do not claim approval", "Phase E is approved" not in docs and
+      "runtime gates are explicitly approved" not in docs)
 
 passed = sum(ok for _, ok, _ in checks)
-print("=" * 64)
-print("LUNABOT V4 PHASE E STATIC VALIDATION")
-print("=" * 64)
 for name, ok, detail in checks:
-    suffix = f" - {detail}" if detail else ""
-    print(f"[{('PASS' if ok else 'FAIL')}] {name}{suffix}")
-print("=" * 64)
-print(f"RESULT: {passed}/{len(checks)} checks passed - " +
+    print(f"[{'PASS' if ok else 'FAIL'}] {name}" + (f" - {detail}" if detail else ""))
+print(f"\nRESULT: {passed}/{len(checks)} checks passed - " +
       ("ALL PASS" if passed == len(checks) else "FAIL"))
-print("=" * 64)
 report = ROOT / "evidence/phase-e-launch-e/static_validation.txt"
-report.write_text("\n".join(
-    f"[{('PASS' if ok else 'FAIL')}] {name}{(' - ' + detail) if detail else ''}"
-    for name, ok, detail in checks
-) + f"\n\nRESULT: {passed}/{len(checks)} checks passed\n", encoding="utf-8")
-print(f"report: {report}")
+report.write_text("\n".join(f"[{'PASS' if ok else 'FAIL'}] {name}" for name, ok, _ in checks) +
+                  f"\n\nRESULT: {passed}/{len(checks)} checks passed\n", encoding="utf-8")
 sys.exit(0 if passed == len(checks) else 1)

@@ -1,182 +1,103 @@
-# Phase E — RGB-D Terrain Perception (`launch-e`)
+# Phase E — Trained Five-Class RGB-D Terrain Perception (`launch-e`)
 
-## 1. Scope and gate
+## Scope and current gate
 
-Phase E adds the first terrain-perception layer to the runtime-approved Phase
-D stack. It consumes the existing RGB and depth camera streams and publishes a
-pixel-wise terrain/obstacle/unknown segmentation mask plus a visualization
-overlay. It does not modify the lunar terrain, rover model, SLAM system, A*
-planner, controller, odometry source, or Phase D topics.
+Phase E adds sensor-derived semantic perception while preserving the independently runnable Phase D geometric A* baseline. It does **not** feed semantic costs into A*, publish velocity commands, or modify SLAM. Phase B remains the sole `/cmd_vel_in` to `/cmd_vel` command boundary.
 
-Terrain perception is implemented as an auditable, deterministic RGB-D baseline
-rather than a trained semantic model. A valid depth return in the lower camera field is a
-terrain candidate when its RGB return is low-saturation; valid returns outside
-the ground region or with saturated RGB are conservative obstacle candidates.
-Invalid depth is unknown. Semantic terrain mapping and navigation cost fusion
-remain future phases.
+Phase E is not approved by this document or by static validation. Approval requires the headless, GUI/evidence, relaunch, regression, and stale-process gates below on ROS 2 Humble/Gazebo. No later phase may begin before those gates pass.
 
-Phase E is independently launchable as `~/launch-e`. Static validation is not
-runtime acceptance. The workstation runtime produced real mask, overlay, and
-status messages, then cleanly relaunched; Phase E is approved. Phase F requires
-its own separate explicit request and gate.
+## Model and labels
 
-## 2. Data flow
+`tools/train_terrain_mlp.py` deterministically generates a balanced simulation-domain RGB-D feature dataset and performs supervised SGD. It writes `models/terrain_mlp_v1.json`, a compact CPU-oriented MLP with architecture `7-12-8-5` and two ReLU hidden layers. This is a genuinely trained model; it is not threshold logic and is not SegFormer, DeepLab, or U-Net.
+
+Features are red, green, blue, normalized depth, normalized image row, local depth gradient, and local RGB texture. The exact `mono8` contract is:
+
+| Value | Class | Overlay color |
+|---:|---|---|
+| 0 | `BEDROCK` | blue-grey |
+| 1 | `REGOLITH` | ochre |
+| 2 | `ROCK` | red |
+| 3 | `CRATER` | purple |
+| 4 | `SHADOW` | near-black |
+
+The artifact reports `92.800%` accuracy on its generated held-out synthetic split. That number is reproducibility metadata—not real-world accuracy, Gazebo runtime acceptance, or proof that every class occurs in a particular camera frame.
+
+## Data flow and ROS interfaces
 
 ```text
-/lunabot/camera/image_raw  ───────┐
-                                  ├──> lunabot_terrain_segmentation
-/lunabot/depth/image_raw  ────────┘       ├─ /lunabot/terrain/segmentation
-                                          ├─ /lunabot/terrain/overlay
-                                          └─ /lunabot/terrain/segmentation/status
-
-Phase D baseline remains active:
-Lidar + /lunabot/odom -> slam_toolbox -> /map/map->odom -> A* -> /cmd_vel_in
-                                                      -> Phase B controller -> /cmd_vel
+/lunabot/camera/image_raw + /lunabot/depth/image_raw
+  -> lunabot_terrain_segmentation
+     -> /lunabot/terrain/segmentation        sensor_msgs/Image (mono8, labels 0..4)
+     -> /lunabot/terrain/overlay             sensor_msgs/Image (rgb8)
+     -> /lunabot/terrain/segmentation/status std_msgs/String
 ```
 
-The perception node uses sensor-compatible Best Effort QoS for RGB-D input and
-image output. The status topic is Reliable + Transient Local so late-joining
-runtime checks can observe the latest segmentation result.
+Image input/output uses sensor-compatible Best Effort QoS. Status is Reliable and Transient Local. A processed frame reports `SEGMENTATION_PASS`, `model=lunabot_mlp_v1`, `trained=true`, dimensions, invalid-depth count, and separate counts for all five classes. The status proves inference ran, but visual and behavioral inspection remains mandatory.
 
-## 3. Interface contract
-
-| Interface | Type | Role |
-|---|---|---|
-| `/lunabot/camera/image_raw` | `sensor_msgs/Image` | existing RGB input |
-| `/lunabot/depth/image_raw` | `sensor_msgs/Image` | existing depth input |
-| `/lunabot/terrain/segmentation` | `sensor_msgs/Image` | `mono8` labels: 0 unknown, 1 terrain, 2 obstacle |
-| `/lunabot/terrain/overlay` | `sensor_msgs/Image` | `rgb8` green terrain/red obstacle/black unknown visualization |
-| `/lunabot/terrain/segmentation/status` | `std_msgs/String` | frame counts and class statistics |
-
-A successful status contains `SEGMENTATION_PASS` and reports the image size,
-valid depth count, terrain count, obstacle count, and unknown count.
-
-The perception node intentionally publishes no velocity, map, or cost-map
-messages. Phase D remains the only navigation and motion layer.
-
-## 4. Installation
-
-Phase E uses the approved Phase D workstation dependencies. No ML runtime or
-`cv_bridge` package is required; image and depth bytes are decoded directly
-from `sensor_msgs/Image`.
+## Installation and static checks
 
 ```bash
+sudo apt install python3-numpy
 source /opt/ros/humble/setup.bash
 cd ~/lunabot-v4
+chmod +x launch-e scripts/launch-e.sh scripts/terrain_segmentation.py tools/train_terrain_mlp.py
 ln -sfn "$PWD/launch-e" ~/launch-e
-chmod +x launch-e scripts/launch-e.sh scripts/terrain_segmentation.py
-```
-
-## 5. Static validation
-
-```bash
-cd ~/lunabot-v4
+python3 tools/train_terrain_mlp.py --output /tmp/terrain_mlp_v1.json
+cmp /tmp/terrain_mlp_v1.json models/terrain_mlp_v1.json
 python3 tools/validate_phase_e.py
 ```
 
-The validator checks the Phase A-D baseline, independent launch behavior,
-RGB-D decoding, output labels, image/status interfaces, RViz displays, real
-runtime checks in the launcher, evidence paths, and honest runtime gating.
-The validator never claims a camera frame was actually segmented.
+The launcher fails early when NumPy or the model artifact is absent. The standard-library trainer can regenerate the artifact reproducibly; inference itself uses NumPy for vectorized pixel processing.
 
-## 6. Automated headless runtime gate
+## Normal GUI run (manual goal default)
 
 ```bash
-cd ~/lunabot-v4
-EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-e
-```
-
-The run starts the approved world, bridge, static TF, controller, odometry
-monitor, `slam_toolbox`, A*, and terrain perception directly. It must validate
-the inherited Phase D interfaces and these Phase E interfaces:
-
-```text
-/lunabot/depth/image_raw
-/lunabot/terrain/segmentation       sensor_msgs/Image
-/lunabot/terrain/overlay            sensor_msgs/Image
-/lunabot/terrain/segmentation/status std_msgs/String
-SEGMENTATION_PASS
-A* goal reached: PASS
-live map updates during autonomous navigation: PASS
-saved map evidence (YAML + PGM): PASS
-PHASE E RUN COMPLETE - overall result: PASS
-```
-
-Do not treat the segmentation process being alive as a pass. The launcher uses
-real `ros2 topic type` and `ros2 topic echo --once` checks and requires the
-status content to contain `SEGMENTATION_PASS`.
-
-## 7. GUI/RViz run
-
-After the headless gate passes:
-
-```bash
-source /opt/ros/humble/setup.bash
-cd ~/lunabot-v4
 EVIDENCE=1 ~/launch-e
 ```
 
-RViz retains the Phase D map, A* path, camera, LiDAR, odometry, and TF displays.
-It adds:
+Without `DEMO=1`, A* does not inject an automatic goal. Use RViz's goal tool or the documented Phase D goal interface. RViz retains map, path, camera, LiDAR, odometry, and TF and adds the semantic overlay and optional mask. Inspect the overlay against camera/depth imagery: classes must be spatially meaningful, stable enough to audit, and not merely a single renamed class. Record screenshots externally if required by the workstation evidence procedure.
 
-- `Terrain Segmentation Overlay` on `/lunabot/terrain/overlay`, enabled by default;
-- `Terrain Segmentation Mask` on `/lunabot/terrain/segmentation`, available as an optional display.
-
-Confirm that the overlay publishes continuously while the rover and camera are
-running, and that the status reports non-zero frame counts. Press Ctrl+C in the
-launcher terminal for clean shutdown.
-
-## 8. Evidence
-
-Runtime evidence is written to `evidence/phase-e-launch-e/`:
-
-| File | Meaning |
-|---|---|
-| `segmentation.log` | terrain segmentation node diagnostics |
-| `depth_sample.txt` | real depth `Image` sample |
-| `segmentation_sample.txt` | real `mono8` mask sample |
-| `overlay_sample.txt` | real `rgb8` overlay sample |
-| `segmentation_status.txt` | real `SEGMENTATION_PASS` status sample |
-| `topics.txt` | runtime topic graph |
-| `last_run.log` | ordered launch and validation result |
-| `map_before_navigation.txt` / `map_after_navigation.txt` | inherited A* map-motion gate |
-| `phase_e_map.yaml` / `phase_e_map.pgm` | final map evidence, when map saver is installed |
-| `static_validation.txt` | generated static Phase E report |
-
-Do not hand-edit runtime evidence. If a check fails, inspect the segmentation,
-bridge, and Gazebo logs, fix the runtime issue, and repeat the run.
-
-## 9. Clean relaunch gate
-
-After the autonomous run or GUI run:
-
-```text
-Launch E environment cleanly closed.
-```
-
-Then run the automated command a second time:
+## Automated headless regression gate
 
 ```bash
 EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-e
 ```
 
-Both runs must start one perception node, produce real segmentation messages,
-retain the Phase D A* goal and map gates, and cleanly stop all process groups.
-This clean relaunch is part of the Phase E runtime gate.
+`DEMO=1` enables the inherited automatic geometric A* goal. Acceptance requires real messages and all launcher checks, including:
 
-## 10. Acceptance checklist
+- exact trained-model status and exact class order;
+- non-empty mask and overlay messages derived from live RGB-D;
+- Phase D A* goal reached through `/cmd_vel_in`;
+- map change during navigation and fresh map save when map saver is installed;
+- `PHASE E RUN COMPLETE - overall result: PASS`.
 
-- [ ] Phase A-D static and runtime contracts remain passing.
-- [ ] Existing RGB and depth topics are real `sensor_msgs/Image` messages.
-- [ ] The segmentation node decodes the workstation's depth encoding.
-- [ ] A real non-empty `mono8` mask is published.
-- [ ] A real `rgb8` overlay is published.
-- [ ] Status contains `SEGMENTATION_PASS` with frame/class counts.
-- [ ] RViz displays the overlay without changing Phase D displays.
-- [ ] A* still reaches its goal through the Phase B controller boundary.
-- [ ] Final map evidence is saved when the map-saver package is available.
-- [ ] Clean shutdown and a second independent relaunch pass.
+Evidence is written under `evidence/phase-e-launch-e/`, including logs, topic/type samples, semantic status/mask/overlay samples, TF, odometry, navigation, and map artifacts. Do not hand-edit generated evidence or treat old evidence as proof for this replacement model.
 
-Phase E's runtime gates are explicitly approved. A separate Phase F request has
-started the semantic terrain-mapping implementation; Phase F has its own
-runtime gate and must be approved independently before Phase G.
+## Runtime semantic inspection
+
+Confirm the status names all five classes exactly:
+
+```bash
+ros2 topic echo /lunabot/terrain/segmentation/status \
+  --qos-reliability reliable --qos-durability transient_local --once
+```
+
+Inspect `/lunabot/terrain/overlay` in RViz and compare it with `/lunabot/camera/image_raw`. Class counts may legitimately be zero in one frame, but across suitable viewpoints evidence must demonstrate meaningful differentiation of `BEDROCK`, `REGOLITH`, `ROCK`, `CRATER`, and `SHADOW`. Synthetic held-out accuracy alone is insufficient.
+
+## Clean relaunch and regression
+
+After Ctrl+C, require `Launch E environment cleanly closed.` and verify no stale Gazebo, bridge, perception, SLAM, planner, controller, or monitor process remains. Repeat the headless command, then independently rerun the closed Phase D launcher to ensure its semantic-cost-free behavior is unchanged.
+
+## Acceptance checklist
+
+- [ ] Static validator passes and model regeneration check is deterministic.
+- [ ] Real RGB and depth topics feed inference; mask values remain in 0..4.
+- [ ] Status reports the exact five labels, trained model identity, and per-class counts.
+- [ ] GUI inspection shows meaningful five-class behavior with captured evidence.
+- [ ] Existing map, sensor, SLAM, TF, planner, controller, and odometry behavior remains healthy.
+- [ ] Automated A* reaches its goal through the Phase B boundary.
+- [ ] Fresh map evidence is saved and generated evidence is non-empty.
+- [ ] Two independent Phase E runs shut down cleanly with no stale processes.
+- [ ] Independent Phase D regression remains passing and semantic-cost-free.
+
+Until every item is verified on the workstation, Phase E remains incomplete and the next phase must not start.

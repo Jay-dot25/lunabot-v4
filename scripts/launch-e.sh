@@ -33,6 +33,7 @@ ODOM_PATH="$REPO_DIR/scripts/odometry_monitor.py"
 SLAM_CONFIG="$REPO_DIR/config/slam_toolbox_phase_c.yaml"
 NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"
 PERCEPTION_PATH="$REPO_DIR/scripts/terrain_segmentation.py"
+TERRAIN_MODEL="$REPO_DIR/models/terrain_mlp_v1.json"
 RVIZ_CONFIG="$REPO_DIR/rviz/phase_e.rviz"
 EVIDENCE_DIR="$REPO_DIR/evidence/phase-e-launch-e"
 LOG_FILE="$EVIDENCE_DIR/last_run.log"
@@ -42,7 +43,7 @@ WORLD_NAME="lunar_world"
 HEADLESS="${HEADLESS:-0}"
 DEMO="${DEMO:-0}"
 EVIDENCE="${EVIDENCE:-0}"
-AUTO_GOAL="${AUTO_GOAL:-true}"
+AUTO_GOAL="${AUTO_GOAL:-false}"
 
 OVERALL="PASS"
 GAZEBO_PID=""
@@ -72,10 +73,11 @@ stop_group() {
   [ -n "$pid" ] || return 0
   kill -TERM -"$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
   for _ in $(seq 1 20); do
-    kill -0 "$pid" 2>/dev/null || return 0
+    kill -0 -"$pid" 2>/dev/null || break
     sleep 0.25
   done
-  kill -KILL -"$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null || true
+  kill -KILL -"$pid" 2>/dev/null || true
+  kill -KILL "$pid" 2>/dev/null || true
 }
 
 save_final_map() {
@@ -85,8 +87,9 @@ save_final_map() {
   [ -n "$SLAM_PID" ] || return 0
   MAP_SAVE_DONE=1
   say "      saving final map evidence..."
-  timeout 30 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_e_map" \
-    --ros-args -p save_map_timeout:=10.0 2>/dev/null \
+  rm -f "$EVIDENCE_DIR/phase_e_map.yaml" "$EVIDENCE_DIR/phase_e_map.pgm"
+  timeout 60 ros2 run nav2_map_server map_saver_cli -f "$EVIDENCE_DIR/phase_e_map" \
+    --ros-args -p save_map_timeout:=30.0 2>/dev/null \
     >> "$EVIDENCE_DIR/map_saver.log" 2>&1 || true
   if [ -s "$EVIDENCE_DIR/phase_e_map.yaml" ] && [ -s "$EVIDENCE_DIR/phase_e_map.pgm" ]; then
     say "      saved map evidence (YAML + PGM): PASS"
@@ -153,8 +156,12 @@ shutdown() {
     wait "$GAZEBO_PID" 2>/dev/null || true
     say "      Gazebo stopped."
   fi
-  for p in $(pgrep -f "lunar_world.sdf" 2>/dev/null || true); do
-    kill -9 "$p" 2>/dev/null || true
+  for pattern in "lunar_world.sdf" "scripts/astar_navigation.py" \
+                 "scripts/control_odometry.py" "scripts/odometry_monitor.py" \
+                 "scripts/terrain_segmentation.py" "async_slam_toolbox_node"; do
+    for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
+      [ "$p" = "$$" ] || kill -9 "$p" 2>/dev/null || true
+    done
   done
   echo "" >> "$LOG_FILE"
   echo "clean shutdown at $(date -u +%FT%TZ)" >> "$LOG_FILE"
@@ -187,7 +194,7 @@ say "Launch mode: $([ "$HEADLESS" = 1 ] && echo HEADLESS || echo GUI) | demo=$([
 echo "[1/15] Checking Phase A baseline + Phase E files....."
 missing=0
 for f in "$WORLD_PATH" "$MODEL_PATH" "$WASD_PATH" "$CONTROL_PATH" "$ODOM_PATH" "$SLAM_CONFIG" "$NAV_PATH" \
-         "$RVIZ_CONFIG" "$PERCEPTION_PATH" "$WORLD_DIR/meshes/lunar_terrain.obj" \
+         "$RVIZ_CONFIG" "$PERCEPTION_PATH" "$TERRAIN_MODEL" "$WORLD_DIR/meshes/lunar_terrain.obj" \
          "$WORLD_DIR/meshes/lunar_terrain_collision.obj"; do
   if [ ! -f "$f" ]; then
     say "      MISSING: $f"
@@ -217,6 +224,11 @@ source /opt/ros/humble/setup.bash
 set -u
 if ! command -v ros2 >/dev/null 2>&1; then
   echo "      ERROR: ros2 CLI not found after sourcing."
+  exit 2
+fi
+if ! python3 -c 'import numpy' >/dev/null 2>&1; then
+  echo "      ERROR: Python NumPy is required for trained terrain-model inference."
+  echo "      Install: sudo apt install python3-numpy"
   exit 2
 fi
 IGN=""
@@ -266,7 +278,9 @@ fi
 # A prior interrupted `ros2 run` can leave its child bridge alive. Remove
 # only processes belonging to this Phase E command/node contract.
 for pattern in "ros_ign_bridge.*parameter_bridge" "ros_gz_bridge.*parameter_bridge" \
-               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" "slam_toolbox.*online_async"; do
+               "scripts/control_odometry.py" "scripts/odometry_monitor.py" \
+               "scripts/astar_navigation.py" "scripts/terrain_segmentation.py" \
+               "slam_toolbox.*online_async" "async_slam_toolbox_node"; do
   for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
     kill -TERM "$p" 2>/dev/null || true
   done
@@ -368,6 +382,7 @@ setsid python3 "$PERCEPTION_PATH" --ros-args \
   -p mask_topic:=/lunabot/terrain/segmentation \
   -p overlay_topic:=/lunabot/terrain/overlay \
   -p status_topic:=/lunabot/terrain/segmentation/status \
+  -p model_path:="$TERRAIN_MODEL" \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/segmentation.log" 2>&1 &
 PERCEPTION_PID=$!
@@ -671,9 +686,15 @@ topic_ok "topic /lunabot/terrain/segmentation" "/lunabot/terrain/segmentation"
 topic_ok "topic /lunabot/terrain/overlay"      "/lunabot/terrain/overlay"
 topic_ok "topic /lunabot/terrain/segmentation/status" "/lunabot/terrain/segmentation/status"
 segmentation_status="$(timeout 15 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability best_effort --qos-durability transient_local --once 2>/dev/null || true)"
-if printf '%s\n' "$segmentation_status" | grep -q "SEGMENTATION_PASS"; then
-  echo "      terrain segmentation content: PASS"
-  log "validation PASS: SEGMENTATION_PASS status"
+if printf '%s\n' "$segmentation_status" | grep -q "SEGMENTATION_PASS" && \
+   printf '%s\n' "$segmentation_status" | grep -q "model=lunabot_mlp_v1 trained=true" && \
+   printf '%s\n' "$segmentation_status" | grep -q "bedrock=" && \
+   printf '%s\n' "$segmentation_status" | grep -q "regolith=" && \
+   printf '%s\n' "$segmentation_status" | grep -q "rock=" && \
+   printf '%s\n' "$segmentation_status" | grep -q "crater=" && \
+   printf '%s\n' "$segmentation_status" | grep -q "shadow="; then
+  echo "      trained five-class segmentation content: PASS"
+  log "validation PASS: trained five-class SEGMENTATION_PASS status"
 else
   echo "      terrain segmentation content: FAIL"
   log "validation FAIL: segmentation status was [$segmentation_status]"

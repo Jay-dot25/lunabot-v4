@@ -9,8 +9,10 @@ cd ~/lunabot-v4
 EVIDENCE=1 DEMO=1 HEADLESS=1 ~/launch-e
 ```
 
-The launcher records real RGB-D segmentation samples, the segmentation status,
-Phase D navigation evidence, and clean-shutdown output. Static validation is
+The launcher records live RGB-D five-class MLP output samples, exact per-class
+status, Phase D navigation evidence, and clean-shutdown output. Existing files
+from the obsolete three-class heuristic are not acceptance evidence for this
+replacement and must be regenerated. Static validation is
 stored in `static_validation.txt`; it is not a substitute for the workstation
 runtime gate.
 

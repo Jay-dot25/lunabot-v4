@@ -163,7 +163,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/Image
       Enabled: true
       Max Width: 640
-      Name: Terrain Segmentation Overlay
+      Name: "Semantic Overlay — BEDROCK blue-grey | REGOLITH ochre | ROCK red | CRATER purple | SHADOW black"
       Normalize Range:
         Max: 1
         Min: 0
@@ -179,9 +179,9 @@ Visualization Manager:
     - Class: rviz_default_plugins/Image
       Enabled: false
       Max Width: 640
-      Name: Terrain Segmentation Mask
+      Name: Terrain Segmentation Mask (mono8 labels 0..4)
       Normalize Range:
-        Max: 2
+        Max: 4
         Min: 0
       Topic:
         Depth: 5
