@@ -22,7 +22,6 @@ from typing import Optional
 import numpy as np
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from rclpy.exceptions import RCLError
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.qos import qos_profile_sensor_data
@@ -243,10 +242,12 @@ class TerrainSegmentation(Node):
         try:
             self.mask_pub.publish(self._message(image.header, mask, "mono8"))
             self.overlay_pub.publish(self._message(image.header, overlay, "rgb8"))
-        except RCLError:
-            # SIGINT can invalidate the ROS context between the ok() check and
-            # publish. Treat that narrow shutdown race as a clean exit.
-            if not rclpy.ok():
+        except Exception as exc:
+            # Humble exposes the native RCLError from a private extension, not
+            # rclpy.exceptions. Avoid importing that unstable symbol: suppress
+            # only the known SIGINT context-invalid race and re-raise all real
+            # inference/publisher failures.
+            if not rclpy.ok() and "context is invalid" in str(exc).lower():
                 return
             raise
         self.frame_count += 1
