@@ -22,6 +22,7 @@ from typing import Optional
 import numpy as np
 import rclpy
 from rclpy.executors import ExternalShutdownException
+from rclpy.exceptions import RCLError
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.qos import qos_profile_sensor_data
@@ -237,8 +238,17 @@ class TerrainSegmentation(Node):
             self.publish_status(f"SEGMENTATION_ERROR {exc}")
             return
         overlay = CLASS_COLORS[mask]
-        self.mask_pub.publish(self._message(image.header, mask, "mono8"))
-        self.overlay_pub.publish(self._message(image.header, overlay, "rgb8"))
+        if not rclpy.ok():
+            return
+        try:
+            self.mask_pub.publish(self._message(image.header, mask, "mono8"))
+            self.overlay_pub.publish(self._message(image.header, overlay, "rgb8"))
+        except RCLError:
+            # SIGINT can invalidate the ROS context between the ok() check and
+            # publish. Treat that narrow shutdown race as a clean exit.
+            if not rclpy.ok():
+                return
+            raise
         self.frame_count += 1
         counts = np.bincount(mask.reshape(-1), minlength=5)
         summary = " ".join(f"{name.lower()}={int(counts[i])}"
