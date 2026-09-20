@@ -33,7 +33,7 @@ ODOM_PATH="$REPO_DIR/scripts/odometry_monitor.py"
 SLAM_CONFIG="$REPO_DIR/config/slam_toolbox_phase_c.yaml"
 NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"
 PERCEPTION_PATH="$REPO_DIR/scripts/terrain_segmentation.py"
-TERRAIN_MODEL="$REPO_DIR/models/terrain_mlp_v1.json"
+TERRAIN_MODEL="$REPO_DIR/models/terrain_mlp_v2.json"
 RVIZ_CONFIG="$REPO_DIR/rviz/phase_e.rviz"
 EVIDENCE_DIR="$REPO_DIR/evidence/phase-e-launch-e"
 LOG_FILE="$EVIDENCE_DIR/last_run.log"
@@ -382,6 +382,7 @@ setsid python3 "$PERCEPTION_PATH" --ros-args \
   -p mask_topic:=/lunabot/terrain/segmentation \
   -p overlay_topic:=/lunabot/terrain/overlay \
   -p status_topic:=/lunabot/terrain/segmentation/status \
+  -p validity_topic:=/lunabot/terrain/validity \
   -p model_path:="$TERRAIN_MODEL" \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/segmentation.log" 2>&1 &
@@ -708,12 +709,14 @@ topic_ok "topic /cmd_vel_in"                  "/cmd_vel_in"
 type_ok "type terrain mask sensor_msgs/Image" "/lunabot/terrain/segmentation" "sensor_msgs/msg/Image"
 type_ok "type terrain overlay sensor_msgs/Image" "/lunabot/terrain/overlay" "sensor_msgs/msg/Image"
 type_ok "type terrain status std_msgs/String" "/lunabot/terrain/segmentation/status" "std_msgs/msg/String"
+type_ok "type terrain validity sensor_msgs/Image" "/lunabot/terrain/validity" "sensor_msgs/msg/Image"
+topic_ok "topic /lunabot/terrain/validity" "/lunabot/terrain/validity"
 topic_ok "topic /lunabot/terrain/segmentation" "/lunabot/terrain/segmentation"
 topic_ok "topic /lunabot/terrain/overlay"      "/lunabot/terrain/overlay"
 topic_ok "topic /lunabot/terrain/segmentation/status" "/lunabot/terrain/segmentation/status"
 segmentation_status="$(timeout 15 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability best_effort --qos-durability transient_local --full-length --once 2>/dev/null || true)"
 if printf '%s\n' "$segmentation_status" | grep -q "SEGMENTATION_PASS" && \
-   printf '%s\n' "$segmentation_status" | grep -q "model=lunabot_mlp_v1 trained=true" && \
+   printf '%s\n' "$segmentation_status" | grep -q "model=lunabot_mlp_v2 trained=true" && \
    printf '%s\n' "$segmentation_status" | grep -q "bedrock=" && \
    printf '%s\n' "$segmentation_status" | grep -q "regolith=" && \
    printf '%s\n' "$segmentation_status" | grep -q "rock=" && \

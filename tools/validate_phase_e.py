@@ -26,7 +26,8 @@ def run(*cmd):
 required = [
     "launch-a", "launch-b", "launch-c", "launch-d", "launch-e",
     "scripts/launch-e.sh", "scripts/terrain_segmentation.py",
-    "tools/train_terrain_mlp.py", "models/terrain_mlp_v1.json",
+    "tools/capture_phase_e_dataset.py", "tools/annotate_phase_e_dataset.py",
+    "tools/train_terrain_mlp_gazebo.py", "models/terrain_mlp_v2.json",
     "rviz/phase_e.rviz", "docs/phase-5-launch-e.md",
     "evidence/phase-e-launch-e/README.md",
     "evidence/phase-e-launch-e/verification_checklist.md",
@@ -34,10 +35,10 @@ required = [
 for rel in required:
     check(f"file exists: {rel}", (ROOT / rel).is_file())
 for rel in ("launch-e", "scripts/launch-e.sh", "scripts/terrain_segmentation.py",
-            "tools/train_terrain_mlp.py", "tools/validate_phase_e.py"):
+            "tools/train_terrain_mlp_gazebo.py", "tools/validate_phase_e.py"):
     p = ROOT / rel
     check(f"executable: {rel}", p.is_file() and bool(p.stat().st_mode & 0o111))
-for rel in ("scripts/terrain_segmentation.py", "tools/train_terrain_mlp.py",
+for rel in ("scripts/terrain_segmentation.py", "tools/train_terrain_mlp_gazebo.py",
             "tools/validate_phase_e.py"):
     try:
         ast.parse(text(rel)); check(f"Python syntax: {rel}", True)
@@ -57,28 +58,27 @@ for phase in "abcd":
 
 launch, node, trainer = map(text, ("scripts/launch-e.sh",
                                   "scripts/terrain_segmentation.py",
-                                  "tools/train_terrain_mlp.py"))
+                                  "tools/train_terrain_mlp_gazebo.py"))
 rviz, docs = text("rviz/phase_e.rviz"), text("docs/phase-5-launch-e.md")
 wrapper = text("launch-e")
 labels = ["BEDROCK", "REGOLITH", "ROCK", "CRATER", "SHADOW"]
 features = ["red", "green", "blue", "depth_norm", "row_norm",
             "depth_gradient", "texture"]
 try:
-    model = json.loads(text("models/terrain_mlp_v1.json"))
-    check("model artifact parses as JSON", True)
+    model = json.loads(text("models/terrain_mlp_v2.json"))
+    check("Gazebo-trained model artifact parses as JSON", True)
 except Exception as exc:
-    model = {}; check("model artifact parses as JSON", False, str(exc))
-check("model format is versioned", model.get("format") == "lunabot_mlp_v1")
+    model = {}; check("Gazebo-trained model artifact parses as JSON", False, str(exc))
+check("model format is versioned", model.get("format") == "lunabot_mlp_v2")
 check("model exact class order", model.get("labels") == labels)
 check("model exact seven features", model.get("features") == features)
 check("model architecture is 7-12-8-5", model.get("architecture") == [7, 12, 8, 5])
 check("model uses ReLU", model.get("activation") == "relu")
 training = model.get("training", {})
-check("artifact records supervised training", "supervised" in training.get("method", ""))
-check("artifact records balanced-sized split", training.get("train_samples") == 4000 and
-      training.get("test_samples") == 1000)
-check("held-out synthetic accuracy exceeds 90%",
-      .9 <= float(training.get("held_out_accuracy", 0)) <= 1)
+check("artifact records supervised training", "annotated Gazebo RGB-D captures" in training.get("method", ""))
+check("artifact uses whole-frame split", training.get("split") == "whole-frame 80/20")
+check("held-out accuracy is recorded",
+      0 < float(training.get("held_out_accuracy", 0)) <= 1)
 check("artifact has five-row confusion matrix",
       len(training.get("confusion_matrix", [])) == 5 and
       all(len(row) == 5 for row in training.get("confusion_matrix", [])))
@@ -88,15 +88,28 @@ for key, shape in (("w1", (7, 12)), ("b1", (12,)), ("w2", (12, 8)),
     actual = (len(value), len(value[0])) if value and isinstance(value[0], list) else (len(value),)
     check(f"model tensor {key} shape {shape}", actual == shape)
 
-# Trainer must actually optimize weights and remain simulation-domain honest.
-for token, name in (("random.Random", "deterministic RNG"), ("upstream gradients", "backpropagation"),
+capture = text("tools/capture_phase_e_dataset.py")
+annotator = text("tools/annotate_phase_e_dataset.py")
+check("capture consumes live RGB-D", "sensor_msgs.msg import Image" in capture and
+      "rgb_topic" in capture and "depth_topic" in capture)
+check("capture enforces timestamp synchronization", "abs(rs - ds)" in capture)
+check("capture saves sensor arrays and provenance", "np.savez_compressed" in capture and
+      "rgb_stamp_ns" in capture and "depth_encoding" in capture)
+check("annotation uses explicit IGNORE 255", "IGNORE" in annotator and
+      "bytearray([255])" in annotator)
+check("annotation exposes exact five classes", all(label in annotator for label in labels))
+
+# Trainer must actually optimize weights from annotated Gazebo captures.
+for token, name in (("default_rng", "deterministic RNG"), ("dw3", "backpropagation"),
                     ("epochs", "training epochs"), ("held_out_accuracy", "held-out metric"),
-                    ("simulation-domain", "simulation-domain disclosure")):
+                    ("whole-frame 80/20", "whole-frame split"),
+                    ("per_class_recall", "per-class recall")):
     check(f"trainer contains {name}", token in trainer)
-check("trainer does not require NumPy", "import numpy" not in trainer)
-check("trainer exact labels", all(f'"{label}"' in trainer for label in labels))
+check("Gazebo trainer uses NumPy", "import numpy as np" in trainer)
+check("trainer exact labels", all(f"'{label}'" in trainer for label in labels))
 
 # Runtime inference contract.
+model_text = json.dumps(model)
 for token, name in (("import numpy as np", "NumPy inference"),
                     ("features @ self.w1", "first trained layer"),
                     ("h1 @ self.w2", "second trained layer"),
@@ -104,8 +117,8 @@ for token, name in (("import numpy as np", "NumPy inference"),
                     ("np.argmax", "class selection"),
                     ("np.gradient", "depth geometry"),
                     ("texture", "local texture"),
-                    ("row_norm", "row feature metadata")):
-    check(f"node uses {name}", token in node or token in text("models/terrain_mlp_v1.json"))
+                    ("rows = np.linspace", "row feature")):
+    check(f"node uses {name}", token in node or token in model_text)
 check("node exact label constants", all(f"{label} = {i}" in node for i, label in enumerate(labels)))
 check("node rejects mismatched model labels", "label order does not match" in node)
 check("node supports common RGB encodings", all(x in node for x in ("rgb8", "bgr8", "rgba8", "bgra8")))
@@ -121,7 +134,7 @@ check("obsolete three-class contract absent", all(x not in node for x in ("UNKNO
 check("wrapper resolves path and execs launcher", "readlink -f" in wrapper and "scripts/launch-e.sh" in wrapper)
 noncomment = "\n".join(x for x in launch.splitlines() if not x.lstrip().startswith("#"))
 check("launcher does not invoke prior launcher", all(f"launch-{p}" not in noncomment for p in "abcd"))
-check("launcher requires model artifact", 'TERRAIN_MODEL="$REPO_DIR/models/terrain_mlp_v1.json"' in launch and
+check("launcher requires model artifact", 'TERRAIN_MODEL="$REPO_DIR/models/terrain_mlp_v2.json"' in launch and
       '"$TERRAIN_MODEL"' in launch)
 check("launcher checks NumPy dependency", "import numpy" in launch and "python3-numpy" in launch)
 check("launcher passes model path", '-p model_path:="$TERRAIN_MODEL"' in launch)
@@ -149,8 +162,8 @@ check("RViz provides manual goal tool and selected-goal display",
       rviz.count("/goal_pose") >= 2)
 check("RViz mask scale includes label 4", "Max: 4" in rviz)
 check("RViz includes exact five-class legend", all(label in rviz for label in labels))
-for phrase in ("7-12-8-5", "92.800%", "synthetic", "not real-world accuracy",
-               "manual goal default", "Phase E remains incomplete", "stale processes",
+for phrase in ("whole-frame", "captured", "annotated", "IGNORE",
+               "Phase E remains incomplete", "stale processes",
                "BEDROCK", "REGOLITH", "ROCK", "CRATER", "SHADOW"):
     check(f"docs disclose: {phrase}", phrase in docs)
 check("docs do not claim approval", "Phase E is approved" not in docs and

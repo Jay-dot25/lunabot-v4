@@ -181,7 +181,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/Image
       Enabled: true
       Max Width: 640
-      Name: "Semantic Overlay — BEDROCK blue-grey | REGOLITH ochre | ROCK red | CRATER purple | SHADOW black"
+      Name: "Semantic Overlay — BEDROCK blue-grey | REGOLITH ochre | ROCK red | CRATER purple | SHADOW black | IGNORE magenta"
       Normalize Range:
         Max: 1
         Min: 0

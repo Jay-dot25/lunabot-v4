@@ -41,7 +41,7 @@ CLASS_COLORS = np.asarray([
     (118, 55, 160),   # crater: purple
     (20, 24, 36),     # shadow: near-black
 ], dtype=np.uint8)
-MODEL_FORMAT = "lunabot_mlp_v1"
+MODEL_FORMAT = "lunabot_mlp_v2"
 
 
 class TerrainSegmentation(Node):
@@ -50,12 +50,13 @@ class TerrainSegmentation(Node):
     def __init__(self) -> None:
         super().__init__("lunabot_terrain_segmentation")
         default_model = str(Path(__file__).resolve().parents[1] /
-                            "models" / "terrain_mlp_v1.json")
+                            "models" / "terrain_mlp_v2.json")
         self.declare_parameter("image_topic", "/lunabot/camera/image_raw")
         self.declare_parameter("depth_topic", "/lunabot/depth/image_raw")
         self.declare_parameter("mask_topic", "/lunabot/terrain/segmentation")
         self.declare_parameter("overlay_topic", "/lunabot/terrain/overlay")
         self.declare_parameter("status_topic", "/lunabot/terrain/segmentation/status")
+        self.declare_parameter("validity_topic", "/lunabot/terrain/validity")
         self.declare_parameter("model_path", default_model)
         self.declare_parameter("max_depth", 12.0)
         self.declare_parameter("max_rate", 4.0)
@@ -66,6 +67,7 @@ class TerrainSegmentation(Node):
         self.mask_topic = str(get("mask_topic").value)
         self.overlay_topic = str(get("overlay_topic").value)
         self.status_topic = str(get("status_topic").value)
+        self.validity_topic = str(get("validity_topic").value)
         self.max_depth = max(.1, float(get("max_depth").value))
         self.max_rate = max(.1, float(get("max_rate").value))
         self.stride = max(1, int(get("inference_stride").value))
@@ -81,6 +83,7 @@ class TerrainSegmentation(Node):
         image_qos.durability = DurabilityPolicy.VOLATILE
         self.mask_pub = self.create_publisher(Image, self.mask_topic, image_qos)
         self.overlay_pub = self.create_publisher(Image, self.overlay_topic, image_qos)
+        self.validity_pub = self.create_publisher(Image, self.validity_topic, image_qos)
         status_qos = QoSProfile(depth=1)
         status_qos.reliability = ReliabilityPolicy.RELIABLE
         status_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
@@ -203,7 +206,7 @@ class TerrainSegmentation(Node):
         rows = np.broadcast_to(rows, (h, w))
         features = np.dstack((rgb, np.clip(safe / self.max_depth, 0, 1),
                               rows, gradient, texture))
-        return features[::self.stride, ::self.stride].reshape(-1, 7), int((~valid).sum())
+        return features[::self.stride, ::self.stride].reshape(-1, 7), valid
 
     def _infer(self, features: np.ndarray, height: int, width: int) -> np.ndarray:
         h1 = np.maximum(0, features @ self.w1 + self.b1)
@@ -231,17 +234,25 @@ class TerrainSegmentation(Node):
         try:
             rgb = self._decode_rgb(image)
             depth = self._decode_depth(depth_msg)
-            features, invalid_depth = self._features(rgb, depth)
+            features, valid = self._features(rgb, depth)
             mask = self._infer(features, int(image.height), int(image.width))
         except (ValueError, RuntimeError) as exc:
             self.publish_status(f"SEGMENTATION_ERROR {exc}")
             return
-        overlay = CLASS_COLORS[mask]
+        # The five-class mask retains its strict 0..4 transport contract, while
+        # validity explicitly identifies pixels that must not be evaluated as
+        # terrain semantics. Magenta makes ignored sky/missing depth impossible
+        # to mistake for SHADOW in visual evidence.
+        mask = np.where(valid, mask, SHADOW).astype(np.uint8)
+        overlay = CLASS_COLORS[mask].copy()
+        overlay[~valid] = (255, 0, 255)
+        validity = (valid.astype(np.uint8) * 255)
         if not rclpy.ok():
             return
         try:
             self.mask_pub.publish(self._message(image.header, mask, "mono8"))
             self.overlay_pub.publish(self._message(image.header, overlay, "rgb8"))
+            self.validity_pub.publish(self._message(image.header, validity, "mono8"))
         except Exception as exc:
             # Humble exposes the native RCLError from a private extension, not
             # rclpy.exceptions. Avoid importing that unstable symbol: suppress
@@ -251,14 +262,14 @@ class TerrainSegmentation(Node):
                 return
             raise
         self.frame_count += 1
-        counts = np.bincount(mask.reshape(-1), minlength=5)
+        counts = np.bincount(mask[valid].reshape(-1), minlength=5)
         summary = " ".join(f"{name.lower()}={int(counts[i])}"
                            for i, name in enumerate(CLASS_NAMES))
         self.publish_status(
             f"SEGMENTATION_PASS model={MODEL_FORMAT} trained=true "
             f"accuracy={self.training_accuracy:.3f} frames={self.frame_count} "
             f"width={image.width} height={image.height} {summary} "
-            f"invalid_depth={invalid_depth}")
+            f"valid_pixels={int(valid.sum())} ignored_pixels={int((~valid).sum())}")
 
 
 def main(args=None) -> None:

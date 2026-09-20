@@ -5,8 +5,10 @@
 [PASS] file exists: launch-e
 [PASS] file exists: scripts/launch-e.sh
 [PASS] file exists: scripts/terrain_segmentation.py
-[PASS] file exists: tools/train_terrain_mlp.py
-[PASS] file exists: models/terrain_mlp_v1.json
+[PASS] file exists: tools/capture_phase_e_dataset.py
+[PASS] file exists: tools/annotate_phase_e_dataset.py
+[PASS] file exists: tools/train_terrain_mlp_gazebo.py
+[FAIL] file exists: models/terrain_mlp_v2.json
 [PASS] file exists: rviz/phase_e.rviz
 [PASS] file exists: docs/phase-5-launch-e.md
 [PASS] file exists: evidence/phase-e-launch-e/README.md
@@ -14,10 +16,10 @@
 [PASS] executable: launch-e
 [PASS] executable: scripts/launch-e.sh
 [PASS] executable: scripts/terrain_segmentation.py
-[PASS] executable: tools/train_terrain_mlp.py
+[PASS] executable: tools/train_terrain_mlp_gazebo.py
 [PASS] executable: tools/validate_phase_e.py
 [PASS] Python syntax: scripts/terrain_segmentation.py
-[PASS] Python syntax: tools/train_terrain_mlp.py
+[PASS] Python syntax: tools/train_terrain_mlp_gazebo.py
 [PASS] Python syntax: tools/validate_phase_e.py
 [PASS] bash syntax: launch-e
 [PASS] bash syntax: scripts/launch-e.sh
@@ -25,28 +27,34 @@
 [PASS] Phase B static baseline remains green
 [PASS] Phase C static baseline remains green
 [PASS] Phase D static baseline remains green
-[PASS] model artifact parses as JSON
-[PASS] model format is versioned
-[PASS] model exact class order
-[PASS] model exact seven features
-[PASS] model architecture is 7-12-8-5
-[PASS] model uses ReLU
-[PASS] artifact records supervised training
-[PASS] artifact records balanced-sized split
-[PASS] held-out synthetic accuracy exceeds 90%
-[PASS] artifact has five-row confusion matrix
-[PASS] model tensor w1 shape (7, 12)
-[PASS] model tensor b1 shape (12,)
-[PASS] model tensor w2 shape (12, 8)
-[PASS] model tensor b2 shape (8,)
-[PASS] model tensor w3 shape (8, 5)
-[PASS] model tensor b3 shape (5,)
+[FAIL] Gazebo-trained model artifact parses as JSON
+[FAIL] model format is versioned
+[FAIL] model exact class order
+[FAIL] model exact seven features
+[FAIL] model architecture is 7-12-8-5
+[FAIL] model uses ReLU
+[FAIL] artifact records supervised training
+[FAIL] artifact uses whole-frame split
+[FAIL] held-out accuracy is recorded
+[FAIL] artifact has five-row confusion matrix
+[FAIL] model tensor w1 shape (7, 12)
+[FAIL] model tensor b1 shape (12,)
+[FAIL] model tensor w2 shape (12, 8)
+[FAIL] model tensor b2 shape (8,)
+[FAIL] model tensor w3 shape (8, 5)
+[FAIL] model tensor b3 shape (5,)
+[PASS] capture consumes live RGB-D
+[PASS] capture enforces timestamp synchronization
+[PASS] capture saves sensor arrays and provenance
+[PASS] annotation uses explicit IGNORE 255
+[PASS] annotation exposes exact five classes
 [PASS] trainer contains deterministic RNG
 [PASS] trainer contains backpropagation
 [PASS] trainer contains training epochs
 [PASS] trainer contains held-out metric
-[PASS] trainer contains simulation-domain disclosure
-[PASS] trainer does not require NumPy
+[PASS] trainer contains whole-frame split
+[PASS] trainer contains per-class recall
+[PASS] Gazebo trainer uses NumPy
 [PASS] trainer exact labels
 [PASS] node uses NumPy inference
 [PASS] node uses first trained layer
@@ -55,7 +63,7 @@
 [PASS] node uses class selection
 [PASS] node uses depth geometry
 [PASS] node uses local texture
-[PASS] node uses row feature metadata
+[PASS] node uses row feature
 [PASS] node exact label constants
 [PASS] node rejects mismatched model labels
 [PASS] node supports common RGB encodings
@@ -86,11 +94,10 @@
 [PASS] RViz provides manual goal tool and selected-goal display
 [PASS] RViz mask scale includes label 4
 [PASS] RViz includes exact five-class legend
-[PASS] docs disclose: 7-12-8-5
-[PASS] docs disclose: 92.800%
-[PASS] docs disclose: synthetic
-[PASS] docs disclose: not real-world accuracy
-[PASS] docs disclose: manual goal default
+[PASS] docs disclose: whole-frame
+[PASS] docs disclose: captured
+[PASS] docs disclose: annotated
+[PASS] docs disclose: IGNORE
 [PASS] docs disclose: Phase E remains incomplete
 [PASS] docs disclose: stale processes
 [PASS] docs disclose: BEDROCK
@@ -100,4 +107,4 @@
 [PASS] docs disclose: SHADOW
 [PASS] docs do not claim approval
 
-RESULT: 101/101 checks passed
+RESULT: 91/108 checks passed
