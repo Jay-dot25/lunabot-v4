@@ -72,6 +72,7 @@
 [PASS] launcher checks NumPy dependency
 [PASS] launcher passes model path
 [PASS] manual goal is default
+[PASS] manual mode defers goal-dependent message checks
 [PASS] DEMO explicitly enables auto goal
 [PASS] launcher validates semantic messages
 [PASS] launcher requires processed-frame status
@@ -82,6 +83,7 @@
 [PASS] RViz keeps map and A* displays
 [PASS] RViz shows semantic overlay
 [PASS] RViz provides semantic mask
+[PASS] RViz provides manual goal tool and selected-goal display
 [PASS] RViz mask scale includes label 4
 [PASS] RViz includes exact five-class legend
 [PASS] docs disclose: 7-12-8-5
@@ -98,4 +100,4 @@
 [PASS] docs disclose: SHADOW
 [PASS] docs do not claim approval
 
-RESULT: 99/99 checks passed
+RESULT: 101/101 checks passed

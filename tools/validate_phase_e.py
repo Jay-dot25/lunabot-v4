@@ -126,6 +126,8 @@ check("launcher requires model artifact", 'TERRAIN_MODEL="$REPO_DIR/models/terra
 check("launcher checks NumPy dependency", "import numpy" in launch and "python3-numpy" in launch)
 check("launcher passes model path", '-p model_path:="$TERRAIN_MODEL"' in launch)
 check("manual goal is default", 'AUTO_GOAL="${AUTO_GOAL:-false}"' in launch)
+check("manual mode defers goal-dependent message checks",
+      "DEFERRED (manual goal not selected)" in launch)
 check("DEMO explicitly enables auto goal", 'if [ "$DEMO" = "1" ]' in launch and "AUTO_GOAL=true" in launch)
 check("launcher validates semantic messages", all(t in launch for t in
       ("/lunabot/terrain/segmentation", "/lunabot/terrain/overlay",
@@ -142,6 +144,9 @@ check("launcher saves fresh map", 'rm -f "$EVIDENCE_DIR/phase_e_map.yaml"' in la
 check("RViz keeps map and A* displays", "Fixed Frame: map" in rviz and "Name: A* Path" in rviz)
 check("RViz shows semantic overlay", "/lunabot/terrain/overlay" in rviz)
 check("RViz provides semantic mask", "/lunabot/terrain/segmentation" in rviz)
+check("RViz provides manual goal tool and selected-goal display",
+      "rviz_default_plugins/SetGoal" in rviz and "Selected Goal" in rviz and
+      rviz.count("/goal_pose") >= 2)
 check("RViz mask scale includes label 4", "Max: 4" in rviz)
 check("RViz includes exact five-class legend", all(label in rviz for label in labels))
 for phrase in ("7-12-8-5", "92.800%", "synthetic", "not real-world accuracy",

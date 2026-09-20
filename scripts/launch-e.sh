@@ -691,9 +691,19 @@ tf_ok "TF sensor_head -> scoped LaserScan frame" "sensor_head" "lunabot_v4/senso
 type_ok "type /goal_pose geometry_msgs/PoseStamped" "/goal_pose" "geometry_msgs/msg/PoseStamped"
 type_ok "type /plan nav_msgs/Path" "/plan" "nav_msgs/msg/Path"
 type_ok "type navigation status std_msgs/String" "/lunabot/navigation/status" "std_msgs/msg/String"
-topic_ok "topic /goal_pose"                    "/goal_pose"
-topic_ok "topic /plan"                         "/plan"
-topic_ok "topic /lunabot/navigation/status"    "/lunabot/navigation/status"
+if [ "$DEMO" = "1" ] || [ "$AUTO_GOAL" = "true" ]; then
+  topic_ok "topic /goal_pose"                    "/goal_pose"
+  topic_ok "topic /plan"                         "/plan"
+  topic_ok "topic /lunabot/navigation/status"    "/lunabot/navigation/status"
+else
+  # Manual GUI mode deliberately starts without a navigation goal. Topic types
+  # and the live planner process are validated above; message/path validation
+  # becomes applicable only after the operator selects a goal in RViz.
+  echo "      topic /goal_pose: DEFERRED (manual goal not selected)"
+  echo "      topic /plan: DEFERRED (manual goal not selected)"
+  echo "      topic /lunabot/navigation/status: DEFERRED (manual goal not selected)"
+  log "validation DEFERRED: manual-goal navigation messages"
+fi
 topic_ok "topic /cmd_vel_in"                  "/cmd_vel_in"
 type_ok "type terrain mask sensor_msgs/Image" "/lunabot/terrain/segmentation" "sensor_msgs/msg/Image"
 type_ok "type terrain overlay sensor_msgs/Image" "/lunabot/terrain/overlay" "sensor_msgs/msg/Image"
