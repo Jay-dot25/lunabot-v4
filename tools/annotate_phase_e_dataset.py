@@ -59,9 +59,13 @@ class App:
         for pts, lab in self.polygons:
             color = LABELS[lab][2]; flat = [v for p in pts for v in p]
             self.canvas.create_polygon(*flat, outline=color, fill='', width=2, tags='annotation')
-        if self.points:
+        if len(self.points) >= 2:
             flat = [v for p in self.points for v in p]
             self.canvas.create_line(*flat, fill='cyan', width=2, tags='annotation')
+        elif len(self.points) == 1:
+            x, y = self.points[0]
+            self.canvas.create_oval(x-3, y-3, x+3, y+3, outline='cyan',
+                                    fill='cyan', tags='annotation')
     def save(self):
         path = self.frames[self.i].with_suffix('.mask.pgm')
         path.write_bytes(f'P5\n{self.w} {self.h}\n255\n'.encode() + bytes(self.mask))
