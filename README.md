@@ -30,6 +30,10 @@ For one consolidated code map, command reference, topic contract, runtime
 inspection guide, evidence guide, and final A-to-L acceptance procedure, see
 [`docs/full-launch-a-to-l.md`](docs/full-launch-a-to-l.md).
 
+For the child-friendly Week 1–Week 4 report covering Launch A through Launch D,
+including the complete comment-free source appendix, see
+[`docs/report-week1-to-week4-launch-a-to-d.md`](docs/report-week1-to-week4-launch-a-to-d.md).
+
 ## Quickstart (Phase A)
 
 Requirements (workstation):
