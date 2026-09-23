@@ -31,8 +31,9 @@ inspection guide, evidence guide, and final A-to-L acceptance procedure, see
 [`docs/full-launch-a-to-l.md`](docs/full-launch-a-to-l.md).
 
 For the child-friendly Week 1–Week 4 report covering Launch A through Launch D,
-including the complete comment-free source appendix, see
-[`docs/report-week1-to-week4-launch-a-to-d.md`](docs/report-week1-to-week4-launch-a-to-d.md).
+including the complete comment-free source appendix, see the
+[Markdown report](docs/report-week1-to-week4-launch-a-to-d.md) or the
+[standalone HTML report](docs/report-week1-to-week4-launch-a-to-d.html).
 
 ## Quickstart (Phase A)
 
