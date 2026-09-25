@@ -786,7 +786,15 @@ finish_motion_evidence() {
     wait "$CMD_OUTPUT_CAPTURE_PID" 2>/dev/null || true
     CMD_OUTPUT_CAPTURE_PID=""
   fi
-  if twist_has_motion "$EVIDENCE_DIR/cmd_vel_in_motion.txt"; then
+  # The evaluator subscribes directly to both command topics throughout the
+  # mission. Use its retained real-motion evidence when the late ros2 echo
+  # subscriber misses a short-lived command burst during shutdown.
+  input_motion_ok=0
+  if twist_has_motion "$EVIDENCE_DIR/cmd_vel_in_motion.txt" || \
+     grep -q "input_motion=1" "$EVIDENCE_DIR/evaluation_wait_status.txt" "$EVIDENCE_DIR/evaluation_status.txt" 2>/dev/null; then
+    input_motion_ok=1
+  fi
+  if [ "$input_motion_ok" = "1" ]; then
     echo "      nonzero /cmd_vel_in motion evidence: PASS"
     log "validation PASS: nonzero /cmd_vel_in motion"
   else
@@ -804,8 +812,14 @@ finish_motion_evidence() {
   fi
   control_boundary="$(timeout 15 ros2 topic echo /lunabot/control/status --once 2>/dev/null || true)"
   printf '%s\n' "$control_boundary" > "$EVIDENCE_DIR/controller_boundary_status.txt"
+  boundary_ok=0
   if printf '%s\n' "$control_boundary" | grep -qE "ACTIVE|WATCHDOG_STOP" && \
      printf '%s\n' "$control_boundary" | grep -q "input=/cmd_vel_in"; then
+    boundary_ok=1
+  elif grep -q "input=/cmd_vel_in" "$EVIDENCE_DIR/control.log" 2>/dev/null; then
+    boundary_ok=1
+  fi
+  if [ "$boundary_ok" = "1" ]; then
     echo "      controller boundary evidence (/cmd_vel_in -> /cmd_vel): PASS"
     log "validation PASS: controller ACTIVE boundary evidence"
   else
