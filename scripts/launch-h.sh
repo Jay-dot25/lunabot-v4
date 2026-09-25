@@ -33,6 +33,7 @@ ODOM_PATH="$REPO_DIR/scripts/odometry_monitor.py"
 SLAM_CONFIG="$REPO_DIR/config/slam_toolbox_phase_c.yaml"
 NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"
 PERCEPTION_PATH="$REPO_DIR/scripts/terrain_segmentation.py"
+TERRAIN_MODEL_PATH="$REPO_DIR/models/terrain_segmentation/terrain_unet.pt"
 MAPPER_PATH="$REPO_DIR/scripts/semantic_terrain_mapper.py"
 COST_PATH="$REPO_DIR/scripts/terrain_cost_mapper.py"
 TERRAIN_PLANNER_PATH="$REPO_DIR/scripts/terrain_aware_planner.py"
@@ -386,6 +387,8 @@ setsid python3 "$PERCEPTION_PATH" --ros-args \
   -p mask_topic:=/lunabot/terrain/segmentation \
   -p overlay_topic:=/lunabot/terrain/overlay \
   -p status_topic:=/lunabot/terrain/segmentation/status \
+  -p confidence_topic:=/lunabot/terrain/confidence \
+  -p model_path:="$TERRAIN_MODEL_PATH" \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/segmentation.log" 2>&1 &
 PERCEPTION_PID=$!
@@ -582,7 +585,8 @@ wait_for_goal() {
     > "$status_file" 2>/dev/null &
   GOAL_WAIT_PID=$!
   for _ in $(seq 1 180); do
-    if grep -q "GOAL_REACHED" "$status_file" 2>/dev/null; then
+    if grep -q "GOAL_REACHED" "$EVIDENCE_DIR/navigation.log" 2>/dev/null || \
+       grep -q "GOAL_REACHED" "$status_file" 2>/dev/null; then
       stop_group "$GOAL_WAIT_PID"
       wait "$GOAL_WAIT_PID" 2>/dev/null || true
       GOAL_WAIT_PID=""
