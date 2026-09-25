@@ -817,6 +817,14 @@ else
   log "validation FAIL: terrain planner status was [$terrain_plan_status]"
   OVERALL="FAIL"
 fi
+if ! printf '%s\n' "$terrain_plan_status" | grep -q "GEOMETRIC_BASELINE_PASS"; then
+  echo "      geometric-vs-terrain comparison: FAIL"
+  log "validation FAIL: planner emitted no geometric baseline comparison"
+  OVERALL="FAIL"
+else
+  echo "      geometric-vs-terrain comparison: PASS"
+  log "validation PASS: geometric baseline compared with weighted route"
+fi
 if [ "$DEMO" = "1" ]; then
   wait_for_goal || true
 fi

@@ -197,7 +197,9 @@ class TerrainAwarePlanner(Node):
                         return candidate
         return None
 
-    def _weighted_astar(self, start, goal):
+    def _weighted_astar(self, start, goal, weight=None):
+        """Return a path and its objective, with zero weight as the baseline."""
+        weight = self.cost_weight if weight is None else max(0.0, weight)
         neighbors = ((1, 0), (-1, 0), (0, 1), (0, -1),
                      (1, 1), (1, -1), (-1, 1), (-1, -1))
         open_set = [(0.0, start)]
@@ -217,7 +219,7 @@ class TerrainAwarePlanner(Node):
                 if cell_cost is None:
                     continue
                 distance = math.sqrt(2.0) if dx and dy else 1.0
-                step = distance * (1.0 + self.cost_weight * cell_cost / 100.0)
+                step = distance * (1.0 + weight * cell_cost / 100.0)
                 tentative = scores[current] + step
                 if tentative >= scores.get(nxt, float("inf")):
                     continue
@@ -226,6 +228,16 @@ class TerrainAwarePlanner(Node):
                 heuristic = math.hypot(goal[0] - nxt[0], goal[1] - nxt[1])
                 heapq.heappush(open_set, (tentative + heuristic, nxt))
         return [], float("inf")
+
+    def _path_cost(self, cells, weight):
+        total = 0.0
+        for first, second in zip(cells, cells[1:]):
+            distance = math.sqrt(2.0) if first[0] != second[0] and first[1] != second[1] else 1.0
+            cell_cost = self._cell_cost(second)
+            if cell_cost is None:
+                return float("inf")
+            total += distance * (1.0 + weight * cell_cost / 100.0)
+        return total
 
     def _plan(self) -> None:
         if self.cost_map is None or self.goal is None:
@@ -248,9 +260,13 @@ class TerrainAwarePlanner(Node):
             self.publish_status("TERRAIN_PLANNER_NO_SAFE_START_OR_GOAL")
             return
         cells, total_cost = self._weighted_astar(start_cell, goal_cell)
-        if not cells:
+        baseline_cells, baseline_distance = self._weighted_astar(
+            start_cell, goal_cell, weight=0.0)
+        if not cells or not baseline_cells:
             self.publish_status("TERRAIN_PLANNER_NO_PATH")
             return
+        baseline_terrain_cost = self._path_cost(
+            baseline_cells, self.cost_weight)
         path = Path()
         path.header.frame_id = self.map_frame
         path.header.stamp = self.get_clock().now().to_msg()
@@ -270,9 +286,14 @@ class TerrainAwarePlanner(Node):
             path.poses.append(pose)
         self.plan_pub.publish(path)
         self.last_plan_time = self.get_clock().now()
+        route_delta = len(cells) != len(baseline_cells)
         self.publish_status(
             f"TERRAIN_PLAN_PASS cells={len(cells)} weighted_cost={total_cost:.2f} "
-            f"frame={self.map_frame} cost_weight={self.cost_weight:.2f}")
+            f"frame={self.map_frame} cost_weight={self.cost_weight:.2f} "
+            f"GEOMETRIC_BASELINE_PASS geometric_cells={len(baseline_cells)} "
+            f"geometric_distance={baseline_distance:.2f} "
+            f"baseline_weighted_cost={baseline_terrain_cost:.2f} "
+            f"route_changed={str(route_delta).lower()}")
 
     def _tick(self) -> None:
         if (self.get_clock().now() - self.last_plan_time).nanoseconds < int(self.replan_period * 1e9):
