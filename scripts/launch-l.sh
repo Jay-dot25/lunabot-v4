@@ -33,6 +33,7 @@ ODOM_PATH="$REPO_DIR/scripts/odometry_monitor.py"
 SLAM_CONFIG="$REPO_DIR/config/slam_toolbox_phase_c.yaml"
 NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"
 PERCEPTION_PATH="$REPO_DIR/scripts/terrain_segmentation.py"
+TERRAIN_MODEL_PATH="$REPO_DIR/models/terrain_segmentation/terrain_unet.pt"
 MAPPER_PATH="$REPO_DIR/scripts/semantic_terrain_mapper.py"
 COST_PATH="$REPO_DIR/scripts/terrain_cost_mapper.py"
 TERRAIN_PLANNER_PATH="$REPO_DIR/scripts/terrain_aware_planner.py"
@@ -435,6 +436,8 @@ setsid python3 "$PERCEPTION_PATH" --ros-args \
   -p mask_topic:=/lunabot/terrain/segmentation \
   -p overlay_topic:=/lunabot/terrain/overlay \
   -p status_topic:=/lunabot/terrain/segmentation/status \
+  -p confidence_topic:=/lunabot/terrain/confidence \
+  -p model_path:="$TERRAIN_MODEL_PATH" \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/segmentation.log" 2>&1 &
 PERCEPTION_PID=$!
@@ -531,6 +534,7 @@ echo "[12/23] Starting runtime evaluation monitor........"
 : > "$EVIDENCE_DIR/evaluation.log"
 setsid python3 "$EVALUATOR_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
+  -p geometric_plan_topic:=/plan \
   -p replan_topic:=/lunabot/autonomy/replan_status \
   -p autonomy_topic:=/lunabot/autonomy/status \
   -p control_topic:=/lunabot/control/status \
@@ -672,6 +676,11 @@ if [ "$EVIDENCE" = "1" ] && [ "$DEMO" = "1" ]; then
   timeout 20 ros2 topic echo /map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/map_before_navigation.txt" || true
 fi
+# Keep the deterministic regression goal before the inflated physical
+# obstacle (center x=2.0, half-width 0.475, inflation=0.25). A goal at
+# x=1.5 falls inside the inflated obstacle halo and cannot be reached by
+# the terrain-aware planner; x=1.0 remains reachable while still proving
+# LiDAR detection and dynamic replanning.
 setsid python3 "$NAV_PATH" --ros-args \
   -p auto_goal:="$AUTO_GOAL" \
   -p map_topic:=/map -p goal_topic:=/goal_pose \
@@ -679,7 +688,7 @@ setsid python3 "$NAV_PATH" --ros-args \
   -p odom_topic:=/lunabot/odom \
   -p status_topic:=/lunabot/navigation/status \
   -p map_frame:=map -p unknown_is_obstacle:=true \
-  -p inflation_radius:=0.25 -p auto_goal_distance:=1.5 \
+  -p inflation_radius:=0.25 -p auto_goal_distance:=1.0 \
   >> "$EVIDENCE_DIR/navigation.log" 2>&1 &
 NAV_PID=$!
 sleep 3
@@ -870,8 +879,8 @@ wait_for_goal_selection() {
   local status_file="$EVIDENCE_DIR/goal_selection_wait_status.txt"
   rm -f "$status_file"
   echo "      waiting for operator RViz goal selection..."
-  setsid timeout 300 ros2 topic echo /goal_pose \\
-    --qos-reliability reliable --qos-durability volatile --once \\
+  setsid timeout 300 ros2 topic echo /goal_pose \
+    --qos-reliability reliable --qos-durability volatile --once \
     > "$status_file" 2>/dev/null &
   local wait_pid=$!
   for _ in $(seq 1 300); do
@@ -1086,6 +1095,12 @@ tf_ok() {
   OVERALL="FAIL"
   return 1
 }
+# Refresh the ros2 CLI discovery daemon before graph validation.  A stale daemon
+# can retain a shutdown rclpy context after a previous interrupted run and report
+# an empty graph even while DDS publishers are healthy.
+ros2 daemon stop >/dev/null 2>&1 || true
+ros2 daemon start >/dev/null 2>&1 || true
+sleep 2
 kill -0 "$GAZEBO_PID" 2>/dev/null && echo "      Gazebo process alive: PASS" || { echo "      Gazebo process alive: FAIL"; OVERALL="FAIL"; }
 map_type=""
 for _ in 1 2 3; do
@@ -1157,7 +1172,7 @@ topic_ok "topic /lunabot/terrain/segmentation" "/lunabot/terrain/segmentation"
 topic_ok "topic /lunabot/terrain/overlay"      "/lunabot/terrain/overlay"
 topic_ok "topic /lunabot/terrain/segmentation/status" "/lunabot/terrain/segmentation/status"
 segmentation_status="$(timeout 15 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
-if printf '%s\n' "$segmentation_status" | grep -q "SEGMENTATION_PASS"; then
+if printf '%s\n' "$segmentation_status" | grep -Eq "SEGMENTATION_PASS|MODEL_INFERENCE_PASS"; then
   echo "      terrain segmentation content: PASS"
   log "validation PASS: SEGMENTATION_PASS status"
 else
