@@ -30,6 +30,13 @@ For one consolidated code map, command reference, topic contract, runtime
 inspection guide, evidence guide, and final A-to-L acceptance procedure, see
 [`docs/full-launch-a-to-l.md`](docs/full-launch-a-to-l.md).
 
+The repository inventory, goal-to-component mapping, and implemented
+engineering safeguards are recorded in
+[`docs/project-analysis.md`](docs/project-analysis.md). Contributor workflow
+and the dependency-free CI checks are documented in
+[`CONTRIBUTING.md`](CONTRIBUTING.md); security reporting guidance is in
+[`SECURITY.md`](SECURITY.md).
+
 ## Quickstart (Phase A)
 
 Requirements (workstation):
@@ -211,8 +218,10 @@ EVIDENCE=1 ~/launch-h                          # GUI/RViz path run
 Phase H outputs `/lunabot/terrain/plan` and
 `/lunabot/terrain/planner/status`. Runtime evidence is written to
 `evidence/phase-h-launch-h/`. The Phase H guide is
-`docs/phase-8-launch-h.md`. Phase H was runtime-validated and explicitly
-approved before Phase I began.
+`docs/phase-8-launch-h.md`. The launcher includes model-backed perception,
+durable goal evidence, and geometric-versus-weighted route comparison. A new
+runtime approval must be recorded after these changes; this checkout does not
+claim that approval without a passing ROS/Gazebo run.
 
 ## Quickstart (Phase I)
 
@@ -282,14 +291,14 @@ EVIDENCE=1 ~/launch-k                          # GUI/RViz run
 Phase K outputs `/lunabot/evaluation/status` in addition to the approved
 Phase J interfaces. Runtime evidence is written to
 `evidence/phase-k-launch-k/`. The Phase K guide is
-`docs/phase-11-launch-k.md`. Phase K passed static validation, two independent
-real headless evaluation gates, aggregate evaluation, final map evidence,
-clean shutdown, and clean relaunch. Phase K was explicitly approved before
-Phase L began.
+`docs/phase-11-launch-k.md`. Its evaluator now records real geometric-baseline
+and terrain-aware path measurements in addition to replanning, motion, and
+command-boundary evidence. Runtime approval remains pending until two clean
+headless runs pass after these changes; no result is claimed without evidence.
 
 ## Quickstart (Phase L)
 
-Phase L is the final presentation mission. It preserves the approved Phase K
+Phase L is the final presentation mission. It preserves the Phase K
 stack, adds a real LiDAR obstacle detector, adds physical habitat/obstacle
 models, and provides an RViz Set Goal tool. The manual gate demonstrates a
 selected goal, sensed obstacle, dynamic replanning, and goal completion.

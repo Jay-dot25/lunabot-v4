@@ -151,6 +151,7 @@ replanning and goal completion, and stop all process groups.
 - [ ] `EVALUATION_PASS` is received on `/lunabot/evaluation/status`.
 - [ ] Final map evidence, clean shutdown, and clean relaunch pass.
 
-Phase K was explicitly runtime-approved after two independent passing
-headless evaluation runs, aggregate `EVALUATION_PASS`, final map evidence,
-clean shutdown, and clean relaunch. Phase L may now begin.
+Phase K is not considered runtime-approved until two independent headless
+runs produce aggregate `EVALUATION_PASS`, final map evidence, clean shutdown,
+and clean relaunch after the current evaluator changes. A ROS/Gazebo run must
+supply that evidence before Phase L is described as approved.
