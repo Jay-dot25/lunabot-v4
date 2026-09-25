@@ -33,6 +33,7 @@ ODOM_PATH="$REPO_DIR/scripts/odometry_monitor.py"
 SLAM_CONFIG="$REPO_DIR/config/slam_toolbox_phase_c.yaml"
 NAV_PATH="$REPO_DIR/scripts/astar_navigation.py"
 PERCEPTION_PATH="$REPO_DIR/scripts/terrain_segmentation.py"
+TERRAIN_MODEL_PATH="$REPO_DIR/models/terrain_segmentation/terrain_unet.pt"
 MAPPER_PATH="$REPO_DIR/scripts/semantic_terrain_mapper.py"
 COST_PATH="$REPO_DIR/scripts/terrain_cost_mapper.py"
 TERRAIN_PLANNER_PATH="$REPO_DIR/scripts/terrain_aware_planner.py"
@@ -421,6 +422,8 @@ setsid python3 "$PERCEPTION_PATH" --ros-args \
   -p mask_topic:=/lunabot/terrain/segmentation \
   -p overlay_topic:=/lunabot/terrain/overlay \
   -p status_topic:=/lunabot/terrain/segmentation/status \
+  -p confidence_topic:=/lunabot/terrain/confidence \
+  -p model_path:="$TERRAIN_MODEL_PATH" \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/segmentation.log" 2>&1 &
 PERCEPTION_PID=$!
@@ -514,6 +517,7 @@ echo "[12/21] Starting runtime evaluation monitor........"
 : > "$EVIDENCE_DIR/evaluation.log"
 setsid python3 "$EVALUATOR_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
+  -p geometric_plan_topic:=/plan \
   -p replan_topic:=/lunabot/autonomy/replan_status \
   -p autonomy_topic:=/lunabot/autonomy/status \
   -p control_topic:=/lunabot/control/status \
@@ -1017,9 +1021,9 @@ topic_ok "topic /lunabot/terrain/segmentation" "/lunabot/terrain/segmentation"
 topic_ok "topic /lunabot/terrain/overlay"      "/lunabot/terrain/overlay"
 topic_ok "topic /lunabot/terrain/segmentation/status" "/lunabot/terrain/segmentation/status"
 segmentation_status="$(timeout 15 ros2 topic echo /lunabot/terrain/segmentation/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
-if printf '%s\n' "$segmentation_status" | grep -q "SEGMENTATION_PASS"; then
+if printf '%s\n' "$segmentation_status" | grep -qE "SEGMENTATION_PASS|MODEL_INFERENCE_PASS"; then
   echo "      terrain segmentation content: PASS"
-  log "validation PASS: SEGMENTATION_PASS status"
+  log "validation PASS: model or legacy segmentation status"
 else
   echo "      terrain segmentation content: FAIL"
   log "validation FAIL: segmentation status was [$segmentation_status]"
@@ -1062,6 +1066,14 @@ if printf '%s\n' "$terrain_plan_status" | grep -q "TERRAIN_PLAN_PASS"; then
 else
   echo "      terrain-aware plan content: FAIL"
   log "validation FAIL: terrain planner status was [$terrain_plan_status]"
+  OVERALL="FAIL"
+fi
+if printf '%s\n' "$terrain_plan_status" | grep -q "GEOMETRIC_BASELINE_PASS"; then
+  echo "      geometric-vs-terrain comparison: PASS"
+  log "validation PASS: geometric baseline compared with weighted route"
+else
+  echo "      geometric-vs-terrain comparison: FAIL"
+  log "validation FAIL: planner emitted no geometric baseline comparison"
   OVERALL="FAIL"
 fi
 type_ok "type dynamic replan status std_msgs/String" \

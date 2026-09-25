@@ -27,6 +27,7 @@ class PhaseKEvaluator(Node):
     def __init__(self) -> None:
         super().__init__("lunabot_phase_k_evaluator")
         self.declare_parameter("plan_topic", "/lunabot/terrain/plan")
+        self.declare_parameter("geometric_plan_topic", "/plan")
         self.declare_parameter("replan_topic", "/lunabot/autonomy/replan_status")
         self.declare_parameter("autonomy_topic", "/lunabot/autonomy/status")
         self.declare_parameter("control_topic", "/lunabot/control/status")
@@ -45,6 +46,9 @@ class PhaseKEvaluator(Node):
         latched_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
         self.plan_sub = self.create_subscription(
             Path, str(get("plan_topic").value), self._plan_callback, latched_qos)
+        self.geometric_plan_sub = self.create_subscription(
+            Path, str(get("geometric_plan_topic").value),
+            self._geometric_plan_callback, latched_qos)
         self.replan_sub = self.create_subscription(
             String, str(get("replan_topic").value), self._replan_callback,
             latched_qos)
@@ -63,6 +67,9 @@ class PhaseKEvaluator(Node):
         self.status_pub = self.create_publisher(String, self.status_topic, latched_qos)
 
         self.plan_seen = False
+        self.geometric_baseline_seen = False
+        self.terrain_length = 0.0
+        self.geometric_length = 0.0
         self.replan_pass = False
         self.goal_reached = False
         self.controller_active = False
@@ -89,9 +96,23 @@ class PhaseKEvaluator(Node):
         self.status_pub.publish(msg)
         self.get_logger().info(text)
 
+    @staticmethod
+    def _path_length(msg: Path) -> float:
+        return sum(math.hypot(
+            second.pose.position.x - first.pose.position.x,
+            second.pose.position.y - first.pose.position.y)
+            for first, second in zip(msg.poses, msg.poses[1:]))
+
     def _plan_callback(self, msg: Path) -> None:
         if msg.poses:
             self.plan_seen = True
+            self.terrain_length = self._path_length(msg)
+        self._evaluate()
+
+    def _geometric_plan_callback(self, msg: Path) -> None:
+        if msg.poses:
+            self.geometric_baseline_seen = True
+            self.geometric_length = self._path_length(msg)
         self._evaluate()
 
     def _replan_callback(self, msg: String) -> None:
@@ -139,6 +160,7 @@ class PhaseKEvaluator(Node):
             return
         criteria = (
             self.plan_seen,
+            self.geometric_baseline_seen,
             self.replan_pass,
             self.goal_reached,
             self.controller_active,
@@ -149,13 +171,15 @@ class PhaseKEvaluator(Node):
         if all(criteria):
             self.passed = True
             self.publish_status(
-                f"EVALUATION_PASS plan=1 replan=1 goal=1 controller=1 "
-                f"input_motion=1 output_motion=1 motion={self.total_motion:.2f} "
+                f"EVALUATION_PASS plan=1 geometric_baseline=1 replan=1 goal=1 "
+                f"controller=1 input_motion=1 output_motion=1 "
+                f"motion={self.total_motion:.2f} geometric_length={self.geometric_length:.2f} "
+                f"terrain_length={self.terrain_length:.2f} "
                 f"input_samples={self.input_samples} output_samples={self.output_samples}")
             return
         missing = []
-        names = ("plan", "replan", "goal", "controller", "input_motion",
-                 "output_motion", "motion")
+        names = ("plan", "geometric_baseline", "replan", "goal", "controller",
+                 "input_motion", "output_motion", "motion")
         for name, valid in zip(names, criteria):
             if not valid:
                 missing.append(name)

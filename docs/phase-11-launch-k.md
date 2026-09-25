@@ -32,6 +32,9 @@ odometry ────────────────────┤──> 
 The evaluator requires all of the following:
 
 - a non-empty terrain-aware plan;
+- a non-empty geometric `/plan` baseline from diagnostic A*;
+- real geometric and terrain-aware path-length measurements in the aggregate
+  result;
 - `DYNAMIC_REPLAN_PASS`;
 - `INTEGRATION_GOAL_REACHED`;
 - an active controller status;
@@ -39,9 +42,12 @@ The evaluator requires all of the following:
 - nonzero `/cmd_vel` output;
 - at least 0.05 m of real odometry motion.
 
-A successful status contains `EVALUATION_PASS` and the measured sample and
-motion metrics. The evaluator is observation-only and cannot compete with the
-approved Phase J motion source.
+A successful status contains `EVALUATION_PASS`, measured geometric and
+terrain-aware path lengths, command samples, and odometry motion. The
+comparison is based on paths emitted during the same live scenario; it does
+not fabricate success or claim that the two controllers ran simultaneously.
+The evaluator is observation-only and cannot compete with the approved Phase J
+motion source.
 
 ## 3. Interface contract
 
