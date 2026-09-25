@@ -129,7 +129,9 @@ check("cost mapper consumes semantic map", "OccupancyGrid, self.semantic_topic" 
       "_semantic_callback" in cost)
 check("cost mapper publishes cost map", "self.cost_pub.publish" in cost and
       "OccupancyGrid" in cost)
-check("cost mapper defines terrain cost", "terrain_cost" in cost and "TERRAIN_VALUE" in cost)
+check("cost mapper defines terrain cost", "class_costs" in cost and
+      "BEDROCK" in cost and "REGOLITH" in cost and "ROCK" in cost and
+      "CRATER" in cost and "SHADOW" in cost)
 check("cost mapper defines unknown caution cost", "unknown_cost" in cost and
       "UNKNOWN = -1" in cost)
 check("cost mapper defines obstacle cost", "obstacle_cost" in cost and

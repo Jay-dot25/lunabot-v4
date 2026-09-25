@@ -139,9 +139,10 @@ check("mapper accumulates a fixed grid", "self.cells" in mapper and
       "_grid_index" in mapper)
 check("mapper publishes OccupancyGrid", "OccupancyGrid" in mapper and
       "self.map_pub.publish" in mapper)
-check("mapper defines semantic values", "TERRAIN = 1" in mapper and
-      "OBSTACLE = 2" in mapper and "25" in mapper and "100" in mapper)
-check("mapper gives obstacles precedence", "Obstacle evidence dominates" in mapper)
+check("mapper defines semantic values", "BEDROCK = 1" in mapper and
+      "REGOLITH = 2" in mapper and "ROCK = 3" in mapper and
+      "CRATER = 4" in mapper and "SHADOW = 5" in mapper)
+check("mapper gives obstacles precedence", "Hazard evidence dominates" in mapper)
 check("mapper publishes auditable status", "SEMANTIC_MAP_PASS" in mapper and
       "self.status_pub" in mapper)
 check("mapper map/status are late-join safe", mapper.count("TRANSIENT_LOCAL") >= 2 and
