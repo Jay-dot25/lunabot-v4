@@ -881,9 +881,7 @@ wait_for_goal_selection() {
   local status_file="$EVIDENCE_DIR/goal_selection_wait_status.txt"
   rm -f "$status_file"
   echo "      waiting for operator RViz goal selection..."
-  setsid timeout 300 ros2 topic echo /goal_pose \\
-    --qos-reliability reliable --qos-durability volatile --once \\
-    > "$status_file" 2>/dev/null &
+  setsid timeout 300 ros2 topic echo /goal_pose --qos-reliability reliable --qos-durability volatile --once > "$status_file" 2>/dev/null &
   local wait_pid=$!
   for _ in $(seq 1 300); do
     if grep -q "pose:" "$status_file" 2>/dev/null; then
