@@ -372,12 +372,25 @@ done
 [ "$ready" -eq 1 ] || abort "Gazebo did not become ready within 90 s"
 # Gazebo Sim starts paused in server-only mode. Explicitly unpause so /clock,
 # sensors, DiffDrive odometry and the Phase L demo can actually advance.
-control_resp="$(timeout 10 "$IGN" service -s "/world/$WORLD_NAME/control" \
-  --reqtype "$MSGNS.WorldControl" --reptype "$MSGNS.Boolean" \
-  --timeout 5000 --req 'pause: false' 2>>"$EVIDENCE_DIR/gazebo.log")"
+control_resp=""
+# The world-info service can become ready slightly before the control service.
+# Retry the real unpause request instead of treating that startup race as a
+# fatal launch failure.
+for _ in $(seq 1 10); do
+  control_resp="$(timeout 10 "$IGN" service -s "/world/$WORLD_NAME/control" \
+    --reqtype "$MSGNS.WorldControl" --reptype "$MSGNS.Boolean" \
+    --timeout 5000 --req 'pause: false' 2>>"$EVIDENCE_DIR/gazebo.log" || true)"
+  case "$control_resp" in
+    *true*) break;;
+  esac
+  if ! kill -0 "$GAZEBO_PID" 2>/dev/null; then
+    abort "Gazebo exited while unpausing; see $EVIDENCE_DIR/gazebo.log"
+  fi
+  sleep 1
+done
 case "$control_resp" in
   *true*) echo "      Gazebo simulation unpaused";;
-  *) abort "could not unpause Gazebo simulation: $control_resp";;
+  *) abort "could not unpause Gazebo simulation after retries: $control_resp";;
 esac
 echo "      Gazebo running (PID $GAZEBO_PID), lunar_world loaded"
 log "[4/23] gazebo OK and unpaused (pid $GAZEBO_PID)"
