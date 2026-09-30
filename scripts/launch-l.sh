@@ -355,11 +355,11 @@ echo "[4/23] Starting Gazebo lunar world.................."
 export GZ_SIM_RESOURCE_PATH="$WORLD_DIR${GZ_SIM_RESOURCE_PATH:+:$GZ_SIM_RESOURCE_PATH}"
 export IGN_GAZEBO_RESOURCE_PATH="$GZ_SIM_RESOURCE_PATH"
 : > "$EVIDENCE_DIR/gazebo.log"
-if [ "$HEADLESS" = "1" ]; then
-  setsid "$IGN" gazebo -s -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
-else
-  setsid "$IGN" gazebo -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
-fi
+# Keep Gazebo physics/sensors server-only in both modes. RViz is the GUI
+# visualizer; running the Ignition client as a second renderer throttles the
+# simulation and can starve IMU/marker/TF publications while navigation is
+# trying to reach a long goal.
+setsid "$IGN" gazebo -s -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
 GAZEBO_PID=$!
 ready=0
 for _ in $(seq 1 90); do
