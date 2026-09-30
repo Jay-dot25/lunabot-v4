@@ -333,7 +333,8 @@ fi
 # A prior interrupted `ros2 run` can leave its child bridge alive. Remove
 # only processes belonging to this Phase L command/node contract.
 for pattern in "ros_ign_bridge.*parameter_bridge" "ros_gz_bridge.*parameter_bridge" \
-               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" "scripts/dynamic_replan_monitor.py" "scripts/obstacle_detector.py" "scripts/phase_k_evaluator.py" "scripts/phase_l_mission.py" "slam_toolbox.*online_async"; do
+               "scripts/control_odometry.py" "scripts/odometry_monitor.py" "scripts/astar_navigation.py" "scripts/dynamic_replan_monitor.py" "scripts/obstacle_detector.py" "scripts/phase_k_evaluator.py" "scripts/phase_l_mission.py" \
+               "scripts/terrain_segmentation.py" "scripts/semantic_terrain_mapper.py" "scripts/terrain_cost_mapper.py" "scripts/terrain_aware_planner.py" "scripts/terrain_path_follower.py" "scripts/frontier_goal_manager.py" "slam_toolbox.*online_async"; do
   for p in $(pgrep -f "$pattern" 2>/dev/null || true); do
     kill -TERM "$p" 2>/dev/null || true
   done
