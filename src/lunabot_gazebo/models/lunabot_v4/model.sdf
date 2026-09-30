@@ -370,6 +370,17 @@
         <always_on>true</always_on><visualize>true</visualize><topic>/lunabot/camera/image_raw</topic>
       </sensor>
 
+      <!-- Supplemental panoramic camera. The forward RGB-D pair remains the
+           metric input for terrain segmentation; this wide sensor gives the
+           operator and future perception nodes all-around visual coverage
+           without steering the mast or rover to inspect the sides. -->
+      <sensor name="panoramic_camera" type="camera">
+        <pose relative_to="sensor_head">0 0 0.02 0 0 0</pose>
+        <update_rate>10</update_rate>
+        <camera><horizontal_fov>6.0</horizontal_fov><image><width>1024</width><height>256</height><format>R8G8B8</format></image><clip><near>0.05</near><far>60</far></clip></camera>
+        <always_on>true</always_on><visualize>false</visualize><topic>/lunabot/camera/panoramic/image_raw</topic>
+      </sensor>
+
       <sensor name="depth_camera" type="depth_camera">
         <pose relative_to="sensor_head">0.14 0 -0.04 0 0 0</pose>
         <update_rate>15</update_rate>

@@ -419,6 +419,7 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
   "/cmd_vel@geometry_msgs/msg/Twist]$MSGNS.Twist" \
   "/clock@rosgraph_msgs/msg/Clock[$MSGNS.Clock" \
   "/lunabot/camera/image_raw@sensor_msgs/msg/Image[$MSGNS.Image" \
+  "/lunabot/camera/panoramic/image_raw@sensor_msgs/msg/Image[$MSGNS.Image" \
   "/lunabot/depth/image_raw@sensor_msgs/msg/Image[$MSGNS.Image" \
   "/lunabot/lidar/scan@sensor_msgs/msg/LaserScan[$MSGNS.LaserScan" \
   "/lunabot/imu@sensor_msgs/msg/Imu[$MSGNS.IMU" \
@@ -435,7 +436,7 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
 BRIDGE_PID=$!
 sleep 3
 kill -0 "$BRIDGE_PID" 2>/dev/null || abort "bridge exited; see $EVIDENCE_DIR/bridge.log"
-echo "      bridge running (PID $BRIDGE_PID), 16 mappings"
+echo "      bridge running (PID $BRIDGE_PID), 17 mappings"
 log "[6/23] bridge OK (pid $BRIDGE_PID)"
 
 # ------------------------------------------------------------
@@ -1416,7 +1417,7 @@ echo "Terrain perception: RUNNING (RGB-D segmentation)"
 echo "Semantic mapping  : RUNNING (map-frame terrain grid)"
 echo "Terrain cost map  : RUNNING (inflated traversability costs)"
 echo "Terrain-aware plan: RUNNING (weighted A* path output)"
-echo "Bridge            : RUNNING (16 mappings)"
+echo "Bridge            : RUNNING (17 mappings)"
 echo "TF                : RUNNING (odom->chassis + 5 static)"
 printf "RViz2             : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "skipped (headless)" || echo "RUNNING" )"
 echo ""

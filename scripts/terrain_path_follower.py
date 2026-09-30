@@ -105,6 +105,10 @@ class TerrainPathFollower(Node):
         # alternate the command and trapped the rover in place.
         self.avoid_turn: Optional[float] = None
         self.obstacle_clear_ticks = 0
+        # After the front sector clears, keep a short forward escape arc.
+        # Releasing avoidance immediately after an in-place turn lets the
+        # path controller point back at the same obstacle and repeat forever.
+        self.avoid_escape_ticks = 0
         self.reached = False
         self.last_waypoint = -1
         self.last_status = ""
@@ -270,6 +274,7 @@ class TerrainPathFollower(Node):
             suggested_turn, distance = obstacle
             if self.avoid_turn is None:
                 self.avoid_turn = suggested_turn
+                self.avoid_escape_ticks = 0
             self.obstacle_clear_ticks = 0
             cmd = Twist()
             cmd.angular.z = self.avoid_turn * self.max_angular
@@ -294,8 +299,23 @@ class TerrainPathFollower(Node):
                     f"INTEGRATION_OBSTACLE_CLEARING turn={self.avoid_turn:+.0f} "
                     f"clear_ticks={self.obstacle_clear_ticks}")
                 return
+            # Do not hand control back to pure path pursuit while the rover is
+            # still beside the obstacle. Drive a bounded arc toward the side
+            # selected by the clearance test so the rover makes real lateral
+            # progress instead of rotating back to the same blocking cell.
+            if self.avoid_escape_ticks < 18:
+                self.avoid_escape_ticks += 1
+                cmd = Twist()
+                cmd.linear.x = min(self.max_linear * 0.5, 0.10)
+                cmd.angular.z = self.avoid_turn * self.max_angular * 0.65
+                self.cmd_pub.publish(cmd)
+                self.publish_status(
+                    f"INTEGRATION_OBSTACLE_ESCAPE turn={self.avoid_turn:+.0f} "
+                    f"arc_ticks={self.avoid_escape_ticks}")
+                return
             self.avoid_turn = None
             self.obstacle_clear_ticks = 0
+            self.avoid_escape_ticks = 0
         # The terrain planner resolves a requested goal that falls on an
         # occupied/inflated cell to its nearest traversable cell. Use the
         # endpoint of the accepted terrain path for completion as well as for
