@@ -52,6 +52,8 @@ DEMO="${DEMO:-0}"
 FINAL_DEMO="${FINAL_DEMO:-0}"
 EVIDENCE="${EVIDENCE:-0}"
 AUTO_GOAL="${AUTO_GOAL:-false}"
+# Configurable forward distance for deterministic headless mission goals.
+AUTO_GOAL_DISTANCE="${AUTO_GOAL_DISTANCE:-4.0}"
 REQUIRE_MANUAL_GOAL="${REQUIRE_MANUAL_GOAL:-true}"
 
 OVERALL="PASS"
@@ -694,7 +696,7 @@ setsid python3 "$NAV_PATH" --ros-args \
   -p odom_topic:=/lunabot/odom \
   -p status_topic:=/lunabot/navigation/status \
   -p map_frame:=map -p unknown_is_obstacle:=true \
-  -p inflation_radius:=0.25 -p auto_goal_distance:=1.5 \
+  -p inflation_radius:=0.25 -p auto_goal_distance:="$AUTO_GOAL_DISTANCE" \
   >> "$EVIDENCE_DIR/navigation.log" 2>&1 &
 NAV_PID=$!
 sleep 3
