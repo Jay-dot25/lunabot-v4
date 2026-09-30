@@ -61,6 +61,7 @@ REQUIRE_MANUAL_GOAL="${REQUIRE_MANUAL_GOAL:-true}"
 
 OVERALL="PASS"
 GAZEBO_PID=""
+GAZEBO_GUI_PID=""
 BRIDGE_PID=""
 RVIZ_PID=""
 CONTROL_PID=""
@@ -213,6 +214,7 @@ shutdown() {
   [ -n "$BRIDGE_PID" ] && stop_group "$BRIDGE_PID"
   for p in ${TF_PIDS[@]+"${TF_PIDS[@]}"}; do stop_group "$p"; done
   [ -n "$RVIZ_PID" ] && stop_group "$RVIZ_PID"
+  [ -n "$GAZEBO_GUI_PID" ] && stop_group "$GAZEBO_GUI_PID"
   if [ -n "$GAZEBO_PID" ]; then
     kill -TERM -"$GAZEBO_PID" 2>/dev/null || kill -TERM "$GAZEBO_PID" 2>/dev/null || true
     for _ in $(seq 1 20); do
@@ -397,6 +399,20 @@ case "$control_resp" in
   *true*) echo "      Gazebo simulation unpaused";;
   *) abort "could not unpause Gazebo simulation after retries: $control_resp";;
 esac
+if [ "$HEADLESS" != "1" ]; then
+  # Attach the Gazebo GUI client to the already-running server. This keeps
+  # physics and sensors isolated from rendering while still showing the world
+  # in a Gazebo window alongside RViz.
+  setsid "$IGN" gazebo -g -v 3 >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
+  GAZEBO_GUI_PID=$!
+  sleep 2
+  if kill -0 "$GAZEBO_GUI_PID" 2>/dev/null; then
+    echo "      Gazebo GUI client running (PID $GAZEBO_GUI_PID)"
+  else
+    echo "      WARNING: Gazebo GUI client failed to start; RViz remains available"
+    GAZEBO_GUI_PID=""
+  fi
+fi
 echo "      Gazebo running (PID $GAZEBO_PID), lunar_world loaded"
 log "[4/23] gazebo OK and unpaused (pid $GAZEBO_PID)"
 
