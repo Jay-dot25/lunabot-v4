@@ -185,24 +185,30 @@ class TerrainPathFollower(Node):
             if distance < self.scan.range_min or distance > limit:
                 continue
             if abs(angle) <= half_angle:
-                front.append(distance)
+                front.append((distance, angle))
             elif half_angle < angle <= 1.0:
                 left.append(distance)
             elif -1.0 <= angle < -half_angle:
                 right.append(distance)
         if not front:
             return None
-        # Turn toward the side with more measured clearance.  In ROS, a
-        # positive angular.z rotates counter-clockwise (to the rover's left).
-        # The old expression used the opposite sign, so the rover selected the
-        # more open side and then rotated toward the more blocked side.  That
-        # produced the visible turn-back / repeat behavior in front of paired
-        # obstacles.  This local safety maneuver only chooses the immediate
-        # escape side; the terrain planner remains responsible for the route.
-        left_clear = min(left) if left else self.scan.range_max
-        right_clear = min(right) if right else self.scan.range_max
-        turn = 1.0 if left_clear > right_clear else -1.0
-        return turn, min(front)
+        # First move away from the closest return's bearing. A return at a
+        # positive bearing is on the rover's left, so the safe turn is right;
+        # a negative bearing requires a left turn. This prevents the clearance
+        # heuristic from choosing a side that is technically open farther away
+        # while steering into the nearest face of a paired obstacle.
+        closest_distance, closest_angle = min(front, key=lambda item: item[0])
+        if closest_angle > 0.15:
+            turn = -1.0
+        elif closest_angle < -0.15:
+            turn = 1.0
+        else:
+            # Turn toward the side with more measured clearance. In ROS,
+            # positive angular.z rotates counter-clockwise, to the left.
+            left_clear = min(left) if left else self.scan.range_max
+            right_clear = min(right) if right else self.scan.range_max
+            turn = 1.0 if left_clear > right_clear else -1.0
+        return turn, closest_distance
 
     @staticmethod
     def _yaw(q) -> float:
