@@ -1156,7 +1156,12 @@ elif [ "$FINAL_DEMO" = "1" ]; then
 else
   topic_ok "topic /goal_pose"                "/goal_pose"
 fi
-topic_ok "topic /plan"                         "/plan"
+if [ "$FINAL_DEMO" = "1" ] && [ "$DEMO" != "1" ]; then
+  echo "      topic /plan: DEFERRED (manual goal required)"
+  log "validation DEFERRED: /plan until manual goal is selected"
+else
+  topic_ok "topic /plan"                         "/plan"
+fi
 topic_ok "topic /lunabot/navigation/status"    "/lunabot/navigation/status"
 topic_ok "topic /cmd_vel_in"                  "/cmd_vel_in"
 type_ok "type terrain mask sensor_msgs/Image" "/lunabot/terrain/segmentation" "sensor_msgs/msg/Image"
@@ -1222,6 +1227,9 @@ replan_status="$(timeout 15 ros2 topic echo /lunabot/autonomy/replan_status \
 if printf '%s\n' "$replan_status" | grep -q "DYNAMIC_REPLAN_PASS"; then
   echo "      dynamic replan status content: PASS"
   log "validation PASS: DYNAMIC_REPLAN_PASS status"
+elif [ "$FINAL_DEMO" = "1" ] && [ "$DEMO" != "1" ]; then
+  echo "      dynamic replan status content: DEFERRED (manual goal required)"
+  log "validation DEFERRED: dynamic replan until manual goal is selected"
 else
   echo "      dynamic replan status content: FAIL"
   log "validation FAIL: dynamic replan status was [$replan_status]"
