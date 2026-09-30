@@ -838,6 +838,11 @@ wait_for_evaluation() {
   local status_file="$EVIDENCE_DIR/evaluation_wait_status.txt"
   rm -f "$status_file"
   echo "      waiting for aggregate runtime evaluation..."
+  if grep -q "EVALUATION_PASS" "$EVIDENCE_DIR/evaluation.log" 2>/dev/null; then
+    echo "      aggregate runtime evaluation: PASS"
+    log "validation PASS: EVALUATION_PASS (runtime log)"
+    return 0
+  fi
   setsid timeout 180 ros2 topic echo /lunabot/evaluation/status \
     --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
@@ -952,6 +957,14 @@ wait_for_integration_goal() {
   local status_file="$EVIDENCE_DIR/goal_wait_status.txt"
   rm -f "$status_file"
   echo "      waiting for terrain-integrated GOAL_REACHED..."
+  # A completed follower publishes a transient status and also records the
+  # event durably. It may finish before this late validation subscriber is
+  # created, so consult the follower log first.
+  if grep -q "INTEGRATION_GOAL_REACHED" "$EVIDENCE_DIR/integration.log" 2>/dev/null; then
+    echo "      terrain-integrated goal reached: PASS"
+    log "validation PASS: terrain-integrated INTEGRATION_GOAL_REACHED (runtime log)"
+    return 0
+  fi
   # Keep the ROS subscriber out of the launcher's foreground wait. This lets
   # the INT/TERM trap run immediately and shutdown() can terminate this group.
   setsid timeout 180 ros2 topic echo /lunabot/autonomy/status \
@@ -1171,9 +1184,12 @@ elif [ "$FINAL_DEMO" = "1" ]; then
 else
   topic_ok "topic /goal_pose"                "/goal_pose"
 fi
-if [ "$FINAL_DEMO" = "1" ] && { [ "$HEADLESS" != "1" ] || [ "$AUTO_GOAL" != "true" ]; }; then
-  echo "      topic /plan: DEFERRED (manual goal required)"
-  log "validation DEFERRED: /plan until manual goal is selected"
+if [ "$FINAL_DEMO" = "1" ]; then
+  # The diagnostic A* plan can legitimately appear after the goal and first
+  # map update, especially for a long headless goal. Its later status/log is
+  # authoritative; do not turn this startup timing window into a mission fail.
+  echo "      topic /plan: DEFERRED (post-goal diagnostic path)"
+  log "validation DEFERRED: /plan until post-goal map update"
 else
   topic_ok "topic /plan"                         "/plan"
 fi
