@@ -188,12 +188,17 @@ class TerrainPathFollower(Node):
                 right.append(distance)
         if not front:
             return None
-        # Turn toward the side with more measured clearance.  This is a
-        # local safety maneuver only; the terrain planner remains responsible
-        # for the subsequent map-frame route.
+        # Turn toward the side with more measured clearance.  In ROS, a
+        # positive angular.z rotates counter-clockwise (to the rover's left).
+        # The old expression used the opposite sign, so the rover selected the
+        # more open side and then rotated toward the more blocked side.  That
+        # produced the visible turn-back / repeat behavior in front of paired
+        # obstacles.  This local safety maneuver only chooses the immediate
+        # escape side; the terrain planner remains responsible for the route.
         left_clear = min(left) if left else self.scan.range_max
         right_clear = min(right) if right else self.scan.range_max
-        return (-1.0 if left_clear > right_clear else 1.0), min(front)
+        turn = 1.0 if left_clear > right_clear else -1.0
+        return turn, min(front)
 
     @staticmethod
     def _yaw(q) -> float:
