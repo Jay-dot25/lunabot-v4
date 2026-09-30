@@ -1161,7 +1161,7 @@ type_ok "type navigation status std_msgs/String" "/lunabot/navigation/status" "s
 # A* intentionally stops republishing its volatile goal after GOAL_REACHED.
 # Automated regression uses the recorded AUTO_GOAL_SENT event. The final GUI
 # mission deliberately waits for the operator's RViz Set Goal selection.
-if [ "$DEMO" = "1" ] && [ "$AUTO_GOAL" = "true" ] && \
+if [ "$HEADLESS" = "1" ] && [ "$AUTO_GOAL" = "true" ] && \
    grep -q "AUTO_GOAL_SENT" "$EVIDENCE_DIR/navigation.log" 2>/dev/null; then
   echo "      topic /goal_pose: PASS (AUTO_GOAL_SENT regression goal)"
   log "validation PASS: /goal_pose AUTO_GOAL_SENT regression"
@@ -1171,7 +1171,7 @@ elif [ "$FINAL_DEMO" = "1" ]; then
 else
   topic_ok "topic /goal_pose"                "/goal_pose"
 fi
-if [ "$FINAL_DEMO" = "1" ] && [ "$DEMO" != "1" ]; then
+if [ "$FINAL_DEMO" = "1" ] && { [ "$HEADLESS" != "1" ] || [ "$AUTO_GOAL" != "true" ]; }; then
   echo "      topic /plan: DEFERRED (manual goal required)"
   log "validation DEFERRED: /plan until manual goal is selected"
 else
@@ -1242,7 +1242,7 @@ replan_status="$(timeout 15 ros2 topic echo /lunabot/autonomy/replan_status \
 if printf '%s\n' "$replan_status" | grep -q "DYNAMIC_REPLAN_PASS"; then
   echo "      dynamic replan status content: PASS"
   log "validation PASS: DYNAMIC_REPLAN_PASS status"
-elif [ "$FINAL_DEMO" = "1" ] && [ "$DEMO" != "1" ]; then
+elif [ "$FINAL_DEMO" = "1" ] && { [ "$HEADLESS" != "1" ] || [ "$AUTO_GOAL" != "true" ]; }; then
   echo "      dynamic replan status content: DEFERRED (manual goal required)"
   log "validation DEFERRED: dynamic replan until manual goal is selected"
 else
@@ -1289,7 +1289,7 @@ else
   log "validation FAIL: integration status was [$integration_status]"
   OVERALL="FAIL"
 fi
-if [ "$DEMO" = "1" ]; then
+if [ "$HEADLESS" = "1" ] && [ "$AUTO_GOAL" = "true" ]; then
   if printf '%s\n' "$replan_status" | grep -q "DYNAMIC_REPLAN_PASS"; then
     printf '%s\n' "$replan_status" > "$EVIDENCE_DIR/replan_wait_status.txt"
     echo "      dynamic terrain-plan replanning: PASS"
