@@ -54,6 +54,9 @@ EVIDENCE="${EVIDENCE:-0}"
 AUTO_GOAL="${AUTO_GOAL:-false}"
 # Configurable forward distance for deterministic headless mission goals.
 AUTO_GOAL_DISTANCE="${AUTO_GOAL_DISTANCE:-4.0}"
+# GUI rendering can reduce Gazebo real-time factor. Keep the mission timeout
+# in simulation-independent wall time and allow long goals to finish.
+MISSION_TIMEOUT="${MISSION_TIMEOUT:-360}"
 REQUIRE_MANUAL_GOAL="${REQUIRE_MANUAL_GOAL:-true}"
 
 OVERALL="PASS"
@@ -843,11 +846,11 @@ wait_for_evaluation() {
     log "validation PASS: EVALUATION_PASS (runtime log)"
     return 0
   fi
-  setsid timeout 180 ros2 topic echo /lunabot/evaluation/status \
+  setsid timeout "$MISSION_TIMEOUT" ros2 topic echo /lunabot/evaluation/status \
     --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
   local wait_pid=$!
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 "$MISSION_TIMEOUT"); do
     if grep -q "EVALUATION_PASS" "$status_file" 2>/dev/null; then
       stop_group "$wait_pid"
       wait "$wait_pid" 2>/dev/null || true
@@ -872,11 +875,11 @@ wait_for_mission() {
   local status_file="$EVIDENCE_DIR/mission_wait_status.txt"
   rm -f "$status_file"
   echo "      waiting for final mission demonstration result..."
-  setsid timeout 180 ros2 topic echo /lunabot/mission/status \
+  setsid timeout "$MISSION_TIMEOUT" ros2 topic echo /lunabot/mission/status \
     --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
   local wait_pid=$!
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 "$MISSION_TIMEOUT"); do
     if grep -q "MISSION_DEMO_PASS" "$status_file" 2>/dev/null; then
       stop_group "$wait_pid"
       wait "$wait_pid" 2>/dev/null || true
@@ -928,11 +931,11 @@ wait_for_dynamic_replan() {
   local status_file="$EVIDENCE_DIR/replan_wait_status.txt"
   rm -f "$status_file"
   echo "      waiting for dynamic terrain-plan revisions..."
-  setsid timeout 180 ros2 topic echo /lunabot/autonomy/replan_status \
+  setsid timeout "$MISSION_TIMEOUT" ros2 topic echo /lunabot/autonomy/replan_status \
     --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
   local wait_pid=$!
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 "$MISSION_TIMEOUT"); do
     if grep -q "DYNAMIC_REPLAN_PASS" "$status_file" 2>/dev/null; then
       stop_group "$wait_pid"
       wait "$wait_pid" 2>/dev/null || true
@@ -967,11 +970,11 @@ wait_for_integration_goal() {
   fi
   # Keep the ROS subscriber out of the launcher's foreground wait. This lets
   # the INT/TERM trap run immediately and shutdown() can terminate this group.
-  setsid timeout 180 ros2 topic echo /lunabot/autonomy/status \
+  setsid timeout "$MISSION_TIMEOUT" ros2 topic echo /lunabot/autonomy/status \
     --qos-reliability reliable --qos-durability transient_local \
     > "$status_file" 2>/dev/null &
   GOAL_WAIT_PID=$!
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 "$MISSION_TIMEOUT"); do
     if grep -q "INTEGRATION_GOAL_REACHED" "$status_file" 2>/dev/null; then
       stop_group "$GOAL_WAIT_PID"
       wait "$GOAL_WAIT_PID" 2>/dev/null || true
