@@ -403,7 +403,9 @@ if [ "$HEADLESS" != "1" ]; then
   # Attach the Gazebo GUI client to the already-running server. This keeps
   # physics and sensors isolated from rendering while still showing the world
   # in a Gazebo window alongside RViz.
-  setsid "$IGN" gazebo -g -v 3 >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
+  # Pass the same world descriptor to the GUI client so it attaches to the
+  # lunar_world server instead of opening an empty disconnected scene.
+  setsid "$IGN" gazebo -g -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
   GAZEBO_GUI_PID=$!
   sleep 2
   if kill -0 "$GAZEBO_GUI_PID" 2>/dev/null; then
