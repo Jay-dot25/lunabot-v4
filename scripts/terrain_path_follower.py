@@ -22,6 +22,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
+from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 import tf2_ros
 
@@ -52,6 +53,13 @@ class TerrainPathFollower(Node):
         self.declare_parameter("max_angular", 0.60)
         self.declare_parameter("lookahead_cells", 2)
         self.declare_parameter("control_rate", 10.0)
+        self.declare_parameter("scan_topic", "/lunabot/lidar/scan")
+        # Stop before the rover reaches an obstacle. The Phase L detector
+        # observes a wider forward sector (0.60 rad); using a narrower sector
+        # allowed returns at bearing about 0.48 rad to pass through to the
+        # controller until physical contact.
+        self.declare_parameter("front_obstacle_distance", 1.20)
+        self.declare_parameter("front_obstacle_half_angle", 0.60)
 
         get = self.get_parameter
         self.path_topic = str(get("path_topic").value)
@@ -76,6 +84,9 @@ class TerrainPathFollower(Node):
         self.odom_sub = self.create_subscription(
             Odometry, self.odom_topic, self._odom_callback,
             qos_profile_sensor_data)
+        self.scan_sub = self.create_subscription(
+            LaserScan, str(get("scan_topic").value), self._scan_callback,
+            qos_profile_sensor_data)
         self.cmd_pub = self.create_publisher(Twist, self.cmd_topic, 10)
         status_qos = QoSProfile(depth=1)
         status_qos.reliability = ReliabilityPolicy.RELIABLE
@@ -88,6 +99,12 @@ class TerrainPathFollower(Node):
         self.path: list[tuple[float, float]] = []
         self.goal: Optional[PoseStamped] = None
         self.odom: Optional[Odometry] = None
+        self.scan: Optional[LaserScan] = None
+        # Hold the chosen avoidance direction while the rover clears an
+        # obstacle. Recomputing it every scan made left/right clearance noise
+        # alternate the command and trapped the rover in place.
+        self.avoid_turn: Optional[float] = None
+        self.obstacle_clear_ticks = 0
         self.reached = False
         self.last_waypoint = -1
         self.last_status = ""
@@ -147,6 +164,36 @@ class TerrainPathFollower(Node):
 
     def _odom_callback(self, msg: Odometry) -> None:
         self.odom = msg
+
+    def _scan_callback(self, msg: LaserScan) -> None:
+        self.scan = msg
+
+    def _front_obstacle(self):
+        if self.scan is None:
+            return None
+        limit = float(self.get_parameter("front_obstacle_distance").value)
+        half_angle = float(self.get_parameter("front_obstacle_half_angle").value)
+        front, left, right = [], [], []
+        for index, distance in enumerate(self.scan.ranges):
+            if not math.isfinite(distance):
+                continue
+            angle = self.scan.angle_min + index * self.scan.angle_increment
+            if distance < self.scan.range_min or distance > limit:
+                continue
+            if abs(angle) <= half_angle:
+                front.append(distance)
+            elif half_angle < angle <= 1.0:
+                left.append(distance)
+            elif -1.0 <= angle < -half_angle:
+                right.append(distance)
+        if not front:
+            return None
+        # Turn toward the side with more measured clearance.  This is a
+        # local safety maneuver only; the terrain planner remains responsible
+        # for the subsequent map-frame route.
+        left_clear = min(left) if left else self.scan.range_max
+        right_clear = min(right) if right else self.scan.range_max
+        return (-1.0 if left_clear > right_clear else 1.0), min(front)
 
     @staticmethod
     def _yaw(q) -> float:
@@ -213,13 +260,51 @@ class TerrainPathFollower(Node):
         if self.reached:
             self._publish_stop()
             return
-        goal_distance = math.hypot(goal[0] - current_x, goal[1] - current_y)
+        obstacle = self._front_obstacle()
+        if obstacle is not None:
+            suggested_turn, distance = obstacle
+            if self.avoid_turn is None:
+                self.avoid_turn = suggested_turn
+            self.obstacle_clear_ticks = 0
+            cmd = Twist()
+            cmd.angular.z = self.avoid_turn * self.max_angular
+            # Never push forward into a close LiDAR return. Keep one turn
+            # direction until the obstacle is actually cleared; choosing from
+            # noisy left/right scans on every tick causes oscillation.
+            self.cmd_pub.publish(cmd)
+            self.publish_status(
+                f"INTEGRATION_OBSTACLE_AVOID distance={distance:.2f} "
+                f"turn={self.avoid_turn:+.0f}")
+            return
+        if self.avoid_turn is not None:
+            # Require several consecutive clear scans before handing control
+            # back to the map-frame path. This prevents a single dropped scan
+            # from sending the rover straight back into the obstacle.
+            self.obstacle_clear_ticks += 1
+            if self.obstacle_clear_ticks < 8:
+                cmd = Twist()
+                cmd.angular.z = self.avoid_turn * self.max_angular
+                self.cmd_pub.publish(cmd)
+                self.publish_status(
+                    f"INTEGRATION_OBSTACLE_CLEARING turn={self.avoid_turn:+.0f} "
+                    f"clear_ticks={self.obstacle_clear_ticks}")
+                return
+            self.avoid_turn = None
+            self.obstacle_clear_ticks = 0
+        # The terrain planner resolves a requested goal that falls on an
+        # occupied/inflated cell to its nearest traversable cell. Use the
+        # endpoint of the accepted terrain path for completion as well as for
+        # following; otherwise the follower can correctly reach the planner's
+        # safe endpoint but continue trying to drive into the blocked raw goal.
+        path_goal_x, path_goal_y = self.path[-1]
+        goal_distance = math.hypot(path_goal_x - current_x,
+                                   path_goal_y - current_y)
         if goal_distance <= self.goal_tolerance:
             self._publish_stop()
             if not self.reached:
                 self.reached = True
                 self.publish_status(
-                    f"INTEGRATION_GOAL_REACHED distance={goal_distance:.2f}")
+                    f"{'INTEGRATION_WAYPOINT_REACHED' if self.goal_topic != '/goal_pose' else 'INTEGRATION_GOAL_REACHED'} distance={goal_distance:.2f}")
             return
         nearest = min(range(len(self.path)),
                       key=lambda i: math.hypot(self.path[i][0] - current_x,
