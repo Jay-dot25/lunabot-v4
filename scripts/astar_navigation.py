@@ -60,7 +60,9 @@ class AStarNavigation(Node):
         self.declare_parameter('status_topic', '/lunabot/navigation/status')
         self.declare_parameter('auto_goal', False)
         self.declare_parameter('auto_goal_distance', 1.5)
-        self.declare_parameter('goal_tolerance', 0.35)
+        self.declare_parameter('goal_x', float('nan'))
+        self.declare_parameter('goal_y', float('nan'))
+        self.declare_parameter('goal_tolerance', 0.25)
         self.declare_parameter('occupied_threshold', 65)
         self.declare_parameter('inflation_radius', 0.25)
         self.declare_parameter('unknown_is_obstacle', True)
@@ -79,6 +81,8 @@ class AStarNavigation(Node):
         self.status_topic = p('status_topic').value
         self.auto_goal = bool(p('auto_goal').value)
         self.auto_goal_distance = float(p('auto_goal_distance').value)
+        self.goal_x = float(p('goal_x').value)
+        self.goal_y = float(p('goal_y').value)
         self.goal_tolerance = float(p('goal_tolerance').value)
         self.occupied_threshold = int(p('occupied_threshold').value)
         self.inflation_radius = float(p('inflation_radius').value)
@@ -205,8 +209,12 @@ class AStarNavigation(Node):
         goal = PoseStamped()
         goal.header.frame_id = self.map_frame
         goal.header.stamp = self.get_clock().now().to_msg()
-        goal.pose.position.x = x + self.auto_goal_distance * math.cos(yaw)
-        goal.pose.position.y = y + self.auto_goal_distance * math.sin(yaw)
+        if math.isfinite(self.goal_x) and math.isfinite(self.goal_y):
+            goal.pose.position.x = self.goal_x
+            goal.pose.position.y = self.goal_y
+        else:
+            goal.pose.position.x = x + self.auto_goal_distance * math.cos(yaw)
+            goal.pose.position.y = y + self.auto_goal_distance * math.sin(yaw)
         q = quaternion_from_yaw(yaw)
         goal.pose.orientation.x, goal.pose.orientation.y = q[0], q[1]
         goal.pose.orientation.z, goal.pose.orientation.w = q[2], q[3]
@@ -267,6 +275,23 @@ class AStarNavigation(Node):
                         return candidate
         return None
 
+    def _reachable_component(self, start):
+        """Return safe cells reachable from start without crossing obstacles."""
+        seen = {start}; queue = [start]
+        neighbors = ((1, 0), (-1, 0), (0, 1), (0, -1),
+                     (1, 1), (1, -1), (-1, 1), (-1, -1))
+        while queue:
+            current = queue.pop(0)
+            for dx, dy in neighbors:
+                nxt = (current[0] + dx, current[1] + dy)
+                if nxt in seen or not self._safe_cell(nxt):
+                    continue
+                if dx and dy and (not self._safe_cell((current[0] + dx, current[1])) or
+                                  not self._safe_cell((current[0], current[1] + dy))):
+                    continue
+                seen.add(nxt); queue.append(nxt)
+        return seen
+
     def _astar(self, start, goal):
         neighbors = ((1, 0), (-1, 0), (0, 1), (0, -1),
                      (1, 1), (1, -1), (-1, 1), (-1, -1))
@@ -285,6 +310,11 @@ class AStarNavigation(Node):
             for dx, dy in neighbors:
                 nxt = (current[0] + dx, current[1] + dy)
                 if not self._safe_cell(nxt):
+                    continue
+                # Do not cut diagonally through a blocked corner. Both
+                # cardinal side cells must be safe for a diagonal move.
+                if dx and dy and (not self._safe_cell((current[0] + dx, current[1])) or
+                                  not self._safe_cell((current[0], current[1] + dy))):
                     continue
                 step = math.sqrt(2.0) if dx and dy else 1.0
                 tentative = g_score[current] + step
@@ -314,6 +344,13 @@ class AStarNavigation(Node):
         if start_cell is None or goal_cell is None:
             self.publish_status('NO_SAFE_START_OR_GOAL_CELL')
             return False
+        component = self._reachable_component(start_cell)
+        if goal_cell not in component:
+            # Resolve disconnected/occupied goals to the closest safe point
+            # in the robot's actual reachable component, instead of retrying
+            # an impossible plan forever.
+            goal_cell = min(component, key=lambda c: math.hypot(c[0] - goal_cell[0], c[1] - goal_cell[1]))
+            self.publish_status(f'GOAL_RESOLVED_REACHABLE cell={goal_cell[0]},{goal_cell[1]}')
         cells = self._astar(start_cell, goal_cell)
         if not cells:
             self.path_points = []

@@ -256,7 +256,6 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
   "/lunabot/lidar/scan@sensor_msgs/msg/LaserScan[$MSGNS.LaserScan" \
   "/lunabot/imu@sensor_msgs/msg/Imu[$MSGNS.IMU" \
   "/lunabot/odom@nav_msgs/msg/Odometry[$MSGNS.Odometry" \
-  "/lunabot/joint_states@sensor_msgs/JointState[$MSGNS.Model" \
   "/tf@tf2_msgs/msg/TFMessage[$MSGNS.Pose_V" \
   "/lunabot/steer/front_left@std_msgs/msg/Float64]$MSGNS.Double" \
   "/lunabot/steer/front_right@std_msgs/msg/Float64]$MSGNS.Double" \
@@ -395,7 +394,7 @@ echo "------------------------------------------------------------"
 printf "Environment       : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "RUNNING (headless)" || echo "RUNNING" )"
 echo "LunaBot           : RUNNING"
 echo "Sensors           : RUNNING (camera, depth, lidar, imu)"
-echo "Bridge            : RUNNING (16 mappings)"
+echo "Bridge            : RUNNING (15 mappings)"
 echo "TF                : RUNNING (odom->chassis + 4 static)"
 echo "Phase Component   : RUNNING"
 printf "RViz2             : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "skipped (headless)" || echo "RUNNING" )"

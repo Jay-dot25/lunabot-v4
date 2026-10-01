@@ -322,7 +322,6 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
   "/lunabot/lidar/scan@sensor_msgs/msg/LaserScan[$MSGNS.LaserScan" \
   "/lunabot/imu@sensor_msgs/msg/Imu[$MSGNS.IMU" \
   "/lunabot/odom@nav_msgs/msg/Odometry[$MSGNS.Odometry" \
-  "/lunabot/joint_states@sensor_msgs/JointState[$MSGNS.Model" \
   "/tf@tf2_msgs/msg/TFMessage[$MSGNS.Pose_V" \
   "/lunabot/steer/front_left@std_msgs/msg/Float64]$MSGNS.Double" \
   "/lunabot/steer/front_right@std_msgs/msg/Float64]$MSGNS.Double" \
@@ -334,7 +333,7 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
 BRIDGE_PID=$!
 sleep 3
 kill -0 "$BRIDGE_PID" 2>/dev/null || abort "bridge exited; see $EVIDENCE_DIR/bridge.log"
-echo "      bridge running (PID $BRIDGE_PID), 16 mappings"
+echo "      bridge running (PID $BRIDGE_PID), 15 mappings"
 log "[6/13] bridge OK (pid $BRIDGE_PID)"
 
 # ------------------------------------------------------------
@@ -556,7 +555,7 @@ echo "Map               : RUNNING (/map + map->odom TF)"
 echo "Watchdog          : RUNNING (0.5 s timeout)"
 echo "Odometry          : RUNNING (/lunabot/odom monitor)"
 echo "Sensors           : RUNNING (camera, depth, lidar, imu)"
-echo "Bridge            : RUNNING (16 mappings)"
+echo "Bridge            : RUNNING (15 mappings)"
 echo "TF                : RUNNING (odom->chassis + 5 static)"
 printf "RViz2             : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "skipped (headless)" || echo "RUNNING" )"
 echo ""

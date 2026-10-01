@@ -197,6 +197,22 @@ class TerrainAwarePlanner(Node):
                         return candidate
         return None
 
+    def _reachable_component(self, start):
+        seen = {start}; queue = [start]
+        neighbors = ((1, 0), (-1, 0), (0, 1), (0, -1),
+                     (1, 1), (1, -1), (-1, 1), (-1, -1))
+        while queue:
+            current = queue.pop(0)
+            for dx, dy in neighbors:
+                nxt = (current[0] + dx, current[1] + dy)
+                if nxt in seen or self._cell_cost(nxt) is None:
+                    continue
+                if dx and dy and (self._cell_cost((current[0] + dx, current[1])) is None or
+                                  self._cell_cost((current[0], current[1] + dy)) is None):
+                    continue
+                seen.add(nxt); queue.append(nxt)
+        return seen
+
     def _weighted_astar(self, start, goal):
         neighbors = ((1, 0), (-1, 0), (0, 1), (0, -1),
                      (1, 1), (1, -1), (-1, 1), (-1, -1))
@@ -215,6 +231,11 @@ class TerrainAwarePlanner(Node):
                 nxt = (current[0] + dx, current[1] + dy)
                 cell_cost = self._cell_cost(nxt)
                 if cell_cost is None:
+                    continue
+                # A diagonal move is valid only when both adjacent cardinal
+                # cells are traversable; this prevents corner cutting.
+                if dx and dy and (self._cell_cost((current[0] + dx, current[1])) is None or
+                                  self._cell_cost((current[0], current[1] + dy)) is None):
                     continue
                 distance = math.sqrt(2.0) if dx and dy else 1.0
                 step = distance * (1.0 + self.cost_weight * cell_cost / 100.0)
@@ -247,6 +268,10 @@ class TerrainAwarePlanner(Node):
         if start_cell is None or goal_cell is None:
             self.publish_status("TERRAIN_PLANNER_NO_SAFE_START_OR_GOAL")
             return
+        component = self._reachable_component(start_cell)
+        if goal_cell not in component:
+            goal_cell = min(component, key=lambda c: math.hypot(c[0] - goal_cell[0], c[1] - goal_cell[1]))
+            self.publish_status(f"TERRAIN_GOAL_RESOLVED_REACHABLE cell={goal_cell[0]},{goal_cell[1]}")
         cells, total_cost = self._weighted_astar(start_cell, goal_cell)
         if not cells:
             self.publish_status("TERRAIN_PLANNER_NO_PATH")

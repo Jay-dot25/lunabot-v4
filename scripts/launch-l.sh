@@ -59,6 +59,8 @@ EVIDENCE="${EVIDENCE:-0}"
 AUTO_GOAL="${AUTO_GOAL:-false}"
 # Configurable forward distance for deterministic headless mission goals.
 AUTO_GOAL_DISTANCE="${AUTO_GOAL_DISTANCE:-4.0}"
+GOAL_X="${GOAL_X:-}"
+GOAL_Y="${GOAL_Y:-}"
 # GUI rendering can reduce Gazebo real-time factor. Keep the mission timeout
 # in simulation-independent wall time and allow long goals to finish.
 MISSION_TIMEOUT="${MISSION_TIMEOUT:-360}"
@@ -465,7 +467,6 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
   "/lunabot/lidar/scan@sensor_msgs/msg/LaserScan[$MSGNS.LaserScan" \
   "/lunabot/imu@sensor_msgs/msg/Imu[$MSGNS.IMU" \
   "/lunabot/odom@nav_msgs/msg/Odometry[$MSGNS.Odometry" \
-  "/lunabot/joint_states@sensor_msgs/JointState[$MSGNS.Model" \
   "/tf@tf2_msgs/msg/TFMessage[$MSGNS.Pose_V" \
   "/lunabot/steer/front_left@std_msgs/msg/Float64]$MSGNS.Double" \
   "/lunabot/steer/front_right@std_msgs/msg/Float64]$MSGNS.Double" \
@@ -477,7 +478,7 @@ setsid ros2 run "$BRIDGE_PKG" parameter_bridge \
 BRIDGE_PID=$!
 sleep 3
 kill -0 "$BRIDGE_PID" 2>/dev/null || abort "bridge exited; see $EVIDENCE_DIR/bridge.log"
-echo "      bridge running (PID $BRIDGE_PID), 16 mappings"
+echo "      bridge running (PID $BRIDGE_PID), 15 mappings"
 log "[6/23] bridge OK (pid $BRIDGE_PID)"
 
 # ------------------------------------------------------------
@@ -728,7 +729,11 @@ if [ "$EVIDENCE" = "1" ] && [ "$DEMO" = "1" ]; then
   timeout 20 ros2 topic echo /map --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null \
     > "$EVIDENCE_DIR/map_before_navigation.txt" || true
 fi
+GOAL_ARGS=()
+[ -z "$GOAL_X" ] || GOAL_ARGS+=( -p "goal_x:=$GOAL_X" )
+[ -z "$GOAL_Y" ] || GOAL_ARGS+=( -p "goal_y:=$GOAL_Y" )
 setsid python3 "$NAV_PATH" --ros-args \
+  "${GOAL_ARGS[@]}" \
   -p auto_goal:="$AUTO_GOAL" \
   -p map_topic:=/map -p goal_topic:=/goal_pose \
   -p path_topic:=/plan -p cmd_topic:=/lunabot/navigation/diagnostic_cmd_vel \
@@ -755,7 +760,7 @@ setsid python3 "$FOLLOWER_PATH" --ros-args \
   -p cmd_topic:=/cmd_vel_in \
   -p status_topic:=/lunabot/autonomy/status \
   -p map_frame:=map -p base_frame:=chassis \
-  -p goal_tolerance:=0.35 -p max_linear:=0.20 -p max_angular:=0.60 \
+  -p goal_tolerance:=0.25 -p max_linear:=0.20 -p max_angular:=0.80 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/integration.log" 2>&1 &
 FOLLOWER_PID=$!
@@ -1500,7 +1505,7 @@ echo "Terrain perception: RUNNING (RGB-D segmentation)"
 echo "Semantic mapping  : RUNNING (map-frame terrain grid)"
 echo "Terrain cost map  : RUNNING (inflated traversability costs)"
 echo "Terrain-aware plan: RUNNING (weighted A* path output)"
-echo "Bridge            : RUNNING (16 mappings)"
+echo "Bridge            : RUNNING (15 mappings)"
 echo "TF                : RUNNING (odom->chassis + 5 static)"
 printf "RViz2             : %s\n" "$( [ "$HEADLESS" = 1 ] && echo "skipped (headless)" || echo "RUNNING" )"
 echo ""
