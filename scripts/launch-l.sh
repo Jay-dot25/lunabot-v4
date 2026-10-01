@@ -529,7 +529,7 @@ setsid python3 "$COST_PATH" --ros-args \
   -p obstacle_topic:=/lunabot/obstacles/map \
   -p cost_topic:=/lunabot/terrain/cost_map \
   -p status_topic:=/lunabot/terrain/cost_map/status \
-  -p inflation_radius:=0.30 \
+  -p inflation_radius:=0.42 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/cost_mapping.log" 2>&1 &
 COST_PID=$!
@@ -550,7 +550,7 @@ setsid python3 "$TERRAIN_PLANNER_PATH" --ros-args \
   -p plan_topic:=/lunabot/terrain/plan \
   -p status_topic:=/lunabot/terrain/planner/status \
   -p map_frame:=map -p base_frame:=chassis \
-  -p cost_weight:=2.0 -p replan_period:=1.0 \
+  -p cost_weight:=2.0 -p replan_period:=0.75 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/terrain_planner.log" 2>&1 &
 TERRAIN_PLANNER_PID=$!
@@ -761,6 +761,7 @@ setsid python3 "$FOLLOWER_PATH" --ros-args \
   -p status_topic:=/lunabot/autonomy/status \
   -p map_frame:=map -p base_frame:=chassis \
   -p goal_tolerance:=0.25 -p max_linear:=0.20 -p max_angular:=0.80 \
+  -p lookahead_cells:=5 -p front_obstacle_distance:=0.42 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/integration.log" 2>&1 &
 FOLLOWER_PID=$!

@@ -48,17 +48,17 @@ class TerrainPathFollower(Node):
             "status_topic", "/lunabot/autonomy/status")
         self.declare_parameter("map_frame", "map")
         self.declare_parameter("base_frame", "chassis")
-        self.declare_parameter("goal_tolerance", 0.35)
+        self.declare_parameter("goal_tolerance", 0.25)
         self.declare_parameter("max_linear", 0.20)
         self.declare_parameter("max_angular", 0.60)
-        self.declare_parameter("lookahead_cells", 2)
+        self.declare_parameter("lookahead_cells", 5)
         self.declare_parameter("control_rate", 10.0)
         self.declare_parameter("scan_topic", "/lunabot/lidar/scan")
         # Stop before the rover reaches an obstacle. The Phase L detector
         # observes a wider forward sector (0.60 rad); using a narrower sector
         # allowed returns at bearing about 0.48 rad to pass through to the
         # controller until physical contact.
-        self.declare_parameter("front_obstacle_distance", 1.20)
+        self.declare_parameter("front_obstacle_distance", 0.42)
         self.declare_parameter("front_obstacle_half_angle", 0.60)
 
         get = self.get_parameter
@@ -135,7 +135,9 @@ class TerrainPathFollower(Node):
         # turn a completed goal back into an active one just because an
         # unchanged path arrived on the next planning tick.
         was_reached = self.reached
-        self.last_waypoint = -1
+        # Preserve progress across replans. Resetting to -1 on every new path
+        # forced the follower back to waypoint 2/3 and made it orbit the same
+        # region while the planner was correctly producing new paths.
         if not was_reached:
             self.publish_status(
                 f"INTEGRATION_PATH_RECEIVED cells={len(self.path)}")
@@ -328,14 +330,24 @@ class TerrainPathFollower(Node):
         # following; otherwise the follower can correctly reach the planner's
         # safe endpoint but continue trying to drive into the blocked raw goal.
         path_goal_x, path_goal_y = self.path[-1]
-        goal_distance = math.hypot(path_goal_x - current_x,
+        path_distance = math.hypot(path_goal_x - current_x,
                                    path_goal_y - current_y)
-        if goal_distance <= self.goal_tolerance:
+        requested_distance = math.hypot(goal[0] - current_x,
+                                        goal[1] - current_y)
+        if path_distance <= self.goal_tolerance:
             self._publish_stop()
             if not self.reached:
                 self.reached = True
-                self.publish_status(
-                    f"{'INTEGRATION_WAYPOINT_REACHED' if self.goal_topic != '/goal_pose' else 'INTEGRATION_GOAL_REACHED'} distance={goal_distance:.2f}")
+                if requested_distance <= self.goal_tolerance:
+                    self.publish_status(
+                        f"INTEGRATION_GOAL_REACHED distance={requested_distance:.2f}")
+                else:
+                    # A planner fallback endpoint is not the requested goal.
+                    # Stop safely, but never report a disconnected goal as
+                    # reached; this keeps launcher aggregation honest.
+                    self.publish_status(
+                        f"INTEGRATION_FALLBACK_REACHED requested_distance={requested_distance:.2f} "
+                        f"fallback_distance={path_distance:.2f}")
             return
         nearest = min(range(len(self.path)),
                       key=lambda i: math.hypot(self.path[i][0] - current_x,
@@ -345,9 +357,9 @@ class TerrainPathFollower(Node):
         heading = math.atan2(target_y - current_y, target_x - current_x)
         error = angle_error(heading - current_yaw)
         cmd = Twist()
-        cmd.angular.z = max(-self.max_angular, min(self.max_angular, 2.0 * error))
+        cmd.angular.z = max(-self.max_angular, min(self.max_angular, 2.4 * error))
         if abs(error) <= 0.9:
-            cmd.linear.x = min(self.max_linear, 0.45 * goal_distance)
+            cmd.linear.x = min(self.max_linear, 0.45 * path_distance)
             cmd.linear.x *= max(0.2, math.cos(error))
         self.cmd_pub.publish(cmd)
         if target_index != self.last_waypoint:
