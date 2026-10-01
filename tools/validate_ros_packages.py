@@ -39,8 +39,11 @@ def package_metadata(path: Path) -> tuple[str, str]:
     build_node = export_node.find("build_type") if export_node is not None else None
     if name_node is None or not name_node.text:
         fail(f"{xml_path}: missing package name")
-    if version_node is None or version_node.text != "0.1.0":
-        fail(f"{xml_path}: version must be 0.1.0")
+    if version_node is None or not (version_node.text or "").strip():
+        fail(f"{xml_path}: package version missing")
+    version_parts = (version_node.text or "").strip().split(".")
+    if len(version_parts) != 3 or not all(part.isdigit() for part in version_parts):
+        fail(f"{xml_path}: version must use numeric MAJOR.MINOR.PATCH")
     if license_node is None or not (license_node.text or "").strip():
         fail(f"{xml_path}: missing license")
     if maintainer_node is None or not maintainer_node.attrib.get("email"):
