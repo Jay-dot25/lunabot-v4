@@ -13,6 +13,5 @@ setup(
     install_requires=["setuptools"], zip_safe=True,
     maintainer="LunaBot Team", maintainer_email="maintainers@lunabot.invalid",
     description="Shared dependency-light LunaBot configuration and data contracts.",
-    license="Apache-2.0", tests_require=["pytest"],
     entry_points={"console_scripts": ["lunabot_common_info = lunabot_common.package_info:main"]},
 )

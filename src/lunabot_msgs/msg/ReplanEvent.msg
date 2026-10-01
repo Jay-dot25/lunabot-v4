@@ -1,0 +1,21 @@
+# Correlated obstacle/map/planner repair event.
+std_msgs/Header header
+uint8 REASON_NONE=0
+uint8 REASON_OBSTACLE=1
+uint8 REASON_TERRAIN_COST=2
+uint8 REASON_GOAL_CHANGED=3
+uint8 REASON_START_MOVED=4
+uint8 REASON_PATH_INVALID=5
+uint8 reason
+builtin_interfaces/Time detection_stamp
+builtin_interfaces/Time map_update_stamp
+builtin_interfaces/Time replan_start_stamp
+builtin_interfaces/Time replan_finish_stamp
+bool active_path_invalidated
+bool success
+uint32 changed_cells
+uint32 revision
+float32 detection_to_map_ms
+float32 replan_time_ms
+float32 total_latency_ms
+string detail

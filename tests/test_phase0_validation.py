@@ -22,6 +22,7 @@ class ValidationHarnessTests(unittest.TestCase):
         self.assertEqual(config["config_validators"], [
             "tools/validate_terrain_config.py",
             "tools/validate_ros_packages.py",
+            "tools/validate_interfaces.py",
         ])
 
     def test_config_rejects_missing_fields(self):

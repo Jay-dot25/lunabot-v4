@@ -16,7 +16,6 @@ setup(
     maintainer_email="maintainers@lunabot.invalid",
     description="LunaBot semantic mapping and traversability foundations.",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={"console_scripts": [
         "lunabot_mapping_info = lunabot_mapping.package_info:main",
     ]},

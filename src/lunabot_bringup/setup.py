@@ -18,7 +18,6 @@ setup(
     maintainer_email="maintainers@lunabot.invalid",
     description="LunaBot launch and shared configuration package.",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={"console_scripts": [
         "lunabot_bringup_info = lunabot_bringup.package_info:main",
     ]},

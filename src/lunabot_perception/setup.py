@@ -16,7 +16,6 @@ setup(
     maintainer_email="maintainers@lunabot.invalid",
     description="LunaBot terrain perception nodes and interfaces.",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={"console_scripts": [
         "lunabot_perception_info = lunabot_perception.package_info:main",
     ]},

@@ -16,8 +16,8 @@ setup(
     maintainer_email="maintainers@lunabot.invalid",
     description="LunaBot mission metrics and experiment foundations.",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={"console_scripts": [
         "lunabot_evaluation_info = lunabot_evaluation.package_info:main",
+        "status_compat_bridge = lunabot_evaluation.status_compat_bridge:main",
     ]},
 )

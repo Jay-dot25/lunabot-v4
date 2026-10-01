@@ -16,7 +16,6 @@ setup(
     maintainer_email="maintainers@lunabot.invalid",
     description="LunaBot path following and safety-control foundations.",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={"console_scripts": [
         "lunabot_control_info = lunabot_control.package_info:main",
     ]},

@@ -16,7 +16,6 @@ setup(
     maintainer_email="maintainers@lunabot.invalid",
     description="LunaBot global and incremental planning foundations.",
     license="Apache-2.0",
-    tests_require=["pytest"],
     entry_points={"console_scripts": [
         "lunabot_planning_info = lunabot_planning.package_info:main",
     ]},

@@ -15,6 +15,10 @@
 > **ROS 2 workspace:** Package ownership, build commands, and the compatibility
 > policy are documented in
 > [`docs/ros-package-foundation.md`](docs/ros-package-foundation.md).
+>
+> **Typed ROS contracts:** Message fields, topics, and the non-invasive legacy
+> bridge are documented in
+> [`docs/structured-interfaces.md`](docs/structured-interfaces.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before

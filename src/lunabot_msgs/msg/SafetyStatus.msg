@@ -1,0 +1,22 @@
+# Safety supervisor decision and stop reason.
+std_msgs/Header header
+uint8 STATE_UNKNOWN=0
+uint8 STATE_SAFE=1
+uint8 STATE_STOPPED=2
+uint8 STATE_ESTOP=3
+uint8 STATE_FAULT=4
+uint8 state
+uint8 REASON_NONE=0
+uint8 REASON_EMERGENCY_STOP=1
+uint8 REASON_SENSOR_TIMEOUT=2
+uint8 REASON_LOCALIZATION_LOST=3
+uint8 REASON_PATH_EXPIRED=4
+uint8 REASON_OBSTACLE=5
+uint8 REASON_EXCESSIVE_SLOPE=6
+uint8 REASON_NO_PROGRESS=7
+uint8 REASON_INVALID_COMMAND=8
+uint8 reason
+bool safe_to_move
+bool emergency_stop_latched
+string command_source
+string detail

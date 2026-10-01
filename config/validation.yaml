@@ -6,7 +6,8 @@
   "xml_extensions": [".sdf"],
   "config_validators": [
     "tools/validate_terrain_config.py",
-    "tools/validate_ros_packages.py"
+    "tools/validate_ros_packages.py",
+    "tools/validate_interfaces.py"
   ],
   "phase_validators": [
     "tools/validate_phase_a.py",

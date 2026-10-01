@@ -1,0 +1,23 @@
+# Final and in-progress quantitative mission metrics.
+std_msgs/Header header
+bool complete
+bool success
+string failure_reason
+float32 planned_path_length_m
+float32 executed_path_length_m
+float32 mission_duration_s
+float32 path_efficiency
+float32 accumulated_traversability_cost
+float32 minimum_clearance_m
+uint32 replan_count
+float32 mean_replan_time_ms
+float32 max_replan_time_ms
+uint32 collision_count
+float32 collision_duration_s
+float32 localization_ate_m
+float32 localization_rpe_m
+float32 controller_cross_track_rmse_m
+float32 inference_mean_ms
+uint32 dropped_inference_frames
+float32[] terrain_distance_m
+string detail

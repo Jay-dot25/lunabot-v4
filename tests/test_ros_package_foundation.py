@@ -59,9 +59,13 @@ class RosPackageFoundationTests(unittest.TestCase):
         cmake = (ROOT / "src/lunabot_gazebo/CMakeLists.txt").read_text(encoding="utf-8")
         self.assertIn("install(DIRECTORY models worlds", cmake)
 
-    def test_messages_reserved_for_phase_three(self):
+    def test_phase_three_message_interfaces_exist(self):
         message_dir = ROOT / "src/lunabot_msgs/msg"
-        self.assertFalse(message_dir.exists(), "Phase 2 must not pre-implement Phase 3 messages")
+        self.assertEqual(
+            {path.name for path in message_dir.glob("*.msg")},
+            {"TerrainPrediction.msg", "PlannerStatus.msg", "ReplanEvent.msg",
+             "SafetyStatus.msg", "MissionMetrics.msg"},
+        )
 
 
 if __name__ == "__main__":
