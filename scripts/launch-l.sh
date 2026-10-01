@@ -1077,6 +1077,24 @@ topic_ok() {
       reliability="reliable"
       ;;
   esac
+  # These are command/diagnostic streams whose first sample can legitimately
+  # arrive after startup discovery (or only after the first control tick).
+  # Validate discovery here and leave message-content validation to the
+  # post-start evidence capture, rather than racing DDS with a one-shot echo.
+  if [ "$2" = "/lunabot/navigation/status" ] || [ "$2" = "/cmd_vel_in" ]; then
+    for _ in 1 2 3 4 5; do
+      if [ -n "$(timeout 10 ros2 topic type "$2" 2>/dev/null || true)" ]; then
+        echo "      $1: PASS (topic discovered)"
+        log "validation PASS: discovered $2"
+        return 0
+      fi
+      sleep 2
+    done
+    echo "      $1: FAIL"
+    log "validation FAIL: topic $2 was not discovered"
+    OVERALL="FAIL"
+    return 1
+  fi
   # Do not pipe to head: head can exit successfully before ros2 receives a
   # message, creating a false PASS. This assignment waits for --once data.
   if sample="$(timeout 30 ros2 topic echo "$2" --qos-reliability "$reliability" \
