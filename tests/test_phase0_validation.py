@@ -23,6 +23,7 @@ class ValidationHarnessTests(unittest.TestCase):
             "tools/validate_terrain_config.py",
             "tools/validate_ros_packages.py",
             "tools/validate_interfaces.py",
+            "tools/validate_dataset_tools.py",
         ])
 
     def test_config_rejects_missing_fields(self):

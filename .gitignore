@@ -20,3 +20,11 @@ log/
 evidence/baseline/environment.json
 evidence/baseline/validation_report.json
 evidence/baseline/validation_report.md
+
+# Generated ML datasets and experiment products
+/datasets/
+/results/
+/models/*.pt
+/models/*.pth
+/models/*.onnx
+/models/*.engine
