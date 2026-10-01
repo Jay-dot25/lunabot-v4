@@ -213,9 +213,16 @@ def main() -> int:
         elif not path.is_file():
             checks.append(result(relative, "legacy-validator", "fail", "file missing"))
         else:
+            # Several historical validators intentionally rerun earlier phase
+            # gates, so this complete audit can take several minutes. Print
+            # progress before starting each captured subprocess to make it
+            # clear that the command is active rather than hung.
+            print(f"[RUN ] legacy-validator: {relative}", flush=True)
             status, detail, duration = phase_check(
                 path, bool(config.get("preserve_validator_outputs", True)))
             checks.append(result(relative, "legacy-validator", status, detail, duration))
+            print(f"[{status.upper():4}] legacy-validator: {relative} "
+                  f"({duration:.1f}s)", flush=True)
 
     counts = {state: sum(item["status"] == state for item in checks)
               for state in ("pass", "fail", "skipped")}
@@ -248,4 +255,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("\nValidation cancelled by user; no PASS report was written.",
+              file=sys.stderr)
+        raise SystemExit(130)
