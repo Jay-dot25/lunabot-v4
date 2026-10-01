@@ -50,7 +50,7 @@ class TerrainPathFollower(Node):
         self.declare_parameter("base_frame", "chassis")
         self.declare_parameter("goal_tolerance", 0.25)
         self.declare_parameter("max_linear", 0.20)
-        self.declare_parameter("max_angular", 0.60)
+        self.declare_parameter("max_angular", 0.80)
         self.declare_parameter("lookahead_cells", 5)
         self.declare_parameter("control_rate", 10.0)
         self.declare_parameter("scan_topic", "/lunabot/lidar/scan")

@@ -42,7 +42,7 @@ class TerrainAwarePlanner(Node):
         self.declare_parameter("blocked_cost", 100)
         self.declare_parameter("cost_weight", 2.0)
         self.declare_parameter("unknown_cost", 80)
-        self.declare_parameter("replan_period", 1.0)
+        self.declare_parameter("replan_period", 0.75)
 
         get = self.get_parameter
         self.cost_map_topic = str(get("cost_map_topic").value)

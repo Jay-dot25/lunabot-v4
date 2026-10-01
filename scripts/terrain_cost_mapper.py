@@ -45,7 +45,7 @@ class TerrainCostMapper(Node):
         self.declare_parameter("terrain_cost", 20)
         self.declare_parameter("unknown_cost", 80)
         self.declare_parameter("obstacle_cost", 100)
-        self.declare_parameter("inflation_radius", 0.30)
+        self.declare_parameter("inflation_radius", 0.42)
 
         get = self.get_parameter
         self.semantic_topic = str(get("semantic_topic").value)
