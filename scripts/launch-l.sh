@@ -1364,16 +1364,24 @@ if [ "$AUTO_GOAL" = "true" ]; then
   else
     wait_for_dynamic_replan || true
   fi
-  wait_for_integration_goal || true
-  wait_for_evaluation || true
-  wait_for_mission || true
+  if wait_for_integration_goal; then
+    wait_for_evaluation || true
+    wait_for_mission || true
+  else
+    echo "      skipping evaluation and mission waits because goal was not reached"
+    log "validation STOPPED: dependent waits skipped after goal failure"
+  fi
   finish_motion_evidence
 elif [ "$FINAL_DEMO" = "1" ]; then
   wait_for_goal_selection || true
   wait_for_dynamic_replan || true
-  wait_for_integration_goal || true
-  wait_for_evaluation || true
-  wait_for_mission || true
+  if wait_for_integration_goal; then
+    wait_for_evaluation || true
+    wait_for_mission || true
+  else
+    echo "      skipping evaluation and mission waits because goal was not reached"
+    log "validation STOPPED: dependent waits skipped after goal failure"
+  fi
   finish_motion_evidence
 fi
 
