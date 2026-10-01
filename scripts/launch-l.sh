@@ -331,6 +331,18 @@ log "[2/23] environment OK ($IGN/$MSGNS, $BRIDGE_PKG, slam_toolbox)"
 # [3/23] Clean state
 # ------------------------------------------------------------
 echo "[3/23] Checking for stale Phase A/I processes......."
+# Match the actual server process as well as the original world-file command.
+# After an interrupted GUI/client run, Ignition can remain as `ign gazebo
+# server`; leaving it alive creates duplicate /clock publishers and moves the
+# real clock to a namespaced topic, which makes every ROS sensor appear dead.
+stale_gz="$(pgrep -f '(^|/)(ign|gz) gazebo|(^|/)(ign|gz) sim' 2>/dev/null || true)"
+if [ -n "$stale_gz" ]; then
+  echo "      Killing stale Gazebo server/client processes (PIDs: $stale_gz)"
+  kill -TERM $stale_gz 2>/dev/null || true
+  sleep 2
+  stale_gz_left="$(pgrep -f '(^|/)(ign|gz) gazebo|(^|/)(ign|gz) sim' 2>/dev/null || true)"
+  [ -z "$stale_gz_left" ] || kill -KILL $stale_gz_left 2>/dev/null || true
+fi
 stale="$(pgrep -f "lunar_world.sdf" 2>/dev/null || true)"
 if [ -n "$stale" ]; then
   echo "      Killing stale Gazebo for lunar_world (PIDs: $stale)"
