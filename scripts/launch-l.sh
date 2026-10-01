@@ -417,7 +417,9 @@ if [ "$HEADLESS" != "1" ]; then
   # in a Gazebo window alongside RViz.
   # Pass the same world descriptor to the GUI client so it attaches to the
   # lunar_world server instead of opening an empty disconnected scene.
-  setsid "$IGN" gazebo -g -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
+  # Keep visualization below the physics/sensor and navigation processes so
+  # opening GUI windows cannot change whether the same mission reaches goal.
+  setsid nice -n 15 "$IGN" gazebo -g -v 3 "$WORLD_PATH" >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
   GAZEBO_GUI_PID=$!
   sleep 2
   if kill -0 "$GAZEBO_GUI_PID" 2>/dev/null; then
@@ -765,7 +767,7 @@ if [ "$HEADLESS" = "1" ]; then
   log "[21/23] rviz skipped (headless)"
 else
   echo "[21/23] Starting RViz2.............................."
-  setsid rviz2 -d "$RVIZ_CONFIG" -f map >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
+  setsid nice -n 15 rviz2 -d "$RVIZ_CONFIG" -f map >> "$EVIDENCE_DIR/gazebo.log" 2>&1 &
   RVIZ_PID=$!
   sleep 2
   if kill -0 "$RVIZ_PID" 2>/dev/null; then
