@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    package_foundation_version: "0.1.0"
+    legacy_launchers_preserved: true

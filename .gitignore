@@ -10,3 +10,13 @@ __pycache__/
 .idea/
 .vscode/
 *.swp
+
+# ROS 2 / colcon generated workspaces
+build/
+install/
+log/
+
+# Locally regenerated validation capability/results (README remains tracked)
+evidence/baseline/environment.json
+evidence/baseline/validation_report.json
+evidence/baseline/validation_report.md

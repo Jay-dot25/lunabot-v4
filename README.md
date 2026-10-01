@@ -11,6 +11,10 @@
 > **Terrain semantics:** The stable multiclass IDs, costs, confidence policy,
 > and baseline compatibility boundary are documented in
 > [`docs/terrain-class-schema.md`](docs/terrain-class-schema.md).
+>
+> **ROS 2 workspace:** Package ownership, build commands, and the compatibility
+> policy are documented in
+> [`docs/ros-package-foundation.md`](docs/ros-package-foundation.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before

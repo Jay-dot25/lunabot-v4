@@ -19,8 +19,10 @@ class ValidationHarnessTests(unittest.TestCase):
         config = MODULE.load_config(ROOT / "config/validation.yaml")
         self.assertEqual(config["schema_version"], 1)
         self.assertEqual(len(config["phase_validators"]), 12)
-        self.assertEqual(config["config_validators"],
-                         ["tools/validate_terrain_config.py"])
+        self.assertEqual(config["config_validators"], [
+            "tools/validate_terrain_config.py",
+            "tools/validate_ros_packages.py",
+        ])
 
     def test_config_rejects_missing_fields(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -43,9 +45,15 @@ class ValidationHarnessTests(unittest.TestCase):
 
     def test_all_configured_validators_exist(self):
         config = MODULE.load_config(ROOT / "config/validation.yaml")
-        missing = [item for item in config["phase_validators"]
-                   if not (ROOT / item).is_file()]
+        validators = config["phase_validators"] + config.get("config_validators", [])
+        missing = [item for item in validators if not (ROOT / item).is_file()]
         self.assertEqual(missing, [])
+
+    def test_source_discovery_excludes_generated_build_trees(self):
+        files = MODULE.discover_files(["src"], "*.py")
+        for path in files:
+            self.assertNotIn("build", path.relative_to(ROOT).parts)
+            self.assertNotIn("install", path.relative_to(ROOT).parts)
 
 
 if __name__ == "__main__":

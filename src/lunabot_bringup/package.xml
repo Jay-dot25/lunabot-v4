@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>lunabot_bringup</name>
+  <version>0.1.0</version>
+  <description>LunaBot launch and shared configuration package.</description>
+  <maintainer email="maintainers@lunabot.invalid">LunaBot Team</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>lunabot_perception</exec_depend>
+  <exec_depend>lunabot_mapping</exec_depend>
+  <exec_depend>lunabot_planning</exec_depend>
+  <exec_depend>lunabot_control</exec_depend>
+  <exec_depend>lunabot_evaluation</exec_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

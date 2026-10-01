@@ -54,13 +54,17 @@ def timed_check(name: str, category: str, function: Callable[[], str]) -> dict:
 
 def discover_files(roots: list[str], pattern: str) -> list[Path]:
     files: set[Path] = set()
+    excluded = {"build", "install", "log", "__pycache__", ".venv", ".git"}
     for relative in roots:
         path = ROOT / relative
         if path.is_file() and path.match(pattern):
             files.add(path)
         elif path.is_dir():
-            files.update(candidate for candidate in path.rglob(pattern)
-                         if candidate.is_file())
+            files.update(
+                candidate for candidate in path.rglob(pattern)
+                if candidate.is_file()
+                and not excluded.intersection(candidate.relative_to(ROOT).parts)
+            )
     return sorted(files)
 
 
