@@ -336,18 +336,21 @@ class TerrainPathFollower(Node):
                                         goal[1] - current_y)
         if path_distance <= self.goal_tolerance:
             self._publish_stop()
-            if not self.reached:
-                self.reached = True
-                if requested_distance <= self.goal_tolerance:
+            if requested_distance <= self.goal_tolerance:
+                if not self.reached:
+                    self.reached = True
                     self.publish_status(
                         f"INTEGRATION_GOAL_REACHED distance={requested_distance:.2f}")
-                else:
-                    # A planner fallback endpoint is not the requested goal.
-                    # Stop safely, but never report a disconnected goal as
-                    # reached; this keeps launcher aggregation honest.
-                    self.publish_status(
-                        f"INTEGRATION_FALLBACK_REACHED requested_distance={requested_distance:.2f} "
-                        f"fallback_distance={path_distance:.2f}")
+            else:
+                # A planner fallback endpoint is not the requested goal.
+                # Stop for this control tick, but do not latch ``reached``:
+                # a later map update may connect the requested goal and
+                # produce a new valid path. This keeps launcher aggregation
+                # honest without permanently freezing the follower at a
+                # temporary fallback point.
+                self.publish_status(
+                    f"INTEGRATION_FALLBACK_REACHED requested_distance={requested_distance:.2f} "
+                    f"fallback_distance={path_distance:.2f}")
             return
         nearest = min(range(len(self.path)),
                       key=lambda i: math.hypot(self.path[i][0] - current_x,
