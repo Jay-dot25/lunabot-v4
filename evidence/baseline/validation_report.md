@@ -1,15 +1,17 @@
 # LunaBot Baseline Validation Report
 
-- Generated: `2026-10-01T13:21:24.392127+00:00`
+- Generated: `2026-10-01T17:12:03.949545+00:00`
 - Commit: `6fe435a8a5fa5af7f209e34c7c5c8caa166d4088`
 - Branch: `arena/01a0f77b-lunabot-v4`
 - Result: **PASS**
-- Checks: 68 passed, 0 failed, 0 skipped
+- Checks: 73 passed, 0 failed, 0 skipped
 
 ## Checks
 
 | Status | Category | Check | Detail |
 |---|---|---|---|
+| PASS | python | `lunabot_common/__init__.py` | syntax and bytecode compilation succeeded |
+| PASS | python | `lunabot_common/terrain_config.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `scripts/astar_navigation.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `scripts/control_odometry.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `scripts/dynamic_replan_monitor.py` | syntax and bytecode compilation succeeded |
@@ -24,6 +26,7 @@
 | PASS | python | `scripts/terrain_segmentation.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `scripts/wasd_teleop.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `tests/test_phase0_validation.py` | syntax and bytecode compilation succeeded |
+| PASS | python | `tests/test_terrain_config.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `tools/check_environment.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `tools/generate_lunar_terrain.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `tools/plot_lidar_scan.py` | syntax and bytecode compilation succeeded |
@@ -40,6 +43,7 @@
 | PASS | python | `tools/validate_phase_j.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `tools/validate_phase_k.py` | syntax and bytecode compilation succeeded |
 | PASS | python | `tools/validate_phase_l.py` | syntax and bytecode compilation succeeded |
+| PASS | python | `tools/validate_terrain_config.py` | syntax and bytecode compilation succeeded |
 | PASS | shell | `launch-a` | bash -n succeeded |
 | PASS | shell | `launch-b` | bash -n succeeded |
 | PASS | shell | `launch-c` | bash -n succeeded |
@@ -66,6 +70,7 @@
 | PASS | shell | `scripts/launch-l.sh` | bash -n succeeded |
 | PASS | xml | `src/lunabot_gazebo/models/lunabot_v4/model.sdf` | XML is well formed |
 | PASS | xml | `src/lunabot_gazebo/worlds/lunar_world.sdf` | XML is well formed |
+| PASS | config-validator | `tools/validate_terrain_config.py` | exit=0; tail:   1: flat_regolith    cost= 10 lethal=false threshold=0.55 rgb=(194, 178, 128) \|   2: rough_regolith   cost= 45 lethal=false threshold=0.60 rgb=(145, 122, 82) \|   3: bedrock          cost= 25 lethal=false threshold=0.55 rgb=(130, 150, 170) \|   4: small_rock       cost= 85 lethal=false threshold=0.65 rgb=(235, 145, 45) \|   5: large_rock       cost=100 lethal=true  threshold=0.65 rgb=(220, 45, 35) \|   6: crater           cost=100 lethal=true  threshold=0.65 rgb=(125, 35, 145) \|   7: shadow           cost= 75 lethal=false threshold=0.60 rgb=(35, 45, 85) \|   8: habitat          cost=100 lethal=true  threshold=0.65 rgb=(30, 180, 210) |
 | PASS | legacy-validator | `tools/validate_phase_a.py` | exit=0; tail: [PASS] docs section ## 23. Known Limitations \| [PASS] terrain stats file \| [PASS] evidence README \| [PASS] verification checklist \| ============================================================ \| RESULT: 80/80 checks passed - ALL PASS \| ============================================================ \| report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt |
 | PASS | legacy-validator | `tools/validate_phase_b.py` | exit=0; tail: [PASS] Phase A static baseline remains 80/80 - ===================== \| RESULT: 80/80 checks passed - ALL PASS \| ============================================================ \| report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt \| ============================================================ \| RESULT: 103/103 checks passed - ALL PASS \| ============================================================ \| report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt |
 | PASS | legacy-validator | `tools/validate_phase_c.py` | exit=0; tail: [PASS] docs contain IMU acceptance \| [PASS] docs contain relaunch instruction \| [PASS] docs contain Phase D gate \| [PASS] validator states that static checks are not runtime acceptance \| ================================================================ \| RESULT: 133/133 checks passed - ALL PASS \| ================================================================ \| report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt |

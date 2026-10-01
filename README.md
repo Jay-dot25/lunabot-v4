@@ -7,6 +7,10 @@
 > **Unified baseline gate:** Run `python3 tools/validate_all.py`. See
 > [`docs/baseline-validation.md`](docs/baseline-validation.md) for the static
 > validation scope and the separate ROS/Gazebo runtime boundary.
+>
+> **Terrain semantics:** The stable multiclass IDs, costs, confidence policy,
+> and baseline compatibility boundary are documented in
+> [`docs/terrain-class-schema.md`](docs/terrain-class-schema.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before

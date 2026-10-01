@@ -1,9 +1,12 @@
 {
   "schema_version": 1,
-  "python_roots": ["scripts", "tools", "tests"],
+  "python_roots": ["scripts", "tools", "tests", "lunabot_common"],
   "shell_roots": ["scripts"],
   "shell_root_launchers": true,
   "xml_extensions": [".sdf"],
+  "config_validators": [
+    "tools/validate_terrain_config.py"
+  ],
   "phase_validators": [
     "tools/validate_phase_a.py",
     "tools/validate_phase_b.py",

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "unknown_class": "unknown",
+  "classes": [
+    {
+      "id": 0,
+      "name": "unknown",
+      "display_name": "Unknown",
+      "color_rgb": [90, 90, 90],
+      "traversal_cost": 85,
+      "lethal": false,
+      "confidence_threshold": 0.00,
+      "description": "Unobserved, invalid, stale, or low-confidence terrain."
+    },
+    {
+      "id": 1,
+      "name": "flat_regolith",
+      "display_name": "Flat regolith",
+      "color_rgb": [194, 178, 128],
+      "traversal_cost": 10,
+      "lethal": false,
+      "confidence_threshold": 0.55,
+      "description": "Relatively smooth and low-slope loose lunar soil."
+    },
+    {
+      "id": 2,
+      "name": "rough_regolith",
+      "display_name": "Rough regolith",
+      "color_rgb": [145, 122, 82],
+      "traversal_cost": 45,
+      "lethal": false,
+      "confidence_threshold": 0.60,
+      "description": "Uneven or loose regolith requiring reduced speed."
+    },
+    {
+      "id": 3,
+      "name": "bedrock",
+      "display_name": "Bedrock",
+      "color_rgb": [130, 150, 170],
+      "traversal_cost": 25,
+      "lethal": false,
+      "confidence_threshold": 0.55,
+      "description": "Exposed competent rock that is traversable when slope permits."
+    },
+    {
+      "id": 4,
+      "name": "small_rock",
+      "display_name": "Small rock",
+      "color_rgb": [235, 145, 45],
+      "traversal_cost": 85,
+      "lethal": false,
+      "confidence_threshold": 0.65,
+      "description": "Rock or block that may be avoidable but carries high risk."
+    },
+    {
+      "id": 5,
+      "name": "large_rock",
+      "display_name": "Large rock",
+      "color_rgb": [220, 45, 35],
+      "traversal_cost": 100,
+      "lethal": true,
+      "confidence_threshold": 0.65,
+      "description": "Non-traversable rock obstacle."
+    },
+    {
+      "id": 6,
+      "name": "crater",
+      "display_name": "Crater",
+      "color_rgb": [125, 35, 145],
+      "traversal_cost": 100,
+      "lethal": true,
+      "confidence_threshold": 0.65,
+      "description": "Crater interior or hazardous rim excluded from navigation."
+    },
+    {
+      "id": 7,
+      "name": "shadow",
+      "display_name": "Shadow",
+      "color_rgb": [35, 45, 85],
+      "traversal_cost": 75,
+      "lethal": false,
+      "confidence_threshold": 0.60,
+      "description": "Poorly illuminated terrain treated conservatively until resolved."
+    },
+    {
+      "id": 8,
+      "name": "habitat",
+      "display_name": "Habitat or structure",
+      "color_rgb": [30, 180, 210],
+      "traversal_cost": 100,
+      "lethal": true,
+      "confidence_threshold": 0.65,
+      "description": "Habitat, equipment, or other protected structure."
+    }
+  ]
+}

@@ -205,6 +205,17 @@ def main() -> int:
         rel = path.relative_to(ROOT).as_posix()
         checks.append(timed_check(rel, "xml", lambda p=path: xml_check(p)))
 
+    for relative in config.get("config_validators", []):
+        path = ROOT / relative
+        if not path.is_file():
+            checks.append(result(relative, "config-validator", "fail", "file missing"))
+            continue
+        print(f"[RUN ] config-validator: {relative}", flush=True)
+        status, detail, duration = phase_check(path, preserve=False)
+        checks.append(result(relative, "config-validator", status, detail, duration))
+        print(f"[{status.upper():4}] config-validator: {relative} "
+              f"({duration:.1f}s)", flush=True)
+
     for relative in config["phase_validators"]:
         path = ROOT / relative
         if args.no_phase_validators:

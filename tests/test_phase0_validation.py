@@ -19,6 +19,8 @@ class ValidationHarnessTests(unittest.TestCase):
         config = MODULE.load_config(ROOT / "config/validation.yaml")
         self.assertEqual(config["schema_version"], 1)
         self.assertEqual(len(config["phase_validators"]), 12)
+        self.assertEqual(config["config_validators"],
+                         ["tools/validate_terrain_config.py"])
 
     def test_config_rejects_missing_fields(self):
         with tempfile.TemporaryDirectory() as directory:

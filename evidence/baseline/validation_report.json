@@ -1,18 +1,32 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-10-01T13:21:24.392127+00:00",
+  "generated_at_utc": "2026-10-01T17:12:03.949545+00:00",
   "git": {
     "commit": "6fe435a8a5fa5af7f209e34c7c5c8caa166d4088",
     "branch": "arena/01a0f77b-lunabot-v4"
   },
   "summary": {
     "overall": "pass",
-    "total": 68,
-    "passed": 68,
+    "total": 73,
+    "passed": 73,
     "failed": 0,
     "skipped": 0
   },
   "checks": [
+    {
+      "name": "lunabot_common/__init__.py",
+      "category": "python",
+      "status": "pass",
+      "detail": "syntax and bytecode compilation succeeded",
+      "duration_seconds": 0.0
+    },
+    {
+      "name": "lunabot_common/terrain_config.py",
+      "category": "python",
+      "status": "pass",
+      "detail": "syntax and bytecode compilation succeeded",
+      "duration_seconds": 0.002
+    },
     {
       "name": "scripts/astar_navigation.py",
       "category": "python",
@@ -25,7 +39,7 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.001
     },
     {
       "name": "scripts/dynamic_replan_monitor.py",
@@ -53,28 +67,28 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.001
     },
     {
       "name": "scripts/phase_l_mission.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.001
     },
     {
       "name": "scripts/semantic_terrain_mapper.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.003
+      "duration_seconds": 0.002
     },
     {
       "name": "scripts/terrain_aware_planner.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.004
+      "duration_seconds": 0.003
     },
     {
       "name": "scripts/terrain_cost_mapper.py",
@@ -88,7 +102,7 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.003
+      "duration_seconds": 0.002
     },
     {
       "name": "scripts/terrain_segmentation.py",
@@ -102,7 +116,7 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.004
+      "duration_seconds": 0.003
     },
     {
       "name": "tests/test_phase0_validation.py",
@@ -110,6 +124,13 @@
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
       "duration_seconds": 0.001
+    },
+    {
+      "name": "tests/test_terrain_config.py",
+      "category": "python",
+      "status": "pass",
+      "detail": "syntax and bytecode compilation succeeded",
+      "duration_seconds": 0.002
     },
     {
       "name": "tools/check_environment.py",
@@ -123,7 +144,7 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.006
+      "duration_seconds": 0.005
     },
     {
       "name": "tools/plot_lidar_scan.py",
@@ -137,35 +158,35 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.004
+      "duration_seconds": 0.005
     },
     {
       "name": "tools/validate_phase_a.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.004
+      "duration_seconds": 0.007
     },
     {
       "name": "tools/validate_phase_b.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.003
     },
     {
       "name": "tools/validate_phase_c.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.004
+      "duration_seconds": 0.003
     },
     {
       "name": "tools/validate_phase_d.py",
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.004
+      "duration_seconds": 0.002
     },
     {
       "name": "tools/validate_phase_e.py",
@@ -200,7 +221,7 @@
       "category": "python",
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
-      "duration_seconds": 0.003
+      "duration_seconds": 0.002
     },
     {
       "name": "tools/validate_phase_j.py",
@@ -222,6 +243,13 @@
       "status": "pass",
       "detail": "syntax and bytecode compilation succeeded",
       "duration_seconds": 0.002
+    },
+    {
+      "name": "tools/validate_terrain_config.py",
+      "category": "python",
+      "status": "pass",
+      "detail": "syntax and bytecode compilation succeeded",
+      "duration_seconds": 0.001
     },
     {
       "name": "launch-a",
@@ -340,21 +368,21 @@
       "category": "shell",
       "status": "pass",
       "detail": "bash -n succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.003
     },
     {
       "name": "scripts/launch-f.sh",
       "category": "shell",
       "status": "pass",
       "detail": "bash -n succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.003
     },
     {
       "name": "scripts/launch-g.sh",
       "category": "shell",
       "status": "pass",
       "detail": "bash -n succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.003
     },
     {
       "name": "scripts/launch-h.sh",
@@ -382,7 +410,7 @@
       "category": "shell",
       "status": "pass",
       "detail": "bash -n succeeded",
-      "duration_seconds": 0.002
+      "duration_seconds": 0.003
     },
     {
       "name": "scripts/launch-l.sh",
@@ -396,7 +424,7 @@
       "category": "xml",
       "status": "pass",
       "detail": "XML is well formed",
-      "duration_seconds": 0.001
+      "duration_seconds": 0.005
     },
     {
       "name": "src/lunabot_gazebo/worlds/lunar_world.sdf",
@@ -406,88 +434,95 @@
       "duration_seconds": 0.0
     },
     {
+      "name": "tools/validate_terrain_config.py",
+      "category": "config-validator",
+      "status": "pass",
+      "detail": "exit=0; tail:   1: flat_regolith    cost= 10 lethal=false threshold=0.55 rgb=(194, 178, 128) |   2: rough_regolith   cost= 45 lethal=false threshold=0.60 rgb=(145, 122, 82) |   3: bedrock          cost= 25 lethal=false threshold=0.55 rgb=(130, 150, 170) |   4: small_rock       cost= 85 lethal=false threshold=0.65 rgb=(235, 145, 45) |   5: large_rock       cost=100 lethal=true  threshold=0.65 rgb=(220, 45, 35) |   6: crater           cost=100 lethal=true  threshold=0.65 rgb=(125, 35, 145) |   7: shadow           cost= 75 lethal=false threshold=0.60 rgb=(35, 45, 85) |   8: habitat          cost=100 lethal=true  threshold=0.65 rgb=(30, 180, 210)",
+      "duration_seconds": 0.046
+    },
+    {
       "name": "tools/validate_phase_a.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs section ## 23. Known Limitations | [PASS] terrain stats file | [PASS] evidence README | [PASS] verification checklist | ============================================================ | RESULT: 80/80 checks passed - ALL PASS | ============================================================ | report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt",
-      "duration_seconds": 0.516
+      "duration_seconds": 0.473
     },
     {
       "name": "tools/validate_phase_b.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] Phase A static baseline remains 80/80 - ===================== | RESULT: 80/80 checks passed - ALL PASS | ============================================================ | report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt | ============================================================ | RESULT: 103/103 checks passed - ALL PASS | ============================================================ | report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt",
-      "duration_seconds": 0.566
+      "duration_seconds": 0.538
     },
     {
       "name": "tools/validate_phase_c.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain IMU acceptance | [PASS] docs contain relaunch instruction | [PASS] docs contain Phase D gate | [PASS] validator states that static checks are not runtime acceptance | ================================================================ | RESULT: 133/133 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt",
-      "duration_seconds": 1.098
+      "duration_seconds": 1.134
     },
     {
       "name": "tools/validate_phase_d.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain map evidence | [PASS] docs contain relaunch | [PASS] docs contain Phase E gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 152/152 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-d-launch-d/static_validation.txt",
-      "duration_seconds": 2.25
+      "duration_seconds": 2.26
     },
     {
       "name": "tools/validate_phase_e.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain RGB-D inputs | [PASS] docs contain relaunch | [PASS] docs contain Phase F gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 112/112 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-e-launch-e/static_validation.txt",
-      "duration_seconds": 4.326
+      "duration_seconds": 4.171
     },
     {
       "name": "tools/validate_phase_f.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain legend | [PASS] docs contain relaunch | [PASS] docs contain Phase G gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 122/122 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-f-launch-f/static_validation.txt",
-      "duration_seconds": 9.152
+      "duration_seconds": 8.15
     },
     {
       "name": "tools/validate_phase_g.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain obstacle inflation | [PASS] docs contain relaunch | [PASS] docs contain Phase H gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 131/131 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-g-launch-g/static_validation.txt",
-      "duration_seconds": 18.996
+      "duration_seconds": 17.504
     },
     {
       "name": "tools/validate_phase_h.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain motion isolation | [PASS] docs contain relaunch | [PASS] docs contain Phase I gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 144/144 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-h-launch-h/static_validation.txt",
-      "duration_seconds": 34.777
+      "duration_seconds": 35.534
     },
     {
       "name": "tools/validate_phase_i.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain phase H distinction | [PASS] docs contain relaunch | [PASS] docs contain Phase J gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 160/160 checks passed - ALL PASS | ================================================================ | report: /home/user/lunabot-v4/evidence/phase-i-launch-i/static_validation.txt",
-      "duration_seconds": 68.554
+      "duration_seconds": 71.238
     },
     {
       "name": "tools/validate_phase_j.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain status output | [PASS] docs contain revision requirement | [PASS] docs contain relaunch | [PASS] docs contain Phase K gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 99/99 checks passed - ALL PASS | ================================================================",
-      "duration_seconds": 65.769
+      "duration_seconds": 71.266
     },
     {
       "name": "tools/validate_phase_k.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain status output | [PASS] docs contain boundary metrics | [PASS] docs contain relaunch | [PASS] docs contain Phase L gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 105/105 checks passed - ALL PASS | ================================================================",
-      "duration_seconds": 63.081
+      "duration_seconds": 75.476
     },
     {
       "name": "tools/validate_phase_l.py",
       "category": "legacy-validator",
       "status": "pass",
       "detail": "exit=0; tail: [PASS] docs contain status output | [PASS] docs contain safety boundary | [PASS] docs contain relaunch | [PASS] docs contain final-phase gate | [PASS] validator is honest about runtime | ================================================================ | RESULT: 105/105 checks passed - ALL PASS | ================================================================",
-      "duration_seconds": 63.515
+      "duration_seconds": 72.501
     }
   ]
 }
