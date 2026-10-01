@@ -64,7 +64,15 @@ GOAL_Y="${GOAL_Y:-}"
 # GUI rendering can reduce Gazebo real-time factor. Keep the mission timeout
 # in simulation-independent wall time and allow long goals to finish.
 MISSION_TIMEOUT="${MISSION_TIMEOUT:-360}"
-REQUIRE_MANUAL_GOAL="${REQUIRE_MANUAL_GOAL:-true}"
+# Automatic headless goals are real mission goals and must not require an
+# additional RViz MANUAL_GOAL_SELECTED event. Preserve an explicit override.
+if [ -z "${REQUIRE_MANUAL_GOAL+x}" ]; then
+  if [ "$AUTO_GOAL" = "true" ]; then
+    REQUIRE_MANUAL_GOAL="false"
+  else
+    REQUIRE_MANUAL_GOAL="true"
+  fi
+fi
 
 OVERALL="PASS"
 GAZEBO_PID=""
@@ -1248,7 +1256,7 @@ elif [ "$FINAL_DEMO" = "1" ]; then
 else
   topic_ok "topic /goal_pose"                "/goal_pose"
 fi
-if [ "$FINAL_DEMO" = "1" ]; then
+if [ "$FINAL_DEMO" = "1" ] || [ "$AUTO_GOAL" = "true" ]; then
   # The diagnostic A* plan can legitimately appear after the goal and first
   # map update, especially for a long headless goal. Its later status/log is
   # authoritative; do not turn this startup timing window into a mission fail.
