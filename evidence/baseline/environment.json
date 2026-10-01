@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-01T13:15:51.607238+00:00",
+  "repository": "/home/user/lunabot-v4",
+  "platform": "Linux-6.1.158+-x86_64-with-glibc2.36",
+  "python_runtime": "3.11.2 (main, Apr  8 2026, 01:58:00) [GCC 12.2.0]",
+  "ros_distro_environment": null,
+  "ros_humble_setup_exists": false,
+  "runtime_ready": false,
+  "tools": {
+    "python": {
+      "available": true,
+      "path": "/usr/bin/python3",
+      "version": "Python 3.11.2",
+      "version_exit_code": 0
+    },
+    "git": {
+      "available": true,
+      "path": "/usr/bin/git",
+      "version": "git version 2.39.5",
+      "version_exit_code": 0
+    },
+    "bash": {
+      "available": true,
+      "path": "/usr/bin/bash",
+      "version": "GNU bash, version 5.2.15(1)-release (x86_64-pc-linux-gnu)",
+      "version_exit_code": 0
+    },
+    "ros2": {
+      "available": false,
+      "path": null,
+      "version": null
+    },
+    "colcon": {
+      "available": false,
+      "path": null,
+      "version": null
+    },
+    "gazebo_gz": {
+      "available": false,
+      "path": null,
+      "version": null
+    },
+    "gazebo_ign": {
+      "available": false,
+      "path": null,
+      "version": null
+    },
+    "rviz2": {
+      "available": false,
+      "path": null,
+      "version": null
+    },
+    "shellcheck": {
+      "available": false,
+      "path": null,
+      "version": null
+    },
+    "xmllint": {
+      "available": false,
+      "path": null,
+      "version": null
+    }
+  },
+  "notes": [
+    "ROS 2/Gazebo runtime validation is unavailable in this environment; static validation remains available."
+  ]
+}

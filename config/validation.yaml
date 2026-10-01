@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "python_roots": ["scripts", "tools", "tests"],
+  "shell_roots": ["scripts"],
+  "shell_root_launchers": true,
+  "xml_extensions": [".sdf"],
+  "phase_validators": [
+    "tools/validate_phase_a.py",
+    "tools/validate_phase_b.py",
+    "tools/validate_phase_c.py",
+    "tools/validate_phase_d.py",
+    "tools/validate_phase_e.py",
+    "tools/validate_phase_f.py",
+    "tools/validate_phase_g.py",
+    "tools/validate_phase_h.py",
+    "tools/validate_phase_i.py",
+    "tools/validate_phase_j.py",
+    "tools/validate_phase_k.py",
+    "tools/validate_phase_l.py"
+  ],
+  "generated_report_directory": "evidence/baseline",
+  "preserve_validator_outputs": true
+}

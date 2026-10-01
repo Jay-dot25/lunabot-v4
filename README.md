@@ -1,5 +1,13 @@
 # LunaBot V4 — Autonomous Navigation of a Robot for Lunar Habitats
 
+> **Goal-level development:** See the exact staged implementation, training,
+> file-migration, testing, and acceptance plan in
+> [`docs/goal-level-implementation-plan.md`](docs/goal-level-implementation-plan.md).
+>
+> **Unified baseline gate:** Run `python3 tools/validate_all.py`. See
+> [`docs/baseline-validation.md`](docs/baseline-validation.md) for the static
+> validation scope and the separate ROS/Gazebo runtime boundary.
+
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
 it is approved, and every later phase reuses the validated baseline of the
