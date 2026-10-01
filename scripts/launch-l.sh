@@ -42,6 +42,11 @@ OBSTACLE_PATH="$REPO_DIR/scripts/obstacle_detector.py"
 EVALUATOR_PATH="$REPO_DIR/scripts/phase_k_evaluator.py"
 MISSION_PATH="$REPO_DIR/scripts/phase_l_mission.py"
 RVIZ_CONFIG="$REPO_DIR/rviz/phase_l.rviz"
+if [ "${HEADLESS:-0}" != "1" ] && [ "${AUTO_GOAL:-false}" = "true" ]; then
+  # Keep automatic GUI missions responsive: RViz still shows map, LiDAR,
+  # obstacles and paths, but does not render four high-rate image/map views.
+  RVIZ_CONFIG="$REPO_DIR/rviz/phase_l_auto.rviz"
+fi
 EVIDENCE_DIR="$REPO_DIR/evidence/phase-l-launch-l"
 LOG_FILE="$EVIDENCE_DIR/last_run.log"
 
