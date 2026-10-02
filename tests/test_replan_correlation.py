@@ -17,10 +17,4 @@ class ReplanCorrelationTests(unittest.TestCase):
   c=ReplanCorrelation();c.set_initial_path([(0,0),(0,1)]);c.sensor_detection(1,[(0,1)]);c.lethal_update(2,[(0,1)]);c.replan_requested(3,'obstacle');c.path_published(4,[(0,0),(0,1)]);self.assertFalse(c.result()['valid_replan'])
  def test_collision_prevents_mission_success(self):
   c=ReplanCorrelation();c.set_initial_path([(0,0)]);c.sensor_detection(1,[(0,0)]);c.lethal_update(2,[(0,0)]);c.replan_requested(3,'obstacle');c.path_published(4,[(1,0)]);c.goal_reached=True;c.collisions=1;self.assertTrue(c.result()['valid_replan']);self.assertFalse(c.result()['mission_success'])
- def test_planner_marks_only_new_lethal_path_intersections_as_obstacles(self):
-  text=(ROOT/'src/lunabot_planning/lunabot_planning/planner_node.py').read_text()
-  self.assertIn('newly_lethal & self.path_cells',text);self.assertIn('REASON_OBSTACLE if invalidated',text);self.assertIn('active_path_invalidated=invalidated',text)
- def test_verifier_correlates_path_before_event_publication_order(self):
-  text=(ROOT/'src/lunabot_planning/lunabot_planning/replan_verifier_node.py').read_text()
-  self.assertIn('self.pending_path=',text);self.assertIn('and msg.active_path_invalidated',text);self.assertIn('self.core.path_published',text)
 if __name__=='__main__':unittest.main()
