@@ -18,5 +18,6 @@ setup(
     license="Apache-2.0",
     entry_points={"console_scripts": [
         "lunabot_planning_info = lunabot_planning.package_info:main",
+        "dstar_lite_planner = lunabot_planning.planner_node:main",
     ]},
 )
