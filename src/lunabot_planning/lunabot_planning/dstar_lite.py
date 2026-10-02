@@ -52,6 +52,7 @@ class DStarLite:
    self.costs[node[0]*self.width+node[1]]=value;affected.add(node);affected.update(self.neighbours(node))
   for node in affected:self.update_vertex(node)
   return affected
+ def path_cost(self,path):return sum(self.cost(a,b) for a,b in zip(path,path[1:])) if path else INF
  def path(self,max_steps=None):
   if self.value(self.g,self.start)==INF:return []
   node=self.start;result=[node];seen={node};max_steps=max_steps or self.width*self.height

@@ -10,5 +10,7 @@ def main():
  text=core.read_text()
  if any(token not in text for token in ('self.g','self.rhs','self.km','update_vertex','compute_shortest_path','update_costs')):print('DSTAR_LITE_VALIDATION_FAIL state');return 1
  if 'astar' in text.lower():print('DSTAR_LITE_VALIDATION_FAIL mislabeled astar');return 1
- print('DSTAR_LITE_VALIDATION_PASS persistent_state=1 incremental_repair=1');return 0
+ tests=(ROOT/'tests/test_dstar_lite.py').read_text()
+ if 'test_cost_decrease' not in tests or 'test_random_grids_match_fresh_optimal_cost' not in tests:print('DSTAR_LITE_VALIDATION_FAIL optimality_tests');return 1
+ print('DSTAR_LITE_VALIDATION_PASS persistent_state=1 incremental_repair=1 random_optimality=1');return 0
 if __name__=='__main__':raise SystemExit(main())
