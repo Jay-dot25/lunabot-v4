@@ -25,5 +25,7 @@ class MLFrameworkTests(unittest.TestCase):
    self.assertTrue((ROOT/'ml'/name).is_file())
   requirements=(ROOT/'ml/requirements.txt').read_text()
   self.assertIn('onnxscript',requirements)
+  exporter=(ROOT/'ml/export_onnx.py').read_text()
+  self.assertIn('external_data=False',exporter)
   readme=(ROOT/'models/README.md').read_text();self.assertIn('not committed',readme);self.assertIn('checksum',readme)
 if __name__=='__main__':unittest.main()

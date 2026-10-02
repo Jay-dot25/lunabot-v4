@@ -43,9 +43,10 @@ success/failure images alongside the report during the final experiment.
 sha256sum -c models/terrain_segmentation.sha256
 ```
 
-Do not commit large weights. Release them through object storage with the ONNX
-file, exact config, checksum, evaluation report, dependency lock/environment,
-and dataset-manifest checksum.
+The exporter embeds weights in one self-contained ONNX file rather than an
+unchecked external-data sidecar. Do not commit large weights. Release them
+through object storage with the ONNX file, exact config, checksum, evaluation
+report, dependency lock/environment, and dataset-manifest checksum.
 
 ## Acceptance boundary
 
