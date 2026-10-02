@@ -1,6 +1,6 @@
 """Final production graph for simulation, bag replay, and evaluation."""
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument,ExecuteProcess,IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument,ExecuteProcess,IncludeLaunchDescription,SetEnvironmentVariable
 from launch.conditions import IfCondition,LaunchConfigurationEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration,PathJoinSubstitution
@@ -15,4 +15,6 @@ def generate_launch_description():
  bridges=Node(package='ros_gz_bridge',executable='parameter_bridge',arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock','/lunabot/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image','/lunabot/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo','/lunabot/depth/image_raw@sensor_msgs/msg/Image[gz.msgs.Image','/lunabot/depth/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo','/lunabot/lidar/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan','/lunabot/imu@sensor_msgs/msg/Imu[gz.msgs.IMU','/lunabot/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry','/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V','/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'],condition=sim_condition,output='screen')
  replay=ExecuteProcess(cmd=['ros2','bag','play',bag,'--clock'],output='screen',condition=LaunchConfigurationEquals('mode','bag_replay'))
  nodes=[Node(package='lunabot_perception',executable='terrain_inference_node',name='terrain_inference',parameters=[config,{'model_path':model,'config_path':LaunchConfiguration('model_config'),'checksum_path':LaunchConfiguration('model_checksum')}],output='screen'),Node(package='lunabot_mapping',executable='semantic_fusion_node',parameters=[config],output='screen'),Node(package='lunabot_mapping',executable='traversability_node',parameters=[config],output='screen'),Node(package='lunabot_planning',executable='dstar_lite_planner',parameters=[config],output='screen'),Node(package='lunabot_planning',executable='replan_verifier',parameters=[config],output='screen'),Node(package='lunabot_control',executable='regulated_path_follower',parameters=[config],output='screen'),Node(package='lunabot_control',executable='safety_supervisor',parameters=[config],output='screen'),Node(package='lunabot_evaluation',executable='mission_metrics',parameters=[config,{'trial_output':LaunchConfiguration('trial_output')}],output='screen'),Node(package='rviz2',executable='rviz2',arguments=['-d',PathJoinSubstitution([FindPackageShare('lunabot_bringup'),'rviz','goal_system.rviz'])],condition=IfCondition(LaunchConfiguration('use_rviz')),output='screen')]
- return LaunchDescription(args+[sim,spawn,bridges,replay]+nodes)
+ resources=PathJoinSubstitution([FindPackageShare('lunabot_gazebo'),'worlds'])
+ environment=[SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH',resources),SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH',resources)]
+ return LaunchDescription(args+environment+[sim,spawn,bridges,replay]+nodes)
