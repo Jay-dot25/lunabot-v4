@@ -32,8 +32,10 @@ Outputs:
 
 The ML environment pins NumPy below 2 because ROS 2 Humble's packaged
 `cv_bridge` extension uses the NumPy 1.x ABI. `ml-dtypes` is also pinned below
-0.6 to retain that ABI-compatible NumPy version. After changing requirements,
-run `.venv-ml/bin/pip install -r ml/requirements.txt` before starting this node.
+0.6 to retain that ABI-compatible NumPy version. PyYAML and typeguard satisfy
+ROS packages exposed in Ubuntu's Python environment. After changing
+requirements, run `.venv-ml/bin/pip install -r ml/requirements.txt` before
+starting this node.
 
 The software gate checks contracts and deterministic offline execution. The
 final live FPS and rosbag agreement gate requires a trained production model,

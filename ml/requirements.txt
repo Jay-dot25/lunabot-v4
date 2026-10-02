@@ -8,3 +8,6 @@ onnx>=1.14,<2
 ml-dtypes>=0.5.4,<0.6
 onnxscript>=0.1,<1
 onnxruntime>=1.16,<2
+# Required by ROS packages visible in Ubuntu's Python environment.
+PyYAML>=5.4,<7
+typeguard>=2.13,<5

@@ -30,5 +30,7 @@ class MLInferenceTests(unittest.TestCase):
   requirements=(ROOT/'ml/requirements.txt').read_text()
   self.assertIn('numpy>=1.24,<2',requirements)
   self.assertIn('ml-dtypes>=0.5.4,<0.6',requirements)
+  self.assertIn('PyYAML',requirements)
+  self.assertIn('typeguard',requirements)
   for mode in ('heuristic','ml','ground_truth'):self.assertIn(mode,launch)
 if __name__=='__main__':unittest.main()
