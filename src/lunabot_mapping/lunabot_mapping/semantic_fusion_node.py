@@ -22,7 +22,7 @@ class SemanticFusionNode(Node):
   super().__init__('semantic_fusion');defaults={'class_topic':'/lunabot/terrain/class_image','confidence_topic':'/lunabot/terrain/confidence','depth_topic':'/lunabot/depth/image_raw','camera_info_topic':'/lunabot/depth/camera_info','map_frame':'map','width':200,'height':200,'resolution':.1,'origin_x':-10.,'origin_y':-10.,'sample_stride':4,'sync_slop_s':.08}
   for key,value in defaults.items():self.declare_parameter(key,value)
   self.bridge=CvBridge();self.grid=SemanticFusionGrid(int(self.get_parameter('width').value),int(self.get_parameter('height').value),float(self.get_parameter('resolution').value),(float(self.get_parameter('origin_x').value),float(self.get_parameter('origin_y').value)))
-  self.tf_buffer=Buffer();self.tf_listener=TransformListener(self.tf_buffer,self);self.class_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/class',1);self.conf_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/confidence',1)
+  self.tf_buffer=Buffer();self.tf_listener=TransformListener(self.tf_buffer,self);self.class_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/class',1);self.conf_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/confidence',1);self.elevation_pub=self.create_publisher(Image,'/lunabot/semantic_map/elevation',1);self.stale_pub=self.create_publisher(Image,'/lunabot/semantic_map/stale',1)
   topics=[str(self.get_parameter(name).value) for name in ('class_topic','confidence_topic','depth_topic','camera_info_topic')];subs=[Subscriber(self,Image,topics[0]),Subscriber(self,Image,topics[1]),Subscriber(self,Image,topics[2]),Subscriber(self,CameraInfo,topics[3])]
   self.sync=ApproximateTimeSynchronizer(subs,10,float(self.get_parameter('sync_slop_s').value));self.sync.registerCallback(self.callback)
  def callback(self,class_msg,confidence_msg,depth_msg,info):
@@ -38,10 +38,13 @@ class SemanticFusionNode(Node):
      x,y,z=project_pixel(u,v,value,intrinsics,matrix);self.grid.observe(x,y,z,label,certainty,stamp)
   self.publish(depth_msg.header)
  def publish(self,header):
-  layers=self.grid.dense_layers(header.stamp.sec*1000000000+header.stamp.nanosec)
+  stamp=header.stamp.sec*1000000000+header.stamp.nanosec;layers=self.grid.dense_layers(stamp)
   for publisher,name in ((self.class_pub,'semantic_class'),(self.conf_pub,'semantic_confidence')):
    msg=OccupancyGrid();msg.header=header;msg.header.frame_id=str(self.get_parameter('map_frame').value);msg.info.resolution=self.grid.resolution;msg.info.width=self.grid.width;msg.info.height=self.grid.height;msg.info.origin.position.x=self.grid.origin[0];msg.info.origin.position.y=self.grid.origin[1];msg.info.origin.orientation.w=1.0
    msg.data=[(-1 if value==0 else int(value)) for value in layers[name]] if name=='semantic_class' else [int(max(0,min(100,round(value*100)))) for value in layers[name]];publisher.publish(msg)
+  elevation=np.asarray(layers['elevation'],dtype=np.float32).reshape(self.grid.height,self.grid.width);stale=np.asarray([1.0 if value==0 or stamp-value>self.grid.stale_after_ns else 0.0 for value in layers['last_observed']],dtype=np.float32).reshape(self.grid.height,self.grid.width)
+  for publisher,array in ((self.elevation_pub,elevation),(self.stale_pub,stale)):
+   msg=self.bridge.cv2_to_imgmsg(array,encoding='32FC1');msg.header=header;msg.header.frame_id=str(self.get_parameter('map_frame').value);publisher.publish(msg)
 def main(args=None):
  rclpy.init(args=args);node=SemanticFusionNode()
  try:rclpy.spin(node)
