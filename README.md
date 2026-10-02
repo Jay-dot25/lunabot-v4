@@ -53,6 +53,10 @@
 >
 > **Obstacle replan proof:** Explicit detection-to-map-to-replan correlation is
 > documented in [`docs/obstacle-replanning.md`](docs/obstacle-replanning.md).
+>
+> **Regulated path following:** Production pure-pursuit behavior and the
+> `/cmd_vel_nav` boundary are documented in
+> [`docs/regulated-path-follower.md`](docs/regulated-path-follower.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before

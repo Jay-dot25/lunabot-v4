@@ -33,6 +33,7 @@ class ValidationHarnessTests(unittest.TestCase):
             "tools/validate_traversability.py",
             "tools/validate_dstar_lite.py",
             "tools/validate_replan_correlation.py",
+            "tools/validate_regulated_follower.py",
         ])
 
     def test_config_rejects_missing_fields(self):
