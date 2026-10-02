@@ -9,7 +9,6 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        ("share/" + package_name + "/config", ["config/traversability.yaml"]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -20,6 +19,5 @@ setup(
     entry_points={"console_scripts": [
         "lunabot_mapping_info = lunabot_mapping.package_info:main",
         "semantic_fusion_node = lunabot_mapping.semantic_fusion_node:main",
-        "traversability_node = lunabot_mapping.traversability_node:main",
     ]},
 )
