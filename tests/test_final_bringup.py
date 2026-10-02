@@ -7,7 +7,7 @@ class Tests(unittest.TestCase):
  def test_launch_syntax_and_modes(self):
   ast.parse(self.text);self.assertIn("choices=['simulation','bag_replay','evaluation']",self.text);self.assertIn("'ros2','bag','play'",self.text);self.assertIn("'gz_sim.launch.py'",self.text)
  def test_complete_production_graph(self):
-  for executable in ('terrain_inference_node','semantic_fusion_node','traversability_node','dstar_lite_planner','replan_verifier','regulated_path_follower','safety_supervisor','mission_metrics'):self.assertIn("executable='%s'"%executable,self.text)
+  for executable in ('localization_pose_publisher','terrain_inference_node','semantic_fusion_node','traversability_node','dstar_lite_planner','replan_verifier','regulated_path_follower','safety_supervisor','mission_metrics'):self.assertIn("executable='%s'"%executable,self.text)
  def test_simulation_spawns_rover_and_bridges_io(self):
   self.assertIn("executable='create'",self.text);self.assertIn("executable='parameter_bridge'",self.text);self.assertIn("'/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist'",self.text);self.assertIn("'/lunabot/depth/image_raw@sensor_msgs/msg/Image[gz.msgs.Image'",self.text)
  def test_rviz_presentation_layers(self):
