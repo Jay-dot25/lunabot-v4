@@ -16,12 +16,12 @@ def augment(image, mask, seed, enabled=True):
     if rng.random() < 0.35:  # sensor noise
         array = np.asarray(image, dtype=np.int16)
         noise = np.random.default_rng(seed).normal(0, rng.uniform(1, 8), array.shape)
-        image = Image.fromarray(np.clip(array + noise, 0, 255).astype(np.uint8), "RGB")
+        image = Image.fromarray(np.clip(array + noise, 0, 255).astype(np.uint8))
     if rng.random() < 0.3:
         image = image.filter(ImageFilter.GaussianBlur(rng.uniform(0.1, 1.2)))
     if rng.random() < 0.25:  # exposure clipping
         array = np.asarray(image)
-        image = Image.fromarray(np.clip(array, rng.randint(0, 20), rng.randint(210, 255)).astype(np.uint8), "RGB")
+        image = Image.fromarray(np.clip(array, rng.randint(0, 20), rng.randint(210, 255)).astype(np.uint8))
     if rng.random() < 0.25:  # synthetic cast shadow affects image, never labels
         overlay = Image.new("L", image.size, 0); draw = ImageDraw.Draw(overlay)
         x = rng.randint(0, image.width); width = rng.randint(max(1, image.width // 8), max(2, image.width // 2))

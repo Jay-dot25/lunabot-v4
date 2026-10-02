@@ -23,5 +23,7 @@ class MLFrameworkTests(unittest.TestCase):
  def test_entry_points_and_artifact_policy(self):
   for name in ('train.py','evaluate.py','export_onnx.py','infer_image.py'):
    self.assertTrue((ROOT/'ml'/name).is_file())
+  requirements=(ROOT/'ml/requirements.txt').read_text()
+  self.assertIn('onnxscript',requirements)
   readme=(ROOT/'models/README.md').read_text();self.assertIn('not committed',readme);self.assertIn('checksum',readme)
 if __name__=='__main__':unittest.main()
