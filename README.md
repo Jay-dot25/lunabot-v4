@@ -35,6 +35,10 @@
 > **ROS ML inference:** Synchronized inputs, ONNX execution, confidence policy,
 > safe failure, and perception-mode selection are documented in
 > [`docs/ros-ml-inference.md`](docs/ros-ml-inference.md).
+>
+> **GPS-denied localization:** EKF sensor fusion, TF ownership, evaluation
+> metrics, and physical-validation boundaries are documented in
+> [`docs/gps-denied-localization.md`](docs/gps-denied-localization.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before

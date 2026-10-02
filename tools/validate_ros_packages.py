@@ -21,6 +21,7 @@ EXPECTED = {
     "lunabot_control": "ament_python",
     "lunabot_evaluation": "ament_python",
     "lunabot_bringup": "ament_python",
+    "lunabot_localization": "ament_python",
 }
 
 

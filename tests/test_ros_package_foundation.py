@@ -19,7 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class RosPackageFoundationTests(unittest.TestCase):
     def test_all_expected_packages_validate(self):
         details = MODULE.validate_all()
-        self.assertEqual(len(details), 9)
+        self.assertEqual(len(details), 10)
         self.assertEqual({item.split(":")[0] for item in details}, set(MODULE.EXPECTED))
 
     def test_python_package_modules_import_without_ros(self):

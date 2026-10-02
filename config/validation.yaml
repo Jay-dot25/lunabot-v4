@@ -12,7 +12,8 @@
     "tools/validate_scenarios.py",
     "tools/validate_ground_truth.py",
     "tools/validate_ml_framework.py",
-    "tools/validate_ml_inference.py"
+    "tools/validate_ml_inference.py",
+    "tools/validate_localization.py"
   ],
   "phase_validators": [
     "tools/validate_phase_a.py",
