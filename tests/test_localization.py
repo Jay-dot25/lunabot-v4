@@ -21,5 +21,5 @@ class LocalizationTests(unittest.TestCase):
    self.assertEqual(len(values),225);self.assertTrue(all('.' in value for value in values))
  def test_noise_and_evaluation_boundary(self):
   sdf=(ROOT/'src/lunabot_gazebo/models/lunabot_v4/model.sdf').read_text();source=(ROOT/'src/lunabot_localization/lunabot_localization/localization_evaluator.py').read_text()
-  self.assertGreaterEqual(sdf.count('noise type="gaussian"'),7);self.assertIn('/lunabot/ground_truth/pose',source);self.assertNotIn('create_publisher',source)
+  self.assertGreaterEqual(sdf.count('noise type="gaussian"')+sdf.count('<noise><type>gaussian</type>'),7);self.assertIn('/lunabot/ground_truth/pose',source);self.assertNotIn('create_publisher',source)
 if __name__=='__main__':unittest.main()
