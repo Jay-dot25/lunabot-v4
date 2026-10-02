@@ -19,6 +19,5 @@ setup(
     entry_points={"console_scripts": [
         "lunabot_planning_info = lunabot_planning.package_info:main",
         "dstar_lite_planner = lunabot_planning.planner_node:main",
-        "replan_verifier = lunabot_planning.replan_verifier_node:main",
     ]},
 )

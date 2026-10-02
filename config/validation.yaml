@@ -16,8 +16,7 @@
     "tools/validate_localization.py",
     "tools/validate_semantic_fusion.py",
     "tools/validate_traversability.py",
-    "tools/validate_dstar_lite.py",
-    "tools/validate_replan_correlation.py"
+    "tools/validate_dstar_lite.py"
   ],
   "phase_validators": [
     "tools/validate_phase_a.py",
