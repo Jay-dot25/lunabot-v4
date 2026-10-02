@@ -15,8 +15,7 @@
     "tools/validate_ml_inference.py",
     "tools/validate_localization.py",
     "tools/validate_semantic_fusion.py",
-    "tools/validate_traversability.py",
-    "tools/validate_dstar_lite.py"
+    "tools/validate_traversability.py"
   ],
   "phase_validators": [
     "tools/validate_phase_a.py",

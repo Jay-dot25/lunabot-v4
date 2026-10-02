@@ -47,9 +47,6 @@
 > **Layered traversability:** Semantic, slope, roughness, clearance, uncertainty,
 > inflation, and debug policies are documented in
 > [`docs/layered-traversability.md`](docs/layered-traversability.md).
->
-> **Incremental planning:** Genuine persistent-state D*-Lite and ROS planning
-> contracts are documented in [`docs/dstar-lite.md`](docs/dstar-lite.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
