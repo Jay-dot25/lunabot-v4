@@ -8,7 +8,6 @@ from message_filters import ApproximateTimeSynchronizer,Subscriber
 from nav_msgs.msg import OccupancyGrid
 from rclpy.duration import Duration
 from rclpy.node import Node
-from rclpy.qos import DurabilityPolicy,QoSProfile,ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo,Image
 from tf2_ros import Buffer,TransformException,TransformListener
 from .semantic_fusion import SemanticFusionGrid,project_pixel
@@ -23,8 +22,7 @@ class SemanticFusionNode(Node):
   super().__init__('semantic_fusion');defaults={'class_topic':'/lunabot/terrain/class_image','confidence_topic':'/lunabot/terrain/confidence','depth_topic':'/lunabot/depth/image_raw','camera_info_topic':'/lunabot/depth/camera_info','map_frame':'map','width':200,'height':200,'resolution':.1,'origin_x':-10.,'origin_y':-10.,'sample_stride':4,'sync_slop_s':.08}
   for key,value in defaults.items():self.declare_parameter(key,value)
   self.bridge=CvBridge();self.grid=SemanticFusionGrid(int(self.get_parameter('width').value),int(self.get_parameter('height').value),float(self.get_parameter('resolution').value),(float(self.get_parameter('origin_x').value),float(self.get_parameter('origin_y').value)))
-  qos=QoSProfile(depth=1,reliability=ReliabilityPolicy.RELIABLE,durability=DurabilityPolicy.TRANSIENT_LOCAL)
-  self.tf_buffer=Buffer();self.tf_listener=TransformListener(self.tf_buffer,self);self.class_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/class',qos);self.conf_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/confidence',qos);self.elevation_pub=self.create_publisher(Image,'/lunabot/semantic_map/elevation',1);self.stale_pub=self.create_publisher(Image,'/lunabot/semantic_map/stale',1)
+  self.tf_buffer=Buffer();self.tf_listener=TransformListener(self.tf_buffer,self);self.class_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/class',1);self.conf_pub=self.create_publisher(OccupancyGrid,'/lunabot/semantic_map/confidence',1);self.elevation_pub=self.create_publisher(Image,'/lunabot/semantic_map/elevation',1);self.stale_pub=self.create_publisher(Image,'/lunabot/semantic_map/stale',1)
   topics=[str(self.get_parameter(name).value) for name in ('class_topic','confidence_topic','depth_topic','camera_info_topic')];subs=[Subscriber(self,Image,topics[0]),Subscriber(self,Image,topics[1]),Subscriber(self,Image,topics[2]),Subscriber(self,CameraInfo,topics[3])]
   self.sync=ApproximateTimeSynchronizer(subs,10,float(self.get_parameter('sync_slop_s').value));self.sync.registerCallback(self.callback)
  def callback(self,class_msg,confidence_msg,depth_msg,info):

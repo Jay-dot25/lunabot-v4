@@ -5,14 +5,13 @@ from cv_bridge import CvBridge
 from message_filters import ApproximateTimeSynchronizer,Subscriber
 from nav_msgs.msg import OccupancyGrid
 from rclpy.node import Node
-from rclpy.qos import DurabilityPolicy,QoSProfile,ReliabilityPolicy
 from sensor_msgs.msg import Image
 from .traversability import DEFAULT,build_traversability
 class TraversabilityNode(Node):
  def __init__(self):
   super().__init__('traversability_node');self.bridge=CvBridge()
   for key,value in DEFAULT.items():self.declare_parameter(key,value)
-  qos=QoSProfile(depth=1,reliability=ReliabilityPolicy.RELIABLE,durability=DurabilityPolicy.TRANSIENT_LOCAL);self.cost_pub=self.create_publisher(OccupancyGrid,'/lunabot/traversability/map',qos);self.reason_pub=self.create_publisher(OccupancyGrid,'/lunabot/traversability/reason',qos)
+  self.cost_pub=self.create_publisher(OccupancyGrid,'/lunabot/traversability/map',1);self.reason_pub=self.create_publisher(OccupancyGrid,'/lunabot/traversability/reason',1)
   subs=[Subscriber(self,OccupancyGrid,'/lunabot/semantic_map/class'),Subscriber(self,OccupancyGrid,'/lunabot/semantic_map/confidence'),Subscriber(self,Image,'/lunabot/semantic_map/elevation'),Subscriber(self,Image,'/lunabot/semantic_map/stale')]
   self.sync=ApproximateTimeSynchronizer(subs,5,.05);self.sync.registerCallback(self.callback)
  def callback(self,classes,confidence,elevation,stale):

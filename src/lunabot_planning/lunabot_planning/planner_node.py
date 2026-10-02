@@ -4,13 +4,12 @@ import rclpy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid,Path
 from rclpy.node import Node
-from rclpy.qos import DurabilityPolicy,QoSProfile,ReliabilityPolicy
 from lunabot_msgs.msg import PlannerStatus,ReplanEvent
 from .dstar_lite import DStarLite
 class PlannerNode(Node):
  def __init__(self):
   super().__init__('dstar_lite_planner');self.grid=None;self.planner=None;self.start=None;self.goal=None;self.revision=0;self.path_cells=set()
-  qos=QoSProfile(depth=1,reliability=ReliabilityPolicy.RELIABLE,durability=DurabilityPolicy.TRANSIENT_LOCAL);self.path_pub=self.create_publisher(Path,'/lunabot/planning/path',qos);self.status_pub=self.create_publisher(PlannerStatus,'/lunabot/planning/status',qos);self.event_pub=self.create_publisher(ReplanEvent,'/lunabot/planning/replan_event',qos)
+  self.path_pub=self.create_publisher(Path,'/lunabot/planning/path',1);self.status_pub=self.create_publisher(PlannerStatus,'/lunabot/planning/status',1);self.event_pub=self.create_publisher(ReplanEvent,'/lunabot/planning/replan_event',1)
   self.create_subscription(OccupancyGrid,'/lunabot/traversability/map',self.map_callback,1);self.create_subscription(PoseStamped,'/lunabot/localization/pose',self.start_callback,10);self.create_subscription(PoseStamped,'/lunabot/planning/goal',self.goal_callback,10)
  def cell(self,pose):
   p=pose.pose.position;return (int((p.y-self.grid.info.origin.position.y)/self.grid.info.resolution),int((p.x-self.grid.info.origin.position.x)/self.grid.info.resolution))
