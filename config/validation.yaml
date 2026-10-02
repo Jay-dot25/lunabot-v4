@@ -21,8 +21,7 @@
     "tools/validate_regulated_follower.py",
     "tools/validate_safety_supervisor.py",
     "tools/validate_mission_metrics.py",
-    "tools/validate_experiment_framework.py",
-    "tools/validate_final_bringup.py"
+    "tools/validate_experiment_framework.py"
   ],
   "phase_validators": [
     "tools/validate_phase_a.py",

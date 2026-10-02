@@ -66,9 +66,6 @@
 >
 > **Experiments:** Reproducible factorial trials and confidence-interval reports
 > are documented in [`docs/experiment-framework.md`](docs/experiment-framework.md).
->
-> **Unified bringup:** Simulation, bag replay, evaluation, and RViz presentation
-> are documented in [`docs/final-bringup.md`](docs/final-bringup.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
