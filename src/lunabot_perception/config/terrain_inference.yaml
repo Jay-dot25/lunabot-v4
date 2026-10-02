@@ -1,0 +1,15 @@
+terrain_inference:
+  ros__parameters:
+    use_sim_time: true
+    model_path: ""
+    config_path: ""
+    checksum_path: ""
+    device: auto
+    image_topic: /lunabot/camera/image_raw
+    camera_info_topic: /lunabot/camera/camera_info
+    class_topic: /lunabot/terrain/class_image
+    confidence_topic: /lunabot/terrain/confidence
+    overlay_topic: /lunabot/terrain/overlay
+    status_topic: /lunabot/terrain/inference_status
+    sync_slop_s: 0.05
+    queue_size: 5

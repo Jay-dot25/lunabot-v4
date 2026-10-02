@@ -9,7 +9,8 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
-        ("share/" + package_name + "/config", ["config/camera_info.yaml"]),
+        ("share/" + package_name + "/config", [
+            "config/camera_info.yaml", "config/terrain_inference.yaml"]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -20,5 +21,6 @@ setup(
     entry_points={"console_scripts": [
         "lunabot_perception_info = lunabot_perception.package_info:main",
         "camera_info_publisher = lunabot_perception.camera_info_publisher:main",
+        "terrain_inference_node = lunabot_perception.terrain_inference_node:main",
     ]},
 )

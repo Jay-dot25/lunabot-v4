@@ -31,6 +31,10 @@
 > **ML framework:** Deterministic training, held-out-world evaluation, ONNX
 > export, acceptance thresholds, and honest execution boundaries are documented
 > in [`docs/ml-training.md`](docs/ml-training.md).
+>
+> **ROS ML inference:** Synchronized inputs, ONNX execution, confidence policy,
+> safe failure, and perception-mode selection are documented in
+> [`docs/ros-ml-inference.md`](docs/ros-ml-inference.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
