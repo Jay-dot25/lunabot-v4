@@ -50,9 +50,6 @@
 >
 > **Incremental planning:** Genuine persistent-state D*-Lite and ROS planning
 > contracts are documented in [`docs/dstar-lite.md`](docs/dstar-lite.md).
->
-> **Obstacle replan proof:** Explicit detection-to-map-to-replan correlation is
-> documented in [`docs/obstacle-replanning.md`](docs/obstacle-replanning.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
