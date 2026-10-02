@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import copy
 import importlib.util
 import json
@@ -128,6 +129,14 @@ class SimulationGroundTruthTests(unittest.TestCase):
         self.assertIn("camera_info_publisher", setup)
         self.assertIn("/lunabot/camera/camera_info", source)
         self.assertIn("/lunabot/depth/camera_info", source)
+        matrix_lengths = {}
+        for node in ast.walk(ast.parse(source)):
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Attribute)
+                    and node.targets[0].attr in {"k", "r", "p"}
+                    and isinstance(node.value, ast.List)):
+                matrix_lengths[node.targets[0].attr] = len(node.value.elts)
+        self.assertEqual(matrix_lengths, {"k": 9, "r": 9, "p": 12})
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ class CameraInfoPublisher(Node):
         message.distortion_model = "plumb_bob"
         message.d = [0.0, 0.0, 0.0, 0.0, 0.0]
         message.k = [fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0]
-        message.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]
+        message.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
         message.p = [fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0]
         return message
 
