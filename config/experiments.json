@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "repetitions": 30,
+  "timeout_seconds": 900,
+  "command": "ros2 launch lunabot_bringup lunabot_goal.launch.py planner:={planner} world_seed:={world_seed} goal_id:={goal} illumination:={illumination} sensor_noise:={sensor_noise} obstacle_scenario:={obstacle} trial_output:={output}/trial.json",
+  "factors": {
+    "planner": ["geometric_astar", "semantic_weighted_astar", "semantic_dstar_lite"],
+    "world_seed": [101, 202, 303],
+    "goal": ["north", "east"],
+    "illumination": ["nominal", "low"],
+    "sensor_noise": ["nominal", "high"],
+    "obstacle": ["none", "dynamic_path_block"]
+  }
+}

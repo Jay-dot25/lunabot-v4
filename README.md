@@ -63,6 +63,9 @@
 >
 > **Mission evidence:** Collision and quantitative trial metrics are documented
 > in [`docs/mission-metrics.md`](docs/mission-metrics.md).
+>
+> **Experiments:** Reproducible factorial trials and confidence-interval reports
+> are documented in [`docs/experiment-framework.md`](docs/experiment-framework.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
