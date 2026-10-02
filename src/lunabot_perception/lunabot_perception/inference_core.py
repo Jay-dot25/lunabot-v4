@@ -12,6 +12,8 @@ def sha256(path):
     return digest.hexdigest()
 
 def load_contract(model_path,config_path,checksum_path=None):
+    if not str(model_path): raise InferenceContractError('model_path parameter is empty')
+    if not str(config_path): raise InferenceContractError('config_path parameter is empty')
     model_path,config_path=Path(model_path),Path(config_path)
     if not model_path.is_file(): raise InferenceContractError(f'model missing: {model_path}')
     if not config_path.is_file(): raise InferenceContractError(f'config missing: {config_path}')

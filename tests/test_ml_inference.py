@@ -18,13 +18,14 @@ class MLInferenceTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as directory:
    root=Path(directory);cfg=root/'config.json';cfg.write_text(json.dumps(config()))
    with self.assertRaisesRegex(InferenceContractError,'model missing'):load_contract(root/'absent.onnx',cfg)
+   with self.assertRaisesRegex(InferenceContractError,'model_path parameter is empty'):load_contract('',cfg)
  def test_invalid_normalization_rejected(self):
   with tempfile.TemporaryDirectory() as directory:
    model,cfg,checksum=self.fixture(directory);bad=config();bad['normalization']['std']=[1,0,1];cfg.write_text(json.dumps(bad))
    with self.assertRaisesRegex(InferenceContractError,'positive'):load_contract(model,cfg)
  def test_ros_contract_is_installed(self):
   source=(ROOT/'src/lunabot_perception/lunabot_perception/terrain_inference_node.py').read_text();setup=(ROOT/'src/lunabot_perception/setup.py').read_text();launch=(ROOT/'src/lunabot_bringup/launch/perception.launch.py').read_text()
-  for token in ('ApproximateTimeSynchronizer','desired_encoding=\'rgb8\'','mono8','32FC1','STATE_ERROR'):self.assertIn(token,source)
+  for token in ('ApproximateTimeSynchronizer','desired_encoding=\'rgb8\'','mono8','32FC1','STATE_ERROR','if rclpy.ok()'):self.assertIn(token,source)
   self.assertIn('terrain_inference_node',setup)
   for mode in ('heuristic','ml','ground_truth'):self.assertIn(mode,launch)
 if __name__=='__main__':unittest.main()
