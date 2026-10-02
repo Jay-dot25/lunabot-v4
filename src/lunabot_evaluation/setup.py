@@ -19,5 +19,6 @@ setup(
     entry_points={"console_scripts": [
         "lunabot_evaluation_info = lunabot_evaluation.package_info:main",
         "status_compat_bridge = lunabot_evaluation.status_compat_bridge:main",
+        "mission_metrics = lunabot_evaluation.mission_metrics_node:main",
     ]},
 )

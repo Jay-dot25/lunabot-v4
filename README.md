@@ -60,6 +60,9 @@
 >
 > **Safety ownership:** Fail-closed command arbitration and emergency-stop
 > behavior are documented in [`docs/safety-supervisor.md`](docs/safety-supervisor.md).
+>
+> **Mission evidence:** Collision and quantitative trial metrics are documented
+> in [`docs/mission-metrics.md`](docs/mission-metrics.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
