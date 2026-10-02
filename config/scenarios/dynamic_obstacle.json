@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "scenario_id": "dynamic_obstacle",
+  "terrain_seed": 42,
+  "crater_density": 1.0,
+  "lighting": {"direction": [-0.5, 0.5, -0.6], "intensity": 0.9},
+  "goal_xy": [4.5, 0.0],
+  "ground_truth_navigation_allowed": false,
+  "objects": [
+    {"name": "route_blocker", "semantic_id": 5, "pose": [2.5, 0.0, 0.4, 0.0, 0.0, 0.0], "size": [0.95, 0.95, 0.8], "dynamic": true, "insertion_trigger": {"type": "rover_distance", "value": 0.75}}
+  ]
+}

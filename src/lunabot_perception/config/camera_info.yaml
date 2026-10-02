@@ -1,0 +1,14 @@
+lunabot_camera_info_publisher:
+  ros__parameters:
+    use_sim_time: true
+    width: 640
+    height: 480
+    fx: 554.256
+    fy: 554.256
+    cx: 320.0
+    cy: 240.0
+    rgb_topic: /lunabot/camera/camera_info
+    depth_topic: /lunabot/depth/camera_info
+    rgb_frame: sensor_head
+    depth_frame: sensor_head
+    publish_rate: 1.0

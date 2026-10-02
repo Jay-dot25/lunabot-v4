@@ -34,10 +34,12 @@ Requires: numpy (pillow + matplotlib only needed for previews)
 """
 
 import argparse
+import hashlib
 import json
 import math
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -110,12 +112,17 @@ def apply_crater(z, dep, rim, x, y, cx, cy, R, D):
     return z, dep, rim
 
 
-def make_craters(rng):
-    """Returns (cx, cy, R, D, class) list, sorted large -> small."""
+def make_craters(rng, density=1.0):
+    """Return deterministic crater tuples, scaled by a validated density."""
+    if not math.isfinite(density) or density < 0.1 or density > 2.0:
+        raise ValueError("crater density must be within [0.1, 2.0]")
+    large_count = max(1, round(7 * density))
+    medium_count = max(1, round(70 * density))
+    small_count = max(1, round(220 * density))
     cr = []
     placed = []
     attempts = 0
-    while len(placed) < 7 and attempts < 4000:
+    while len(placed) < large_count and attempts < 8000:
         attempts += 1
         R = rng.uniform(22.0, 45.0)
         cx, cy = rng.uniform(-180.0, 180.0), rng.uniform(-180.0, 180.0)
@@ -125,14 +132,14 @@ def make_craters(rng):
             continue
         placed.append((cx, cy, R))
         cr.append((cx, cy, R, R * rng.uniform(0.14, 0.22), "large"))
-    for _ in range(70):
+    for _ in range(medium_count):
         R = rng.uniform(6.0, 15.0)
         while True:
             cx, cy = rng.uniform(-190.0, 190.0), rng.uniform(-190.0, 190.0)
             if math.hypot(cx, cy) > 20.0:
                 break
         cr.append((cx, cy, R, R * rng.uniform(0.12, 0.20), "medium"))
-    for _ in range(220):
+    for _ in range(small_count):
         R = rng.uniform(1.5, 5.0)
         cx, cy = rng.uniform(-195.0, 195.0), rng.uniform(-195.0, 195.0)
         if math.hypot(cx, cy) < 12.0:
@@ -210,15 +217,118 @@ def bilinear_sample(z, n_fine, n_coarse):
     return out
 
 
+def semantic_layers(X, Y, Z, normals, craters, cell, sun_direction=(0.5, -0.5, 0.6)):
+    """Build auditable simulator ground-truth terrain layers.
+
+    IDs follow config/terrain_classes.yaml. Rock/habitat classes are represented
+    by scenario objects, while this raster describes the terrain surface.
+    """
+    dzdy, dzdx = np.gradient(Z, cell)
+    slope_deg = np.degrees(np.arctan(np.hypot(dzdx, dzdy)))
+    neighbour_mean = (np.roll(Z, 1, 0) + np.roll(Z, -1, 0)
+                      + np.roll(Z, 1, 1) + np.roll(Z, -1, 1)) / 4.0
+    roughness = np.abs(Z - neighbour_mean)
+    labels = np.full(Z.shape, 1, dtype=np.uint8)  # flat_regolith
+    labels[(roughness > 0.16) | (slope_deg > 10.0)] = 2  # rough_regolith
+    labels[(roughness < 0.08) & (slope_deg > 5.0) & (slope_deg <= 15.0)] = 3  # bedrock proxy
+    light = np.asarray(sun_direction, dtype=float)
+    light /= np.linalg.norm(light)
+    illumination = np.sum(normals * light.reshape(1, 1, 3), axis=-1)
+    labels[illumination < 0.18] = 7  # shadow
+    crater_mask = np.zeros(Z.shape, dtype=bool)
+    for cx, cy, radius, _depth, _size in craters:
+        crater_mask |= ((X - cx) ** 2 + (Y - cy) ** 2) <= (radius * 1.05) ** 2
+    labels[crater_mask] = 6  # crater dominates appearance classes
+    labels[np.hypot(X, Y) <= SPAWN_RADIUS] = 1
+    return labels, slope_deg.astype(np.float32), roughness.astype(np.float32), illumination.astype(np.float32)
+
+
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def write_ground_truth(metadata_path, mask_path, X, Y, Z, normals, craters,
+                       cell, seed, crater_density):
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ml_path = os.path.join(root, "ml")
+    if ml_path not in sys.path:
+        sys.path.insert(0, ml_path)
+    from lunabot_ml.dataset_manifest import write_mask_png
+
+    labels, slope, roughness, illumination = semantic_layers(
+        X, Y, Z, normals, craters, cell)
+    os.makedirs(os.path.dirname(os.path.abspath(metadata_path)), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(mask_path)), exist_ok=True)
+    write_mask_png(Path(mask_path).resolve(), labels.shape[1], labels.shape[0], labels.tobytes())
+    stem = os.path.splitext(os.path.abspath(metadata_path))[0]
+    elevation_path = stem + "_elevation.npy"
+    slope_path = stem + "_slope.npy"
+    roughness_path = stem + "_roughness.npy"
+    illumination_path = stem + "_illumination.npy"
+    np.save(elevation_path, Z.astype(np.float32), allow_pickle=False)
+    np.save(slope_path, slope, allow_pickle=False)
+    np.save(roughness_path, roughness, allow_pickle=False)
+    np.save(illumination_path, illumination, allow_pickle=False)
+    counts = np.bincount(labels.ravel(), minlength=9)
+    metadata = {
+        "schema_version": 1,
+        "evaluation_only": True,
+        "seed": seed,
+        "crater_density": crater_density,
+        "frame_id": "map",
+        "extent_m": EXTENT,
+        "origin_xy_m": [-EXTENT / 2, -EXTENT / 2],
+        "resolution_m": cell,
+        "width": int(labels.shape[1]),
+        "height": int(labels.shape[0]),
+        "class_histogram": {str(i): int(value) for i, value in enumerate(counts) if value},
+        "craters": [
+            {"x": float(cx), "y": float(cy), "radius_m": float(radius),
+             "depth_m": float(depth), "size": size, "semantic_id": 6}
+            for cx, cy, radius, depth, size in craters
+        ],
+        "layers": {
+            "semantic_mask": os.path.basename(mask_path),
+            "elevation": os.path.basename(elevation_path),
+            "slope": os.path.basename(slope_path),
+            "roughness": os.path.basename(roughness_path),
+            "illumination": os.path.basename(illumination_path),
+        },
+    }
+    metadata["sha256"] = {
+        name: file_sha256(path) for name, path in (
+            ("semantic_mask", mask_path), ("elevation", elevation_path),
+            ("slope", slope_path), ("roughness", roughness_path),
+            ("illumination", illumination_path))
+    }
+    with open(metadata_path, "w", encoding="utf-8") as stream:
+        json.dump(metadata, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+    return metadata
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, default=SEED)
+    ap.add_argument("--crater-density", type=float, default=1.0)
     ap.add_argument("--no-previews", action="store_true")
+    ap.add_argument("--mesh-output-dir", default=WORLD_MESH_DIR)
+    ap.add_argument("--evidence-dir", default=EVIDENCE_DIR)
+    ap.add_argument("--metadata-output")
+    ap.add_argument("--semantic-mask-output")
     args = ap.parse_args()
+    if bool(args.metadata_output) != bool(args.semantic_mask_output):
+        ap.error("--metadata-output and --semantic-mask-output must be used together")
 
     rng = np.random.default_rng(args.seed)
-    os.makedirs(WORLD_MESH_DIR, exist_ok=True)
-    os.makedirs(EVIDENCE_DIR, exist_ok=True)
+    mesh_output_dir = os.path.abspath(args.mesh_output_dir)
+    evidence_dir = os.path.abspath(args.evidence_dir)
+    os.makedirs(mesh_output_dir, exist_ok=True)
+    os.makedirs(evidence_dir, exist_ok=True)
 
     cell = EXTENT / N_FINE
     xs = -EXTENT / 2 + (np.arange(N_FINE) + 0.5) * cell
@@ -227,7 +337,7 @@ def main():
 
     dep = np.zeros((N_FINE, N_FINE))
     rim = np.zeros((N_FINE, N_FINE))
-    craters = make_craters(rng)
+    craters = make_craters(rng, args.crater_density)
     for cx, cy, R, D, _cls in craters:
         Z, dep, rim = apply_crater(Z, dep, rim, X, Y, cx, cy, R, D)
 
@@ -258,7 +368,7 @@ def main():
     colors = np.repeat(col[..., None], 3, axis=-1)
 
     # ---- write meshes ----
-    vis_path = os.path.join(WORLD_MESH_DIR, "lunar_terrain.obj")
+    vis_path = os.path.join(mesh_output_dir, "lunar_terrain.obj")
     write_obj(vis_path, X.ravel(), Y.ravel(), Z.ravel(),
               normals.reshape(-1, 3), colors.reshape(-1, 3), grid_shape=(N_FINE, N_FINE))
 
@@ -268,7 +378,7 @@ def main():
     nc /= (np.linalg.norm(nc, axis=-1, keepdims=True) + 1e-9)
     xs_c = -EXTENT / 2 + (np.arange(N_COLL) + 0.5) * (EXTENT / N_COLL)
     Xc, Yc = np.meshgrid(xs_c, xs_c, indexing="xy")
-    coll_path = os.path.join(WORLD_MESH_DIR, "lunar_terrain_collision.obj")
+    coll_path = os.path.join(mesh_output_dir, "lunar_terrain_collision.obj")
     write_obj(coll_path, Xc.ravel(), Yc.ravel(), Zc.ravel(),
               nc.reshape(-1, 3), None, grid_shape=(N_COLL, N_COLL))
 
@@ -295,7 +405,7 @@ def main():
         "visual_obj_mb": round(os.path.getsize(vis_path) / 1e6, 1),
         "collision_obj_mb": round(os.path.getsize(coll_path) / 1e6, 1),
     }
-    stats_path = os.path.join(EVIDENCE_DIR, "terrain_stats.txt")
+    stats_path = os.path.join(evidence_dir, "terrain_stats.txt")
     with open(stats_path, "w") as fh:
         fh.write("LunaBot V4 - Phase A - lunar terrain statistics\n")
         fh.write("=" * 50 + "\n")
@@ -305,16 +415,24 @@ def main():
         fh.write(f"  z = {h0 + 0.48:.3f} m   # wheel bottom = model_root_z - 0.43, +5 cm drop margin\n")
     print(json.dumps(stats, indent=2))
 
+    if args.metadata_output:
+        metadata = write_ground_truth(
+            os.path.abspath(args.metadata_output),
+            os.path.abspath(args.semantic_mask_output),
+            X, Y, Z, normals, craters, cell, args.seed, args.crater_density)
+        print("ground-truth metadata:", os.path.abspath(args.metadata_output))
+        print("ground-truth classes:", metadata["class_histogram"])
+
     if not args.no_previews:
         try:
-            make_previews(X, Y, Z, col, craters)
-            print("previews written to", EVIDENCE_DIR)
+            make_previews(X, Y, Z, col, craters, evidence_dir)
+            print("previews written to", evidence_dir)
         except ImportError as e:
             print(f"WARNING: previews skipped ({e})")
     return 0
 
 
-def make_previews(X, Y, Z, col, craters):
+def make_previews(X, Y, Z, col, craters, output_dir=EVIDENCE_DIR):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -348,7 +466,7 @@ def make_previews(X, Y, Z, col, craters):
     ax.set_title("LunaBot V4 - lunar terrain, top-down (400 m x 400 m)")
     ax.set_aspect("equal")
     fig.tight_layout()
-    fig.savefig(os.path.join(EVIDENCE_DIR, "terrain_preview_topdown.png"))
+    fig.savefig(os.path.join(output_dir, "terrain_preview_topdown.png"))
     plt.close(fig)
 
     # ---------- perspective (matches Gazebo GUI camera at (0, -300, 200)) ----------
@@ -382,7 +500,7 @@ def make_previews(X, Y, Z, col, craters):
     ax.set_ylabel("y [m]")
     ax.set_zlabel("z [m]")
     fig.tight_layout()
-    fig.savefig(os.path.join(EVIDENCE_DIR, "terrain_preview_perspective.png"))
+    fig.savefig(os.path.join(output_dir, "terrain_preview_perspective.png"))
     plt.close(fig)
 
 

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "scenario_id": "baseline_habitat",
+  "terrain_seed": 42,
+  "crater_density": 1.0,
+  "lighting": {"direction": [-0.5, 0.5, -0.6], "intensity": 0.9},
+  "goal_xy": [1.5, 0.0],
+  "ground_truth_navigation_allowed": false,
+  "objects": [
+    {"name": "lunar_habitat_main", "semantic_id": 8, "pose": [18.0, 10.0, 0.0, 0.0, 0.0, 0.0], "size": [4.0, 3.0, 2.3], "dynamic": false},
+    {"name": "lunar_habitat_equipment", "semantic_id": 8, "pose": [13.0, 13.0, 0.0, 0.0, 0.0, 0.0], "size": [2.2, 1.5, 1.2], "dynamic": false},
+    {"name": "presentation_rock_left", "semantic_id": 5, "pose": [6.0, 4.0, 0.0, 0.0, 0.0, 0.0], "size": [1.1, 1.1, 1.1], "dynamic": false}
+  ]
+}

@@ -23,6 +23,10 @@
 > **Dataset tooling:** The synchronized sample format, integrity checks, and
 > leakage-free world splitting workflow are documented in
 > [`docs/dataset-tooling.md`](docs/dataset-tooling.md).
+>
+> **Simulation ground truth:** Deterministic semantic layers, scenario
+> manifests, camera metadata, and the evaluation-only boundary are documented
+> in [`docs/simulation-ground-truth.md`](docs/simulation-ground-truth.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
