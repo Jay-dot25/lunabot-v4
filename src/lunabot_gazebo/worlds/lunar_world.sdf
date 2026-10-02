@@ -60,7 +60,7 @@
         <visual name="visual">
           <geometry>
             <mesh>
-              <uri>meshes/lunar_terrain.obj</uri>
+              <uri>meshes/lunar_terrain_collision.obj</uri>
             </mesh>
           </geometry>
           <material>
