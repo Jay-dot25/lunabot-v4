@@ -18,5 +18,6 @@ setup(
     license="Apache-2.0",
     entry_points={"console_scripts": [
         "lunabot_mapping_info = lunabot_mapping.package_info:main",
+        "semantic_fusion_node = lunabot_mapping.semantic_fusion_node:main",
     ]},
 )

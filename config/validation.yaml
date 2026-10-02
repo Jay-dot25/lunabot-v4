@@ -13,7 +13,8 @@
     "tools/validate_ground_truth.py",
     "tools/validate_ml_framework.py",
     "tools/validate_ml_inference.py",
-    "tools/validate_localization.py"
+    "tools/validate_localization.py",
+    "tools/validate_semantic_fusion.py"
   ],
   "phase_validators": [
     "tools/validate_phase_a.py",

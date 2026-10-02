@@ -39,6 +39,10 @@
 > **GPS-denied localization:** EKF sensor fusion, TF ownership, evaluation
 > metrics, and physical-validation boundaries are documented in
 > [`docs/gps-denied-localization.md`](docs/gps-denied-localization.md).
+>
+> **Calibrated semantic fusion:** Timestamped pinhole projection, temporal
+> evidence fusion, hazard precedence, and rolling-map limits are documented in
+> [`docs/calibrated-semantic-fusion.md`](docs/calibrated-semantic-fusion.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before

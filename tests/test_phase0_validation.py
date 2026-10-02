@@ -29,6 +29,7 @@ class ValidationHarnessTests(unittest.TestCase):
             "tools/validate_ml_framework.py",
             "tools/validate_ml_inference.py",
             "tools/validate_localization.py",
+            "tools/validate_semantic_fusion.py",
         ])
 
     def test_config_rejects_missing_fields(self):
