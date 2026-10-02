@@ -27,5 +27,6 @@ class MLInferenceTests(unittest.TestCase):
   source=(ROOT/'src/lunabot_perception/lunabot_perception/terrain_inference_node.py').read_text();setup=(ROOT/'src/lunabot_perception/setup.py').read_text();launch=(ROOT/'src/lunabot_bringup/launch/perception.launch.py').read_text()
   for token in ('ApproximateTimeSynchronizer','desired_encoding=\'rgb8\'','mono8','32FC1','STATE_ERROR','if rclpy.ok()'):self.assertIn(token,source)
   self.assertIn('terrain_inference_node',setup)
+  self.assertIn('numpy>=1.24,<2',(ROOT/'ml/requirements.txt').read_text())
   for mode in ('heuristic','ml','ground_truth'):self.assertIn(mode,launch)
 if __name__=='__main__':unittest.main()

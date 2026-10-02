@@ -30,6 +30,10 @@ Outputs:
 - `/lunabot/terrain/overlay` (`rgb8`)
 - `/lunabot/terrain/inference_status` (`lunabot_msgs/TerrainPrediction`)
 
+The ML environment pins NumPy below 2 because ROS 2 Humble's packaged
+`cv_bridge` extension uses the NumPy 1.x ABI. After changing requirements, run
+`.venv-ml/bin/pip install -r ml/requirements.txt` before starting this node.
+
 The software gate checks contracts and deterministic offline execution. The
 final live FPS and rosbag agreement gate requires a trained production model,
 target machine, and representative bag; no such performance claim is made by
