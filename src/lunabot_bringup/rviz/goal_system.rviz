@@ -1,0 +1,29 @@
+Panels:
+  - Class: rviz_common/Displays
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Fixed Frame: map
+  Displays:
+    - Class: rviz_default_plugins/Map
+      Name: Traversability
+      Topic:
+        Value: /lunabot/traversability/map
+    - Class: rviz_default_plugins/Map
+      Name: Semantic Class
+      Topic:
+        Value: /lunabot/semantic_map/class
+    - Class: rviz_default_plugins/Map
+      Name: Semantic Confidence
+      Topic:
+        Value: /lunabot/semantic_map/confidence
+    - Class: rviz_default_plugins/Path
+      Name: D-Star Lite Path
+      Topic:
+        Value: /lunabot/planning/path
+    - Class: rviz_default_plugins/RobotModel
+      Name: Rover
+  Enabled: true
+Window Geometry:
+  Width: 1280
+  Height: 800

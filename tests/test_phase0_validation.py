@@ -37,6 +37,7 @@ class ValidationHarnessTests(unittest.TestCase):
             "tools/validate_safety_supervisor.py",
             "tools/validate_mission_metrics.py",
             "tools/validate_experiment_framework.py",
+            "tools/validate_final_bringup.py",
         ])
 
     def test_config_rejects_missing_fields(self):
