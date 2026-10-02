@@ -19,5 +19,6 @@ setup(
     entry_points={"console_scripts": [
         "lunabot_control_info = lunabot_control.package_info:main",
         "regulated_path_follower = lunabot_control.path_follower_node:main",
+        "safety_supervisor = lunabot_control.safety_supervisor_node:main",
     ]},
 )

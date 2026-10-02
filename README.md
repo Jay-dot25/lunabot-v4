@@ -57,6 +57,9 @@
 > **Regulated path following:** Production pure-pursuit behavior and the
 > `/cmd_vel_nav` boundary are documented in
 > [`docs/regulated-path-follower.md`](docs/regulated-path-follower.md).
+>
+> **Safety ownership:** Fail-closed command arbitration and emergency-stop
+> behavior are documented in [`docs/safety-supervisor.md`](docs/safety-supervisor.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
