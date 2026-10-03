@@ -898,6 +898,35 @@ wait_for_goal_selection() {
   return 1
 }
 
+wait_for_terrain_plan() {
+  local status_file="$EVIDENCE_DIR/terrain_plan_wait_status.txt"
+  rm -f "$status_file"
+  echo "      waiting for terrain-aware plan after goal selection..."
+  setsid timeout 180 ros2 topic echo /lunabot/terrain/planner/status \
+    --qos-reliability reliable --qos-durability transient_local \
+    > "$status_file" 2>/dev/null &
+  local wait_pid=$!
+  for _ in $(seq 1 180); do
+    if grep -q "TERRAIN_PLAN_PASS" "$status_file" 2>/dev/null; then
+      stop_group "$wait_pid"
+      wait "$wait_pid" 2>/dev/null || true
+      echo "      terrain-aware plan content: PASS"
+      log "validation PASS: TERRAIN_PLAN_PASS after goal selection"
+      return 0
+    fi
+    if ! kill -0 "$wait_pid" 2>/dev/null; then
+      break
+    fi
+    sleep 1
+  done
+  stop_group "$wait_pid"
+  wait "$wait_pid" 2>/dev/null || true
+  echo "      terrain-aware plan content: FAIL"
+  log "validation FAIL: terrain planner did not publish a plan after goal selection"
+  OVERALL="FAIL"
+  return 1
+}
+
 wait_for_dynamic_replan() {
   local status_file="$EVIDENCE_DIR/replan_wait_status.txt"
   rm -f "$status_file"
@@ -1199,7 +1228,12 @@ type_ok "type terrain planner status std_msgs/String" "/lunabot/terrain/planner/
 topic_ok "topic /lunabot/terrain/plan" "/lunabot/terrain/plan"
 topic_ok "topic /lunabot/terrain/planner/status" "/lunabot/terrain/planner/status"
 terrain_plan_status="$(timeout 15 ros2 topic echo /lunabot/terrain/planner/status --qos-reliability reliable --qos-durability transient_local --once 2>/dev/null || true)"
-if printf '%s\n' "$terrain_plan_status" | grep -q "TERRAIN_PLAN_PASS"; then
+if [ "$FINAL_DEMO" = "1" ]; then
+  # A manual-goal run is expected to have no terrain plan until the operator
+  # selects /goal_pose. Defer this content gate until after goal selection.
+  echo "      terrain-aware plan content: WAITING (operator goal required)"
+  log "validation WAIT: terrain plan requires manual goal"
+elif printf '%s\n' "$terrain_plan_status" | grep -q "TERRAIN_PLAN_PASS"; then
   echo "      terrain-aware plan content: PASS"
   log "validation PASS: TERRAIN_PLAN_PASS status"
 else
@@ -1274,6 +1308,7 @@ if [ "$DEMO" = "1" ]; then
   finish_motion_evidence
 elif [ "$FINAL_DEMO" = "1" ]; then
   wait_for_goal_selection || true
+  wait_for_terrain_plan || true
   wait_for_dynamic_replan || true
   wait_for_integration_goal || true
   wait_for_evaluation || true
