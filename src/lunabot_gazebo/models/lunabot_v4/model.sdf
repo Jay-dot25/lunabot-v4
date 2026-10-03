@@ -364,14 +364,16 @@
       <visual name="head"><geometry><box><size>0.28 0.22 0.14</size></box></geometry><material><ambient>0.06 0.06 0.07 1</ambient></material></visual>
 
       <sensor name="rgb_camera" type="camera">
-        <pose relative_to="sensor_head">0.14 0 0 0 0 0</pose>
+        <!-- Tilt the RGB camera down so the lower image field covers the rover's near ground and forward obstacles. -->
+        <pose relative_to="sensor_head">0.14 0 0 0 0.35 0</pose>
         <update_rate>20</update_rate>
         <camera><horizontal_fov>1.047</horizontal_fov><image><width>640</width><height>480</height><format>R8G8B8</format></image><clip><near>0.05</near><far>80</far></clip></camera>
         <always_on>true</always_on><visualize>true</visualize><topic>/lunabot/camera/image_raw</topic>
       </sensor>
 
       <sensor name="depth_camera" type="depth_camera">
-        <pose relative_to="sensor_head">0.14 0 -0.04 0 0 0</pose>
+        <!-- Match the RGB optical axis so depth sees the same lower field. -->
+        <pose relative_to="sensor_head">0.14 0 -0.04 0 0.35 0</pose>
         <update_rate>15</update_rate>
         <camera><horizontal_fov>1.047</horizontal_fov><image><width>640</width><height>480</height></image><clip><near>0.10</near><far>40</far></clip></camera>
         <always_on>true</always_on><visualize>true</visualize><topic>/lunabot/depth/image_raw</topic>

@@ -599,8 +599,9 @@ log "[14/23] mission demonstration observer OK (pid $MISSION_PID)"
 echo "[15/23] Starting static TF (sensor frames)............"
 TF_SPECS=(
   "chassis|sensor_head|0.18 0 0.85 0 0 0"
-  "sensor_head|rgb_camera|0.14 0 0 0 0 0"
-  "sensor_head|depth_camera|0.14 0 -0.04 0 0 0"
+  # Match the physical downward camera tilt in the rover SDF.
+  "sensor_head|rgb_camera|0.14 0 0 0 0.35 0"
+  "sensor_head|depth_camera|0.14 0 -0.04 0 0.35 0"
   "sensor_head|lidar|0.02 0 0.09 0 0.5 0"
   # Gazebo Fortress scopes the LaserScan frame in the message. Keep the
   # Phase B unscoped alias and add the exact frame used by slam_toolbox.
