@@ -31,6 +31,7 @@ class Phase17RvizStageTests(unittest.TestCase):
 
     def test_topics_match_live_stage3_evidence(self):
         text = RVIZ.read_text()
+        self.assertIn('      Topic:\n        Depth: 5', text)
         self.assertIn('Value: /lunabot/camera/image_raw', text)
         self.assertIn('Value: /lunabot/lidar/scan', text)
         self.assertIn('Value: /odometry/filtered', text)
