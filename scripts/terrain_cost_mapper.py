@@ -46,6 +46,10 @@ class TerrainCostMapper(Node):
         self.declare_parameter("unknown_cost", 80)
         self.declare_parameter("obstacle_cost", 100)
         self.declare_parameter("inflation_radius", 0.30)
+        # Conservative circular footprint radius for the rover chassis. Cells
+        # inside this radius around a sensed obstacle are blocked, not merely
+        # assigned a soft traversal penalty.
+        self.declare_parameter("robot_radius", 0.55)
 
         get = self.get_parameter
         self.semantic_topic = str(get("semantic_topic").value)
@@ -56,6 +60,7 @@ class TerrainCostMapper(Node):
         self.unknown_cost = max(0, min(100, int(get("unknown_cost").value)))
         self.obstacle_cost = max(0, min(100, int(get("obstacle_cost").value)))
         self.inflation_radius = max(0.0, float(get("inflation_radius").value))
+        self.robot_radius = max(0.0, float(get("robot_radius").value))
 
         input_qos = QoSProfile(depth=1)
         input_qos.reliability = ReliabilityPolicy.RELIABLE
@@ -96,7 +101,10 @@ class TerrainCostMapper(Node):
 
     def _inflate(self, costs: list[int], width: int, height: int,
                  resolution: float) -> tuple[int, int]:
-        radius_cells = int(math.ceil(self.inflation_radius / max(resolution, 1e-6)))
+        resolution = max(resolution, 1e-6)
+        halo_cells = int(math.ceil(self.inflation_radius / resolution))
+        footprint_cells = int(math.ceil(self.robot_radius / resolution))
+        radius_cells = max(halo_cells, footprint_cells)
         if radius_cells <= 0:
             return 0, 0
         obstacles = [i for i, value in enumerate(costs)
@@ -115,10 +123,16 @@ class TerrainCostMapper(Node):
                     target = y * width + x
                     if target == index:
                         continue
-                    # The halo remains high-cost but drops with distance; an
-                    # existing obstacle or higher cost is never overwritten.
-                    halo = max(self.terrain_cost + 1,
-                               int(self.obstacle_cost - 35.0 * distance / radius_cells))
+                    # A cell inside the rover footprint must be blocked. A
+                    # softer outer halo still guides A* toward wider routes.
+                    if distance <= footprint_cells:
+                        halo = self.obstacle_cost
+                    else:
+                        halo = max(
+                            self.terrain_cost + 1,
+                            int(self.obstacle_cost - 35.0 * distance /
+                                max(1, halo_cells)))
+                    # An existing obstacle or higher cost is never overwritten.
                     if halo > costs[target]:
                         costs[target] = min(self.obstacle_cost, halo)
                         inflated += 1
@@ -175,7 +189,7 @@ class TerrainCostMapper(Node):
             f"terrain_cells={terrain_count} unknown_cells={unknown_count} "
             f"obstacle_cells={obstacle_count} sensed_obstacles={sensed_obstacles} "
             f"inflated_cells={inflated_count} resolution={msg.info.resolution:.2f} "
-            f"frame={msg.header.frame_id}")
+            f"robot_radius={self.robot_radius:.2f} frame={msg.header.frame_id}")
 
 
 def main(args=None) -> None:

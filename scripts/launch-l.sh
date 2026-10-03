@@ -467,12 +467,14 @@ log "[8/23] semantic mapper OK (pid $MAPPER_PID)"
 # ------------------------------------------------------------
 echo "[9/23] Starting terrain cost-map generator........."
 : > "$EVIDENCE_DIR/cost_mapping.log"
+# Reserve the rover footprint so A* cannot choose a visually open but
+# physically too-narrow gap between the rock and the presentation obstacle.
 setsid python3 "$COST_PATH" --ros-args \
   -p semantic_topic:=/lunabot/terrain/semantic_map \
   -p obstacle_topic:=/lunabot/obstacles/map \
   -p cost_topic:=/lunabot/terrain/cost_map \
   -p status_topic:=/lunabot/terrain/cost_map/status \
-  -p inflation_radius:=0.30 \
+  -p inflation_radius:=0.80 -p robot_radius:=0.55 \
   -p use_sim_time:=true \
   >> "$EVIDENCE_DIR/cost_mapping.log" 2>&1 &
 COST_PID=$!

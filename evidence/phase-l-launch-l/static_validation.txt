@@ -91,6 +91,7 @@ RESULT: 105/105 checks passed - ALL PASS
 [PASS] mission supervisor does not publish a goal
 [PASS] obstacle detector is observation-only
 [PASS] cost map consumes sensed obstacle overlay
+[PASS] cost map blocks the rover footprint
 [PASS] Phase L starts mission supervisor directly
 [PASS] Phase L validates mission status type
 [PASS] Phase L validates mission status topic
@@ -109,4 +110,4 @@ RESULT: 105/105 checks passed - ALL PASS
 [PASS] docs contain final-phase gate
 [PASS] validator is honest about runtime
 
-RESULT: 106/106 checks passed
+RESULT: 107/107 checks passed

@@ -196,8 +196,12 @@ obstacle = read("scripts/obstacle_detector.py")
 check("obstacle detector is observation-only", "LaserScan" in obstacle and
       "create_publisher(Twist" not in obstacle and
       "OBSTACLE_DETECTED" in obstacle)
-check("cost map consumes sensed obstacle overlay", "obstacle_topic" in read("scripts/terrain_cost_mapper.py") and
-      "sensed_obstacles" in read("scripts/terrain_cost_mapper.py"))
+cost_mapper = read("scripts/terrain_cost_mapper.py")
+check("cost map consumes sensed obstacle overlay", "obstacle_topic" in cost_mapper and
+      "sensed_obstacles" in cost_mapper)
+check("cost map blocks the rover footprint", "robot_radius" in cost_mapper and
+      "distance <= footprint_cells" in cost_mapper and
+      "inflation_radius:=0.80 -p robot_radius:=0.55" in launch)
 
 # Launcher integration and runtime acceptance.
 check("Phase L starts mission supervisor directly", 'python3 "$MISSION_PATH" --ros-args' in launch)
