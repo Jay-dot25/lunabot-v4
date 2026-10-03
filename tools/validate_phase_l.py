@@ -131,9 +131,20 @@ check("Phase L preserves Phase K evaluator", "phase_k_evaluator.py" in launch an
 check("Phase L starts real obstacle detector", 'python3 "$OBSTACLE_PATH" --ros-args' in launch and
       "/lunabot/obstacles/status" in launch and "/lunabot/obstacles/map" in launch)
 check("Phase L cleans obstacle detector", 'stop_group "$OBSTACLE_PID"' in launch)
+goal_subscriber_line = next(
+    (line for line in launch.splitlines()
+     if "setsid timeout 300 ros2 topic echo /goal_pose" in line), "")
+goal_subscriber_args = next(
+    (line for line in launch.splitlines()
+     if "--qos-reliability reliable --qos-durability volatile --once" in line), "")
 check("Phase L supports manual final mode", "FINAL_DEMO" in launch and
       'AUTO_GOAL="${AUTO_GOAL:-false}"' in launch and
       "wait_for_goal_selection" in launch)
+check("manual goal subscriber keeps ROS arguments in one command",
+      goal_subscriber_line.endswith("\\") and
+      not goal_subscriber_line.endswith("\\\\") and
+      goal_subscriber_args.strip().endswith("\\") and
+      not goal_subscriber_args.strip().endswith("\\\\"))
 check("Phase L uses its own RViz config", "rviz/phase_l.rviz" in launch and
       "rviz/phase_k.rviz" not in launch)
 check("RViz provides manual Set Goal tool", "rviz_default_plugins/SetGoal" in rviz and

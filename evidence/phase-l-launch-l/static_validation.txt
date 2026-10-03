@@ -65,6 +65,7 @@ RESULT: 105/105 checks passed - ALL PASS
 [PASS] Phase L starts real obstacle detector
 [PASS] Phase L cleans obstacle detector
 [PASS] Phase L supports manual final mode
+[PASS] manual goal subscriber keeps ROS arguments in one command
 [PASS] Phase L uses its own RViz config
 [PASS] RViz provides manual Set Goal tool
 [PASS] RViz shows sensed obstacle map
@@ -108,4 +109,4 @@ RESULT: 105/105 checks passed - ALL PASS
 [PASS] docs contain final-phase gate
 [PASS] validator is honest about runtime
 
-RESULT: 105/105 checks passed
+RESULT: 106/106 checks passed
