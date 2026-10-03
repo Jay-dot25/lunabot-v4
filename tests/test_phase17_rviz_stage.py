@@ -14,13 +14,14 @@ class Phase17RvizStageTests(unittest.TestCase):
         ast.parse(text)
         self.assertIn('phase17_tf_localization.launch.py', text)
         self.assertIn("package='rviz2'", text)
+        self.assertIn('TimerAction(period=8.0', text)
         for excluded in ('terrain_inference', 'semantic_fusion', 'traversability',
                          'dstar', 'path_follower', 'mission_metrics'):
             self.assertNotIn(excluded, text)
 
     def test_config_contains_only_validated_display_classes(self):
         text = RVIZ.read_text()
-        expected = {'Grid': 1, 'TF': 2, 'Camera': 1, 'LaserScan': 1,
+        expected = {'Grid': 1, 'TF': 2, 'Image': 1, 'LaserScan': 1,
                     'Odometry': 1}
         for display, count in expected.items():
             self.assertEqual(text.count('Class: rviz_default_plugins/' + display), count)
