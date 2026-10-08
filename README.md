@@ -66,6 +66,10 @@
 >
 > **Experiments:** Reproducible factorial trials and confidence-interval reports
 > are documented in [`docs/experiment-framework.md`](docs/experiment-framework.md).
+>
+> **Deep-learning end to end:** Labelled-data capture, training, held-out
+> evaluation, ONNX export and ROS integration, with current gaps, are documented
+> in [`docs/deep-learning-end-to-end.md`](docs/deep-learning-end-to-end.md).
 
 12-phase development of an autonomous lunar rover, phase-gated: each phase
 has its own **independent** launch command, is validated at runtime before
