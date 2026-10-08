@@ -1,0 +1,130 @@
+<?xml version="1.0" ?>
+<!--
+  Standalone Ignition Gazebo Fortress probe for the semantic segmentation camera.
+  It is NOT part of the rover or the navigation stack.
+
+  Labels use the terrain class IDs from config/terrain_classes.yaml:
+    ground plane  -> 1 (flat_regolith)
+    rock box      -> 4 (small_rock)
+    boulder       -> 5 (large_rock)
+  Unlabelled models are background.
+
+  Run (on the Ubuntu workstation, with a display or GPU rendering):
+    ign gazebo -r tools/probes/segmentation_probe.sdf
+-->
+<sdf version="1.8">
+  <world name="segmentation_probe">
+    <physics name="default_physics" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>20 20</size></plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>20 20</size></plane>
+          </geometry>
+          <material>
+            <ambient>0.6 0.55 0.45 1</ambient>
+            <diffuse>0.6 0.55 0.45 1</diffuse>
+          </material>
+          <plugin filename="ignition-gazebo-label-system" name="ignition::gazebo::systems::Label">
+            <label>1</label>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock">
+      <static>true</static>
+      <pose>0 2.0 0.3 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.6 0.6 0.6</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.6 0.6 0.6</size></box></geometry>
+          <material>
+            <ambient>0.9 0.4 0.1 1</ambient>
+            <diffuse>0.9 0.4 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="ignition-gazebo-label-system" name="ignition::gazebo::systems::Label">
+        <label>4</label>
+      </plugin>
+    </model>
+
+    <model name="boulder">
+      <static>true</static>
+      <pose>1.2 2.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.5</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.5</radius></sphere></geometry>
+          <material>
+            <ambient>0.8 0.1 0.1 1</ambient>
+            <diffuse>0.8 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="ignition-gazebo-label-system" name="ignition::gazebo::systems::Label">
+        <label>5</label>
+      </plugin>
+    </model>
+
+    <!-- Camera carrier: a small static link looking along +Y toward the objects. -->
+    <model name="probe_camera">
+      <static>true</static>
+      <pose>0 -1.0 1.0 0 0.3 1.5708</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.1</mass>
+          <inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia>
+        </inertial>
+        <sensor name="semantic_camera" type="segmentation">
+          <topic>/probe/segmentation</topic>
+          <camera>
+            <segmentation_type>semantic</segmentation_type>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+            </image>
+            <clip>
+              <near>0.05</near>
+              <far>80</far>
+            </clip>
+          </camera>
+          <always_on>1</always_on>
+          <update_rate>5</update_rate>
+          <visualize>true</visualize>
+        </sensor>
+      </link>
+    </model>
+  </world>
+</sdf>
