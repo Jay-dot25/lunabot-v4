@@ -24,6 +24,7 @@ from nav_msgs.msg import Odometry
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import Imu
 from std_msgs.msg import String
 
 
@@ -38,7 +39,13 @@ class OdometryMonitor(Node):
         # Gazebo bridge publishes odometry with sensor-style best-effort QoS.
         self.create_subscription(Odometry, '/lunabot/odom', self._odom_cb,
                                  qos_profile_sensor_data)
+        self.create_subscription(Imu, '/lunabot/imu', self._imu_cb,
+                                 qos_profile_sensor_data)
         self.samples = 0
+        self.imu_samples = 0
+        self.last_imu_wz = 0.0
+        self.fused_yaw = None
+        self.max_yaw_slip_rate = 0.0
         self.first_wall = None
         self.last_wall = None
         self.first_sim = None
@@ -81,6 +88,11 @@ class OdometryMonitor(Node):
     def _unwrap(delta):
         return math.atan2(math.sin(delta), math.cos(delta))
 
+    def _imu_cb(self, msg: Imu):
+        if math.isfinite(msg.angular_velocity.z):
+            self.last_imu_wz = float(msg.angular_velocity.z)
+        self.imu_samples += 1
+
     def _odom_cb(self, msg):
         now = time.time()
         sim_time = self._stamp_seconds(msg.header.stamp)
@@ -93,6 +105,17 @@ class OdometryMonitor(Node):
             yaw_step = self._unwrap(yaw - self.last_yaw)
             self.total_distance += step
             self.total_yaw += yaw_step
+            dt_sim = max(0.0, sim_time - (self.last_sim or sim_time))
+            if self.imu_samples > 0 and self.fused_yaw is not None and dt_sim > 0.0:
+                pred_yaw = self.fused_yaw + self.last_imu_wz * dt_sim
+                err_yaw = self._unwrap(yaw - pred_yaw)
+                self.fused_yaw = self._unwrap(pred_yaw + 0.10 * err_yaw)
+                slip_rate = abs(msg.twist.twist.angular.z - self.last_imu_wz)
+                self.max_yaw_slip_rate = max(self.max_yaw_slip_rate, slip_rate)
+            else:
+                self.fused_yaw = yaw
+        else:
+            self.fused_yaw = yaw
         self.max_step = max(self.max_step, step)
         speed = abs(msg.twist.twist.linear.x)
         self.max_speed = max(self.max_speed, speed)
@@ -152,6 +175,8 @@ class OdometryMonitor(Node):
             f'max_pose_step       : {self.max_step:.6f} m',
             f'max_abs_linear_speed: {self.max_speed:.6f} m/s',
             f'avg_abs_linear_speed: {avg_speed:.6f} m/s',
+            f'imu_samples         : {self.imu_samples}',
+            f'max_yaw_slip_rate   : {self.max_yaw_slip_rate:.6f} rad/s',
             f'frame_ids           : {sorted(self.frame_ids)}',
             f'child_frame_ids     : {sorted(self.child_frame_ids)}',
             f'continuity_frames   : {"PASS" if frames_ok else "FAIL"}',

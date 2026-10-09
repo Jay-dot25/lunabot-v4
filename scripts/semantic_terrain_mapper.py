@@ -30,7 +30,7 @@ from rclpy.time import Time
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image
-from std_msgs.msg import String
+from std_msgs.msg import Float64, String
 import tf2_ros
 
 
@@ -60,6 +60,12 @@ class SemanticTerrainMapper(Node):
         self.declare_parameter("max_depth", 8.0)
         self.declare_parameter("sample_stride", 8)
         self.declare_parameter("update_rate", 2.0)
+        self.declare_parameter("camera_offset_x", 0.0)
+        self.declare_parameter("camera_offset_y", 0.0)
+        self.declare_parameter("camera_offset_z", 0.81)
+        self.declare_parameter("camera_pitch", 0.0)
+        self.declare_parameter("mast_pan_topic", "/lunabot/mast/pan")
+        self.declare_parameter("mast_tilt_topic", "/lunabot/mast/tilt")
 
         get = self.get_parameter
         self.mask_topic = str(get("mask_topic").value)
@@ -77,11 +83,23 @@ class SemanticTerrainMapper(Node):
         self.max_depth = max(0.5, float(get("max_depth").value))
         self.sample_stride = max(1, int(get("sample_stride").value))
         self.update_rate = max(0.2, float(get("update_rate").value))
+        self.camera_offset_x = float(get("camera_offset_x").value)
+        self.camera_offset_y = float(get("camera_offset_y").value)
+        self.camera_offset_z = float(get("camera_offset_z").value)
+        self.camera_pitch = float(get("camera_pitch").value)
+        self.mast_pan_topic = str(get("mast_pan_topic").value)
+        self.mast_tilt_topic = str(get("mast_tilt_topic").value)
+        self.mast_pan_yaw = 0.0
+        self.mast_tilt_pitch = 0.0
 
         self.mask_sub = self.create_subscription(
             Image, self.mask_topic, self._mask_callback, qos_profile_sensor_data)
         self.depth_sub = self.create_subscription(
             Image, self.depth_topic, self._depth_callback, qos_profile_sensor_data)
+        self.mast_pan_sub = self.create_subscription(
+            Float64, self.mast_pan_topic, self._mast_pan_callback, 10)
+        self.mast_tilt_sub = self.create_subscription(
+            Float64, self.mast_tilt_topic, self._mast_tilt_callback, 10)
         map_qos = QoSProfile(depth=1)
         map_qos.reliability = ReliabilityPolicy.RELIABLE
         map_qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
@@ -114,6 +132,14 @@ class SemanticTerrainMapper(Node):
 
     def _depth_callback(self, msg: Image) -> None:
         self.latest_depth = msg
+
+    def _mast_pan_callback(self, msg: Float64) -> None:
+        if math.isfinite(msg.data):
+            self.mast_pan_yaw = float(msg.data)
+
+    def _mast_tilt_callback(self, msg: Float64) -> None:
+        if math.isfinite(msg.data):
+            self.mast_tilt_pitch = float(msg.data)
 
     def publish_status(self, text: str) -> None:
         if text == self.last_status:
@@ -198,15 +224,18 @@ class SemanticTerrainMapper(Node):
         if mask is None or depth is None or mask.width <= 0 or mask.height <= 0:
             return
         stamp_ns = self._stamp_ns(mask)
-        if stamp_ns <= self.last_mask_stamp:
-            return
         pose = self._lookup_robot_pose()
         if pose is None:
             return
         self.last_mask_stamp = stamp_ns
         robot_x, robot_y, robot_yaw = pose
+        effective_yaw = robot_yaw + self.mast_pan_yaw
+        effective_pitch = self.camera_pitch + self.mast_tilt_pitch
+        wide_pan_sweep = abs(self.mast_pan_yaw) > 0.22 or abs(self.mast_tilt_pitch) > 0.12
         fx = mask.width / (2.0 * math.tan(self.horizontal_fov / 2.0))
+        fy = fx
         cx = (mask.width - 1) / 2.0
+        cy = (mask.height - 1) / 2.0
         samples = 0
         for y in range(0, mask.height, self.sample_stride):
             depth_y = min(depth.height - 1, int(y * depth.height / mask.height))
@@ -218,11 +247,20 @@ class SemanticTerrainMapper(Node):
                 distance = self._depth_at(depth, depth_x, depth_y)
                 if not math.isfinite(distance) or distance < 0.1 or distance > self.max_depth:
                     continue
+                if label == OBSTACLE:
+                    if wide_pan_sweep:
+                        continue
+                    if y < int(0.35 * mask.height) or distance > 2.2:
+                        continue
+                    if mask.width >= 160 and (y < int(0.42 * mask.height) or distance > 1.40):
+                        continue
                 bearing = math.atan2((x - cx), fx)
-                local_x = distance * math.cos(bearing)
-                local_y = distance * math.sin(bearing)
-                map_x = robot_x + math.cos(robot_yaw) * local_x - math.sin(robot_yaw) * local_y
-                map_y = robot_y + math.sin(robot_yaw) * local_x + math.cos(robot_yaw) * local_y
+                vert_angle = math.atan2((y - cy) * math.cos(bearing), fy) + effective_pitch
+                ground_distance = max(0.05, distance * math.cos(vert_angle))
+                local_x = self.camera_offset_x + ground_distance * math.cos(bearing)
+                local_y = self.camera_offset_y - ground_distance * math.sin(bearing)
+                map_x = robot_x + math.cos(effective_yaw) * local_x - math.sin(effective_yaw) * local_y
+                map_y = robot_y + math.sin(effective_yaw) * local_x + math.cos(effective_yaw) * local_y
                 index = self._grid_index(map_x, map_y)
                 if index is None:
                     continue

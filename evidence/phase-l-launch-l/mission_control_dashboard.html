@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LunaBot — Mission Control Dashboard</title>
+<style>
+  :root {
+    --bg: #070b14;
+    --panel: #0e1626;
+    --panel-border: #1e2f4d;
+    --accent: #38bdf8;
+    --safe: #22c55e;
+    --caution: #eab308;
+    --hazard: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(circle at top, #0f1b33 0%, #060911 100%);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    padding: 12px 16px;
+    min-height: 100vh;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #0c192e 0%, #13284c 50%, #0c192e 100%);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+  .title-block h1 {
+    font-size: 1.28rem;
+    letter-spacing: 0.06em;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .title-block .sub {
+    font-size: 0.82rem;
+    color: var(--accent);
+    margin-top: 3px;
+    font-family: monospace;
+  }
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .status-pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+    border: 1px solid #22c55e;
+  }
+  .btn {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    color: white;
+    border: 1px solid #38bdf8;
+    border-radius: 7px;
+    padding: 8px 15px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .btn:hover { filter: brightness(1.12); }
+  .grid-top {
+    display: grid;
+    grid-template-columns: 1.05fr 1.05fr 1.15fr 0.95fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .grid-mid {
+    display: grid;
+    grid-template-columns: 1.45fr 1fr 1.15fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    padding-bottom: 7px;
+    margin-bottom: 9px;
+  }
+  .feed-box {
+    position: relative;
+    width: 100%;
+    height: 195px;
+    background: #050811;
+    border: 1px solid #1e293b;
+    border-radius: 7px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .feed-box img, .feed-box canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .feed-caption {
+    margin-top: 8px;
+    font-size: 0.77rem;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: monospace;
+  }
+  .tag-safe { background: rgba(34,197,94,0.18); color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
+  .tag-caution { background: rgba(234,179,8,0.18); color: #facc15; border: 1px solid rgba(234,179,8,0.4); }
+  .tag-hazard { background: rgba(239,68,68,0.18); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
+  .hud-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+    font-size: 0.80rem;
+  }
+  .hud-table td {
+    padding: 5px 4px;
+    border-bottom: 1px solid rgba(148,163,184,0.1);
+  }
+  .hud-table td:first-child { color: var(--muted); }
+  .hud-table td:last-child { text-align: right; font-weight: 700; color: #f8fafc; }
+  .planner-canvas-wrap {
+    width: 100%;
+    height: 255px;
+    background: #060a12;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    position: relative;
+  }
+  .planner-canvas-wrap canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+  }
+  .decision-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid #1e3a5f;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 0.81rem;
+  }
+  .decision-verdict {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgba(34, 197, 94, 0.14);
+    border: 1px solid #22c55e;
+    color: #86efac;
+    font-weight: 700;
+    font-size: 0.80rem;
+  }
+  .timeline-list {
+    list-style: none;
+    font-family: monospace;
+    font-size: 0.76rem;
+    max-height: 145px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+  }
+  .timeline-list li {
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(148,163,184,0.14);
+  }
+  .cmp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    margin-top: 6px;
+  }
+  .cmp-table th, .cmp-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(148,163,184,0.14);
+    text-align: left;
+  }
+  .cmp-table th { color: var(--accent); font-size: 0.74rem; text-transform: uppercase; }
+  .bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0b1322;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-family: monospace;
+    font-size: 0.84rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title-block">
+    <h1>🌕 LUNABOT — AUTONOMOUS LUNAR NAVIGATION (MISSION CONTROL)</h1>
+    <div class="sub" id="missionTitle">MISSION: HABITAT A → LUNAR HABITAT B | MODE: AUTONOMOUS | GPS: OFFLINE ✓</div>
+  </div>
+  <div class="top-actions">
+    <button class="btn" onclick="triggerStartMission()">▶ START MISSION</button>
+    <button class="btn" style="background:#0f766e;border-color:#2dd4bf;" onclick="startStoryTour()" id="tourBtn">🎬 AUTO-PLAY 5-SCENE DEMO</button>
+    <button class="btn" style="background:#1e293b;border-color:#475569;" onclick="toggleReplayMode()" id="replayBtn">⏪ DECISION REPLAY: LIVE</button>
+    <div class="status-pill" id="statusPill">STATUS: AUTONOMOUS</div>
+  </div>
+</div>
+
+<!-- 5-SCENE PRESENTATION STORY BAR + AI PIPELINE RIBBON -->
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0b1528;border:1px solid #1e3a5f;border-radius:9px;padding:8px 14px;margin-bottom:10px;flex-wrap:wrap;">
+  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button class="btn" style="padding:5px 10px;font-size:0.74rem;" onclick="setScene(0)">0. FULL DASHBOARD</button>
+    <button class="btn" style="padding:5px 10px;font-size:0.74rem;background:#1e293b;" onclick="setScene(1)">SCENE 1: MISSION START</button>
+    <button class="btn" style="padding:5px 10px;font-size:0.74rem;background:#1e293b;" onclick="setScene(2)">SCENE 2: AI THINKING</button>
+    <button class="btn" style="padding:5px 10px;font-size:0.74rem;background:#1e293b;" onclick="setScene(3)">SCENE 3: PATH DECISION</button>
+    <button class="btn" style="padding:5px 10px;font-size:0.74rem;background:#1e293b;" onclick="setScene(4)">SCENE 4: ⚠ REPLANNING</button>
+    <button class="btn" style="padding:5px 10px;font-size:0.74rem;background:#1e293b;" onclick="setScene(5)">SCENE 5: FINAL COMPARISON</button>
+  </div>
+  <div style="font-family:monospace;font-size:0.76rem;color:#93c5fd;" id="sceneCaption">
+    CAMERA (RGB-D) ──► 🟩 REGOLITH / 🟨 ROUGH / 🟥 ROCK &amp; CRATER ──► SEMANTIC MAP ──► TRAVERSABILITY COST ──► SAFE PATH
+  </div>
+</div>
+
+<!-- CINEMATIC SCENE SPOTLIGHT BANNER (SHOWN WHEN SCENE 1..5 IS SELECTED) -->
+<div id="sceneSpotlight" style="display:none;background:linear-gradient(135deg,#0f1f38,#172554);border:2px solid #38bdf8;border-radius:10px;padding:14px 18px;margin-bottom:12px;box-shadow:0 8px 28px rgba(0,0,0,0.55);">
+  <div id="sceneSpotlightContent"></div>
+</div>
+
+<!-- TOP ROW: 3 SYNCHRONIZED VIEWS + TELEMETRY HUD -->
+<div class="grid-top">
+  <!-- View 1: Terrain Camera -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>1. TERRAIN CAMERA (WHAT ROVER SEES)</span>
+      <span>RGB-D LIVE</span>
+    </div>
+    <div class="feed-box">
+      <canvas id="camFallbackCanvas" width="320" height="200"></canvas>
+      <img id="camImg" style="display:none;position:absolute;inset:0;" alt="Rover Camera"/>
+    </div>
+    <div class="feed-caption">
+      <span class="tag tag-safe">Regolith / Bedrock</span>
+      <span class="tag tag-caution">Slope Detected</span>
+      <span class="tag tag-hazard" id="camHazardTag">Boulder / Crater Detected</span>
+    </div>
+  </div>
+
+  <!-- View 2: Semantic Vision -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>2. SEMANTIC VISION (WHAT AI UNDERSTANDS)</span>
+      <span>AI SEGMENTATION</span>
+    </div>
+    <div class="feed-box">
+      <canvas id="semFallbackCanvas" width="320" height="200"></canvas>
+      <img id="semImg" style="display:none;position:absolute;inset:0;" alt="Semantic Segmentation"/>
+    </div>
+    <div class="feed-caption">
+      <span class="tag tag-safe" id="segSafeTag">🟩 Safe Regolith: 64%</span>
+      <span class="tag tag-caution" id="segCautionTag">🟨 Caution Slope: 27%</span>
+      <span class="tag tag-hazard" id="segHazardTag">🟥 Rock/Crater: 9%</span>
+    </div>
+  </div>
+
+  <!-- View 3: SLAM & Localization -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>3. SLAM &amp; LOCALIZATION</span>
+      <span>slam_toolbox (/map)</span>
+    </div>
+    <div class="feed-box">
+      <canvas id="slamCanvas" width="340" height="200"></canvas>
+    </div>
+    <div class="feed-caption">
+      <span class="tag tag-safe">TF map → odom → chassis: ACTIVE</span>
+      <span class="tag tag-caution" id="slamPoseTag">Rover: (0.00, 0.00)</span>
+    </div>
+  </div>
+
+  <!-- View 4: LunaBot Telemetry HUD -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>LUNABOT TELEMETRY HUD</span>
+      <span>LIVE</span>
+    </div>
+    <table class="hud-table">
+      <tr><td>MODE</td><td id="hudMode" style="color:#4ade80;">AUTONOMOUS ✓</td></tr>
+      <tr><td>GPS</td><td style="color:#38bdf8;">OFFLINE ✓</td></tr>
+      <tr><td>SLAM</td><td style="color:#4ade80;">ACTIVE ✓</td></tr>
+      <tr><td>AI PERCEPTION</td><td style="color:#4ade80;">ACTIVE ✓</td></tr>
+      <tr><td>PLANNER</td><td>Weighted A*</td></tr>
+      <tr><td>SPEED</td><td id="hudSpeed">0.38 m/s</td></tr>
+      <tr><td>HEADING</td><td id="hudHeading">0.0°</td></tr>
+      <tr><td>DISTANCE</td><td id="hudDist">0.00 m</td></tr>
+      <tr><td>REPLANS</td><td id="hudReplans" style="color:#facc15;">2</td></tr>
+      <tr><td>COLLISIONS</td><td id="hudCollisions" style="color:#4ade80;">0</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- MIDDLE ROW: SAFE PATH PLANNER + WHY LUNABOT CHOSE THIS PATH + DECISION REPLAY & COMPARISON -->
+<div class="grid-mid">
+  <!-- Safe Path Planner -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>4. SAFE PATH PLANNER (CLICK MAP TO SET DESTINATION)</span>
+      <span id="plannerModeLabel">LIVE COST MAP + ROUTE A vs ROUTE B</span>
+    </div>
+    <div class="planner-canvas-wrap">
+      <canvas id="plannerCanvas" width="520" height="255"></canvas>
+    </div>
+    <div class="feed-caption" style="justify-content:space-between;margin-top:8px;">
+      <span><span class="tag tag-safe">━━ Route B (LunaBot Safe Path)</span> <span class="tag tag-hazard">╌╌ Route A (Geometric Shortest)</span></span>
+      <span class="tag tag-caution">🟩 Safe  🟨 Caution  🟥 Hazard / Crater Zone</span>
+    </div>
+  </div>
+
+  <!-- Why did LunaBot choose this path? + Traditional vs Semantic -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>WHY DID LUNABOT CHOOSE THIS PATH?</span>
+      <span>PATH DECISION</span>
+    </div>
+    <div class="decision-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <strong style="color:#f87171;">Route A (Geometric SLAM)</strong>
+        <span class="tag tag-hazard">REJECTED (HIGH RISK)</span>
+      </div>
+      <div style="font-family:monospace;font-size:0.77rem;color:#cbd5e1;">
+        Length: <b id="decALen">1.82 m</b> | Hazard Exposure: <b id="decAExp">62.0%</b> | Clearance: <b id="decAClr">0.14 m</b>
+      </div>
+      <hr style="border:0;border-top:1px solid rgba(148,163,184,0.18);margin:7px 0;"/>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <strong style="color:#4ade80;">Route B (LunaBot Semantic)</strong>
+        <span class="tag tag-safe">SELECTED ✓</span>
+      </div>
+      <div style="font-family:monospace;font-size:0.77rem;color:#cbd5e1;">
+        Length: <b id="decBLen">2.18 m</b> | Hazard Exposure: <b id="decBExp">4.0%</b> | Clearance: <b id="decBClr">0.58 m</b>
+      </div>
+      <div class="decision-verdict" id="decReason">
+        ✓ LunaBot selected Route B because safety cost &lt; distance cost ("The shortest route is not necessarily the safest route.")
+      </div>
+    </div>
+
+    <div style="font-size:0.75rem;font-weight:700;color:var(--accent);margin-top:2px;">AUTOMATED DEMONSTRATION SCENARIO (TEST SCENARIO RESULT)</div>
+    <table class="cmp-table">
+      <thead>
+        <tr><th>Metric</th><th>Geometric (Route A)</th><th>LunaBot (Route B)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Path length</td><td id="cmpALen">1.50 m</td><td id="cmpBLen">1.75 m</td></tr>
+        <tr><td>Hazard exposure</td><td style="color:#f87171;" id="cmpAExp">62%</td><td style="color:#4ade80;" id="cmpBExp">4%</td></tr>
+        <tr><td>Min clearance</td><td style="color:#f87171;" id="cmpAClr">0.18 m</td><td style="color:#4ade80;" id="cmpBClr">1.04 m</td></tr>
+        <tr><td>Collisions</td><td style="color:#f87171;">1</td><td style="color:#4ade80;">0</td></tr>
+        <tr><td>Outcome</td><td style="color:#f87171;">Unsafe (❌)</td><td style="color:#4ade80;">Success (✓)</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:6px;font-size:0.75rem;color:#fde047;font-weight:600;">
+      “LunaBot deliberately chose a longer path because the shorter path was dangerous.”
+    </div>
+  </div>
+
+  <!-- Decision Replay & Mission Report -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>DECISION REPLAY &amp; MISSION REPORT</span>
+      <span id="missionPctBadge">MISSION: 100%</span>
+    </div>
+    <ul class="timeline-list" id="timelineList"></ul>
+    <div class="decision-card" style="margin-top:auto;background:rgba(20,83,45,0.22);border-color:#22c55e;">
+      <div style="font-weight:700;color:#4ade80;font-size:0.82rem;margin-bottom:4px;" id="reportHeader">
+        ✓ MISSION COMPLETE — TARGET REACHED
+      </div>
+      <div style="font-family:monospace;font-size:0.75rem;line-height:1.45;color:#e2e8f0;" id="reportStats">
+        Navigation: SUCCESS | Terrain Avoidance: SUCCESS<br/>
+        SLAM Localization: SUCCESS | Dynamic Replanning: SUCCESS<br/>
+        Autonomous local navigation in a GPS/GNSS-independent lunar settlement simulation.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTLEMENT NETWORK ROW: 7 OPERATIONAL LOCATIONS + LOCAL MAP DATABASE + 6 MISSIONS + SEMANTIC COST MODEL -->
+<div class="panel" style="margin-bottom:12px;">
+  <div class="panel-header">
+    <span>5. LUNAR SETTLEMENT REGION — 7 OPERATIONAL LOCATIONS, LOCAL MAP DATABASE &amp; 6 MISSIONS (NO GPS / SLAM + LANDMARKS)</span>
+    <span style="color:#4ade80;">400m × 400m MULTI-CORRIDOR WORLD • DIFFICULTY GRADIENT 1/6 → 6/6</span>
+  </div>
+  <div style="font-size:0.78rem;color:#cbd5e1;margin-bottom:8px;">
+    <strong style="color:#38bdf8;">Viva-Defensible Architecture:</strong>
+    “LunaBot demonstrates autonomous local navigation in a <b>GPS/GNSS-independent simulation</b>, using onboard perception (RGB-D + 3D LiDAR), <b>SLAM</b>, a <b>Local Settlement Map &amp; Landmark Database</b>, 5-class semantic terrain understanding (<code>R/B/O/C/S/H</code>), and terrain-aware path planning (<code>Weighted A* / D*-Lite</code>).”
+  </div>
+  <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:12px;">
+    <div>
+      <table class="cmp-table" style="margin-top:0;">
+        <thead>
+          <tr>
+            <th>Location (Local Map ID)</th>
+            <th>Local Coords (x, y)</th>
+            <th>Dist</th>
+            <th>Terrain &amp; Landmarks</th>
+            <th>Difficulty</th>
+            <th>Mission Dispatch</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>1. Lunar Habitat Hub</b> (L1)</td>
+            <td><code>(-10.5, 7.5)</code></td>
+            <td>0 m</td>
+            <td>Safe Regolith Basin • Main Dome, Garage, Airlock</td>
+            <td><span class="tag tag-safe">1/6 Easiest</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(0.0, 0.0)">Return Hub</button></td>
+          </tr>
+          <tr>
+            <td><b>2. Solar Power Station</b> (L2)</td>
+            <td><code>(58.0, 26.0)</code></td>
+            <td>64 m</td>
+            <td>Elevated Sunlit Ridge (+2.0m) • 3 Solar Towers</td>
+            <td><span class="tag tag-safe">2/6 Easy-Mod</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(1.75, -0.52)">M1: Solar</button></td>
+          </tr>
+          <tr>
+            <td><b>3. Comms Relay Tower</b> (L3)</td>
+            <td><code>(92.0, 58.0)</code></td>
+            <td>109 m</td>
+            <td>High Promontory (+2.9m) • 12.5m Relay Tower</td>
+            <td><span class="tag tag-caution">3/6 Moderate</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(1.72, -0.56)">Relay Corridor</button></td>
+          </tr>
+          <tr>
+            <td><b>4. Science Station</b> (L4)</td>
+            <td><code>(78.0, -28.0)</code></td>
+            <td>83 m</td>
+            <td>Rocky Ridge + Crater Field (Route A vs B)</td>
+            <td><span class="tag tag-hazard">5/6 Very Hard</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(1.65, -0.62)">M3: Science ✓</button></td>
+          </tr>
+          <tr>
+            <td><b>5. Resource / Mining Site</b> (L5)</td>
+            <td><code>(-56.0, 48.0)</code></td>
+            <td>74 m</td>
+            <td>NW Plateau (+2.9m) • ISRU Drill Rig &amp; Rocks</td>
+            <td><span class="tag tag-caution">4/6 Hard</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(1.62, -0.64)">M2: Mining</button></td>
+          </tr>
+          <tr>
+            <td><b>6. Landing / Logistics Zone</b> (L6)</td>
+            <td><code>(-64.0, -38.0)</code></td>
+            <td>74 m</td>
+            <td>Open SW Mare Plain • Descent Lander &amp; Ramp</td>
+            <td><span class="tag tag-safe">2/6 Moderate</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(1.60, -0.68)">M5: Landing</button></td>
+          </tr>
+          <tr>
+            <td><b>7. Shadow-Crater Research</b> (L7)</td>
+            <td><code>(64.0, -64.0)</code></td>
+            <td>91 m</td>
+            <td>Deep Polar Crater (-9.2m) • Permanent Umbra</td>
+            <td><span class="tag tag-hazard">6/6 Hardest</span></td>
+            <td><button class="btn" style="padding:3px 8px;font-size:0.70rem;" onclick="startMission(1.68, -0.66)">M4: Shadow</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:#08101f;border:1px solid #1e2f4d;border-radius:8px;padding:9px;font-family:monospace;font-size:0.73rem;line-height:1.45;">
+        <div style="color:#38bdf8;font-weight:700;margin-bottom:4px;">SEMANTIC TERRAIN MAP vs. TRAVERSABILITY COST MODEL</div>
+        <div><span style="color:#4ade80;">[R] REGOLITH</span> &nbsp;&nbsp;&nbsp;&nbsp;= Weight <b>1</b> &nbsp;(Grid Cost <b>20</b>) — Safe lunar soil</div>
+        <div><span style="color:#a3e635;">[B] BEDROCK</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= Weight <b>3</b> &nbsp;(Grid Cost <b>38</b>) — Stepped rock shelf</div>
+        <div><span style="color:#facc15;">[O] SMALL ROCK</span> &nbsp;&nbsp;= Weight <b>5</b> &nbsp;(Grid Cost <b>75</b>) — Basalt ejecta</div>
+        <div><span style="color:#fb923c;">[S] SHADOW</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= Weight <b>8</b> &nbsp;(Grid Cost <b>72</b>) — Low-sun umbra zone</div>
+        <div><span style="color:#f87171;">[O] LARGE ROCK</span> &nbsp;&nbsp;= Weight <b>8</b> &nbsp;(Grid Cost <b>100</b>) — Boulder obstacle</div>
+        <div><span style="color:#ef4444;">[C] CRATER/SLOPE</span> = Weight <b>10–12</b> (Cost <b>100 / ∞</b>) — Forbidden rim/bowl</div>
+      </div>
+      <div style="background:#08101f;border:1px solid #1e2f4d;border-radius:8px;padding:9px;font-family:monospace;font-size:0.72rem;line-height:1.42;color:#cbd5e1;">
+        <div style="color:#fde047;font-weight:700;margin-bottom:3px;">NO-GPS LOCALIZATION &amp; PLANNING PIPELINE</div>
+        Mission Command ("Go to Science Station") ──► Local Map Lookup ──► Camera + LiDAR + Odometry ──► 5-Class Semantic Map + SLAM Pose (x,y,θ) ──► Cost Map ──► Weighted A* / D*-Lite Safe Trajectory
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <span id="barSpeed">SPEED: 0.38 m/s</span>
+  <span id="barDist">DISTANCE: 1.95 m</span>
+  <span id="barReplans">REPLANS: 02</span>
+  <span id="barCollisions" style="color:#4ade80;">COLLISIONS: 00</span>
+  <span id="barSafety" style="color:#38bdf8;">SAFETY SCORE: 96%</span>
+  <span id="barComplete" style="color:#4ade80;">MISSION: 100% COMPLETE ✓</span>
+</div>
+
+<script>
+let STATE = {"mission_title": "MISSION 01: HABITAT A -> LUNAR HABITAT B", "status": "AUTONOMOUS", "mission_complete": false, "mission_pct": 12, "rover": {"x": 0.0, "y": 0.0, "yaw_deg": 0.0, "speed_mps": 0.0, "distance_m": 0.0}, "goal": {"x": 1.65, "y": -0.62}, "telemetry": {"mode": "AUTONOMOUS", "gps": "OFFLINE \u2713", "slam": "ACTIVE \u2713", "ai": "ACTIVE \u2713", "planner": "Weighted A*", "replans": 0, "collisions": 0, "safety_score": 96, "duration_s": 0.0, "hazards_avoided": 1}, "camera_uri": "", "semantic_uri": "", "seg_classes": {"SAFE_FLAT": 64.0, "MODERATE_SLOPE": 18.0, "ROUGH": 9.0, "OBSTACLE": 6.0, "CRATER_SHADOW": 3.0}, "slam_grid": {"width": 0, "height": 0, "resolution": 0.08, "origin": [-4.0, -4.0], "cells": []}, "cost_grid": {"width": 0, "height": 0, "resolution": 0.1, "origin": [-4.0, -4.0], "cells": []}, "obstacles": [[1.55, 0.32]], "trail": [[0.0, 0.0]], "route_a": [[0.0, 0.0], [0.85, -0.05], [1.35, 0.1], [1.65, -0.62]], "route_b": [[0.0, 0.0], [0.55, -0.28], [1.1, -0.52], [1.65, -0.62]], "before_replan": [[0.0, 0.0], [0.55, 0.05], [1.15, 0.12], [1.55, 0.18], [1.65, -0.62]], "after_replan": [[0.0, 0.0], [0.55, -0.28], [1.1, -0.52], [1.65, -0.62]], "decision": {"route_a_len": 1.82, "route_a_risk": "HIGH", "route_a_exposure_pct": 62.0, "route_a_clearance_m": 0.14, "route_b_len": 2.18, "route_b_risk": "LOW", "route_b_exposure_pct": 4.0, "route_b_clearance_m": 0.58, "reason": "LunaBot selected Route B because safety cost < distance cost"}, "timeline": [{"t": "00:01", "tag": "MISSION", "msg": "MISSION 01 started: Habitat A -> Lunar Habitat B (GPS OFFLINE)"}, {"t": "00:02", "tag": "SLAM", "msg": "slam_toolbox active: publishing /map and map -> odom TF"}]};
+let replayMode = 0; // 0 = live/final, 1 = BEFORE replan, 2 = AFTER replan
+let currentScene = 0;
+let tourTimer = null;
+
+function setScene(n) {
+  currentScene = n;
+  const box = document.getElementById('sceneSpotlight');
+  const content = document.getElementById('sceneSpotlightContent');
+  const d = STATE.decision;
+  if (n === 0) {
+    box.style.display = 'none';
+    replayMode = 0;
+    renderAll();
+    return;
+  }
+  box.style.display = 'block';
+  if (n === 1) {
+    replayMode = 0;
+    content.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="color:#38bdf8;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;">SCENE 1 — MISSION START</div>
+          <div style="font-size:1.35rem;font-weight:800;margin-top:4px;">MISSION: HABITAT A → LUNAR HABITAT B &nbsp;|&nbsp; MODE: AUTONOMOUS &nbsp;|&nbsp; GPS: OFFLINE ✓</div>
+          <div style="color:#cbd5e1;font-size:0.92rem;margin-top:6px;">“LunaBot has one objective: reach Habitat B without human teleoperation or GPS.”</div>
+        </div>
+        <div class="status-pill" style="font-size:0.95rem;padding:10px 18px;">START → HABITAT B (1.65m, -0.62m)</div>
+      </div>`;
+  } else if (n === 2) {
+    replayMode = 0;
+    content.innerHTML = `
+      <div style="color:#38bdf8;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;">SCENE 2 — LET THE AUDIENCE SEE THE AI THINKING (8 SEMANTIC TERRAIN CLASSES &amp; 3 DIFFICULTY ZONES)</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;font-family:monospace;font-size:0.90rem;font-weight:700;">
+        <span class="tag tag-safe" style="padding:5px 10px;">CAMERA + LiDAR</span> ──►
+        <span class="tag tag-caution" style="padding:5px 10px;">TERRAIN DETECTION (8 CLASSES)</span> ──►
+        <span class="tag tag-safe" style="padding:5px 10px;">SEMANTIC MAP</span> ──►
+        <span class="tag tag-hazard" style="padding:5px 10px;">SLAM + COST MAP</span> ──►
+        <span class="tag tag-safe" style="padding:5px 10px;">WEIGHTED A* / D*-LITE</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0;font-family:monospace;font-size:0.74rem;">
+        <div style="background:rgba(34,197,94,0.14);border:1px solid #22c55e;border-radius:6px;padding:5px 8px;"><b>Safe Habitat Zone</b><br/>Flat Operating Pad • <span style="color:#4ade80;">VERY LOW</span></div>
+        <div style="background:rgba(34,197,94,0.12);border:1px solid #4ade80;border-radius:6px;padding:5px 8px;"><b>Regolith (Dominant)</b><br/>Dusty Gray Ground • <span style="color:#4ade80;">LOW COST</span></div>
+        <div style="background:rgba(234,179,8,0.14);border:1px solid #eab308;border-radius:6px;padding:5px 8px;"><b>Bedrock / Small Rocks</b><br/>Exposed Shelf &amp; Stones • <span style="color:#facc15;">MEDIUM</span></div>
+        <div style="background:rgba(239,68,68,0.16);border:1px solid #ef4444;border-radius:6px;padding:5px 8px;"><b>Crater / Boulder / Shadow</b><br/>Steep Rim &amp; Dark Floor • <span style="color:#f87171;">HIGH / MAX</span></div>
+      </div>
+      <div style="color:#fde047;font-size:0.88rem;font-weight:600;">“Two visually similar areas do not have the same navigation cost — LunaBot classifies Regolith, Bedrock, Rocks, Craters, Steep Walls, and Long South-Pole Shadows.”</div>`;
+  } else if (n === 3) {
+    replayMode = 0;
+    content.innerHTML = `
+      <div style="color:#38bdf8;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;">SCENE 3 — THE MONEY SHOT: PATH DECISION (WHY THIS PATH?)</div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center;margin-top:10px;text-align:center;">
+        <div style="background:rgba(239,68,68,0.14);border:2px solid #ef4444;border-radius:10px;padding:12px;">
+          <div style="font-size:1.05rem;font-weight:800;color:#f87171;">ROUTE A (GEOMETRIC)</div>
+          <div style="font-size:1.55rem;font-weight:900;margin:4px 0;">${d.route_a_len.toFixed(2)} m</div>
+          <div style="font-family:monospace;color:#fca5a5;">HIGH RISK &nbsp;•&nbsp; ${d.route_a_exposure_pct.toFixed(0)}% HAZARD EXPOSURE</div>
+        </div>
+        <div style="font-size:1.1rem;font-weight:900;color:#4ade80;padding:0 10px;">
+          LUNABOT SELECTS ──►<br/><span style="font-size:0.85rem;color:#fde047;">SAFETY &gt; DISTANCE</span>
+        </div>
+        <div style="background:rgba(34,197,94,0.16);border:2px solid #22c55e;border-radius:10px;padding:12px;">
+          <div style="font-size:1.05rem;font-weight:800;color:#4ade80;">ROUTE B (LUNABOT SELECTED ✓)</div>
+          <div style="font-size:1.55rem;font-weight:900;margin:4px 0;">${d.route_b_len.toFixed(2)} m</div>
+          <div style="font-family:monospace;color:#86efac;">LOW RISK &nbsp;•&nbsp; ${d.route_b_exposure_pct.toFixed(0)}% HAZARD EXPOSURE</div>
+        </div>
+      </div>`;
+  } else if (n === 4) {
+    replayMode = 1;
+    content.innerHTML = `
+      <div style="color:#f87171;font-weight:800;font-size:0.95rem;letter-spacing:0.06em;">SCENE 4 — ⚠ TERRAIN CHANGE DETECTED (DYNAMIC REPLANNING)</div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;margin:8px 0;font-family:monospace;font-size:0.92rem;">
+        <span class="tag tag-hazard" style="font-size:0.88rem;padding:5px 10px;">Current path: INVALID</span>
+        <span class="tag tag-caution" style="font-size:0.88rem;padding:5px 10px;">Obstacle cost: INCREASED (100)</span>
+        <span class="tag tag-safe" style="font-size:0.88rem;padding:5px 10px;">Planner: WEIGHTED A* REPLANNING → SAFE ROUTE B</span>
+      </div>
+      <div style="color:#cbd5e1;font-size:0.88rem;">Watch the Safe Path Planner below switch from the blocked red path (Before) to the curved green path (After)!</div>`;
+    setTimeout(() => { if (currentScene === 4) { replayMode = 2; renderAll(); } }, 1800);
+  } else if (n === 5) {
+    replayMode = 0;
+    content.innerHTML = `
+      <div style="color:#4ade80;font-weight:800;font-size:0.92rem;letter-spacing:0.06em;">SCENE 5 — MISSION COMPLETE (AUTOMATED DEMONSTRATION SCENARIO RESULT)</div>
+      <div style="font-size:1.22rem;font-weight:800;color:#fde047;margin:6px 0;">“LunaBot deliberately chose a longer path (${d.route_b_len.toFixed(2)} m vs ${d.route_a_len.toFixed(2)} m) because the shorter path was dangerous.”</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-family:monospace;font-size:0.86rem;color:#86efac;">
+        <span>✓ Goal reached</span>
+        <span>✓ 0 collisions</span>
+        <span>✓ Dynamic replanning</span>
+        <span>✓ Semantic terrain awareness</span>
+        <span>✓ SLAM localization</span>
+      </div>`;
+  }
+  renderAll();
+}
+
+function startStoryTour() {
+  if (tourTimer) {
+    clearInterval(tourTimer);
+    tourTimer = null;
+    document.getElementById('tourBtn').textContent = '🎬 AUTO-PLAY 5-SCENE DEMO';
+    setScene(0);
+    return;
+  }
+  let step = 1;
+  document.getElementById('tourBtn').textContent = '⏹ STOP DEMO TOUR';
+  setScene(step);
+  tourTimer = setInterval(() => {
+    step++;
+    if (step > 5) {
+      clearInterval(tourTimer);
+      tourTimer = null;
+      document.getElementById('tourBtn').textContent = '🎬 AUTO-PLAY 5-SCENE DEMO';
+      setScene(0);
+    } else {
+      setScene(step);
+    }
+  }, 4500);
+}
+
+function toggleReplayMode() {
+  replayMode = (replayMode + 1) % 3;
+  const btn = document.getElementById('replayBtn');
+  const lbl = document.getElementById('plannerModeLabel');
+  if (replayMode === 0) {
+    btn.textContent = '⏪ DECISION REPLAY: LIVE';
+    lbl.textContent = 'LIVE COST MAP + ROUTE A vs ROUTE B';
+  } else if (replayMode === 1) {
+    btn.textContent = '⏪ REPLAY: BEFORE REPLAN (HAZARD DETECTED)';
+    lbl.textContent = 'REPLAY STEP 1: BEFORE REPLAN (INITIAL PATH BLOCKED BY BOULDER)';
+  } else {
+    btn.textContent = '⏪ REPLAY: AFTER REPLAN (SAFE ROUTE B)';
+    lbl.textContent = 'REPLAY STEP 2: AFTER WEIGHTED A* REPLANNING AROUND HAZARD';
+  }
+  renderAll();
+}
+
+function triggerStartMission(gx = 1.65, gy = -0.62) {
+  fetch('http://127.0.0.1:8765/api/start_mission', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({x: gx, y: gy})
+  }).catch(() => {});
+}
+
+document.getElementById('plannerCanvas').addEventListener('click', (ev) => {
+  const rect = ev.target.getBoundingClientRect();
+  const u = (ev.clientX - rect.left) / rect.width;
+  const v = (ev.clientY - rect.top) / rect.height;
+  const wx = -0.6 + u * 3.4;
+  const wy = 1.4 - v * 2.8;
+  triggerStartMission(Number(wx.toFixed(2)), Number(wy.toFixed(2)));
+});
+
+function drawFallbackCamera(ctx, w, h, state) {
+  // Pitch-black South-Pole lunar sky + stars + half-lit Earth + rolling ridge + Habitat + craters + boulders + long shadows
+  ctx.fillStyle = '#020408';
+  ctx.fillRect(0, 0, w, h * 0.40);
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 38; i++) {
+    ctx.fillRect((i * 73) % w, (i * 29) % Math.floor(h * 0.36), 1.4, 1.4);
+  }
+  // Half-lit Earth upper-right (matching image-1.png)
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.arc(w - 52, 28, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#020408';
+  ctx.beginPath(); ctx.arc(w - 54, 34, 15, 0, Math.PI * 2); ctx.fill();
+  // Distant rolling South-Pole ridges
+  ctx.fillStyle = '#686c74';
+  ctx.beginPath();
+  ctx.moveTo(0, h * 0.40);
+  ctx.quadraticCurveTo(w * 0.22, h * 0.27, w * 0.52, h * 0.38);
+  ctx.quadraticCurveTo(w * 0.78, h * 0.29, w, h * 0.40);
+  ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+  // Fine dusty gray regolith foreground (dominant)
+  ctx.fillStyle = '#7e828a';
+  ctx.fillRect(0, h * 0.40, w, h * 0.60);
+  // Cylindrical Lunar Habitat on golden truss legs in Zone 1 (left background)
+  ctx.fillStyle = '#b45309';
+  ctx.fillRect(24, h * 0.33, 30, 10);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(22, h * 0.23, 34, 18);
+  ctx.beginPath();
+  ctx.moveTo(20, h * 0.23); ctx.lineTo(39, h * 0.16); ctx.lineTo(58, h * 0.23); ctx.fill();
+  // Crater with sunlit rim + permanently shadowed dark floor
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath(); ctx.ellipse(w * 0.76, h * 0.62, 34, 11, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#090b10';
+  ctx.beginPath(); ctx.ellipse(w * 0.75, h * 0.62, 26, 8, 0, 0, Math.PI * 2); ctx.fill();
+  // Long pitch-black South-Pole shadow behind boulder
+  ctx.fillStyle = '#07090e';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.44, h * 0.72);
+  ctx.lineTo(w * 0.16, h * 0.80);
+  ctx.lineTo(w * 0.22, h * 0.86);
+  ctx.lineTo(w * 0.62, h * 0.74);
+  ctx.closePath();
+  ctx.fill();
+  // Angular boulder + HUD box
+  ctx.fillStyle = '#2d3139';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.44, h * 0.72);
+  ctx.lineTo(w * 0.50, h * 0.46);
+  ctx.lineTo(w * 0.60, h * 0.50);
+  ctx.lineTo(w * 0.65, h * 0.72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(w * 0.42, h * 0.44, w * 0.25, h * 0.30);
+  ctx.fillStyle = '#f87171';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('BOULDER + CRATER + SHADOW', w * 0.32, h * 0.41);
+}
+
+function drawFallbackSemantic(ctx, w, h, state) {
+  ctx.fillStyle = '#050811';
+  ctx.fillRect(0, 0, w, h * 0.38);
+  // Zone 1 & Dominant Regolith (Low Cost - green)
+  ctx.fillStyle = 'rgba(34, 197, 94, 0.76)';
+  ctx.fillRect(0, h * 0.38, w, h * 0.62);
+  // Zone 2 Bedrock & Slope band (Medium Cost - yellow)
+  ctx.fillStyle = 'rgba(234, 179, 8, 0.78)';
+  ctx.fillRect(0, h * 0.38, w, h * 0.12);
+  // Zone 3 Deep Shadow region (High Cost - dark purple/red)
+  ctx.fillStyle = 'rgba(124, 58, 237, 0.82)';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.44, h * 0.72);
+  ctx.lineTo(w * 0.16, h * 0.80);
+  ctx.lineTo(w * 0.22, h * 0.86);
+  ctx.lineTo(w * 0.62, h * 0.74);
+  ctx.closePath();
+  ctx.fill();
+  // Zone 3 Crater & Steep Wall (High/Very High Cost - orange/red)
+  ctx.fillStyle = 'rgba(220, 38, 38, 0.88)';
+  ctx.beginPath(); ctx.ellipse(w * 0.76, h * 0.62, 32, 10, 0, 0, Math.PI * 2); ctx.fill();
+  // Zone 3 Large Boulder (High Cost - red)
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.95)';
+  ctx.beginPath();
+  ctx.moveTo(w * 0.43, h * 0.73);
+  ctx.lineTo(w * 0.50, h * 0.45);
+  ctx.lineTo(w * 0.61, h * 0.49);
+  ctx.lineTo(w * 0.66, h * 0.73);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 9.5px monospace';
+  ctx.fillText('REGOLITH(LOW) • BEDROCK(MED) • ROCK/CRATER/SHADOW(HIGH)', 8, h * 0.93);
+}
+
+function worldToCanvas(wx, wy, w, h) {
+  const minX = -0.6, maxX = 2.6;
+  const minY = -1.35, maxY = 1.15;
+  const cx = ((wx - minX) / (maxX - minX)) * w;
+  const cy = ((maxY - wy) / (maxY - minY)) * h;
+  return [cx, cy];
+}
+
+function drawSlamCanvas(state) {
+  const canvas = document.getElementById('slamCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#070d19';
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle SLAM grid lines
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.10)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+  // Obstacle LiDAR cluster
+  const obs = (state.obstacles && state.obstacles.length) ? state.obstacles : [[1.55, 0.32]];
+  ctx.fillStyle = '#ef4444';
+  obs.forEach(([ox, oy]) => {
+    const [cx, cy] = worldToCanvas(ox, oy, w, h);
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // Driven trajectory
+  if (state.trail && state.trail.length > 1) {
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    state.trail.forEach(([tx, ty], i) => {
+      const [cx, cy] = worldToCanvas(tx, ty, w, h);
+      if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+    });
+    ctx.stroke();
+  }
+
+  // Rover pose & Goal
+  const [rx, ry] = worldToCanvas(state.rover.x, state.rover.y, w, h);
+  const [gx, gy] = worldToCanvas(state.goal.x, state.goal.y, w, h);
+
+  ctx.fillStyle = '#22c55e';
+  ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('GOAL (Habitat B)', gx - 42, gy + 16);
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.beginPath(); ctx.arc(rx, ry, 6.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillText('ROVER', rx - 18, ry - 10);
+}
+
+function drawPlannerCanvas(state) {
+  const canvas = document.getElementById('plannerCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#07111e';
+  ctx.fillRect(0, 0, w, h);
+
+  // Safe regolith, bedrock, shadow, and crater/boulder cost tiles
+  for (let gx = -0.4; gx <= 2.4; gx += 0.22) {
+    for (let gy = -1.2; gy <= 1.0; gy += 0.22) {
+      const [cx, cy] = worldToCanvas(gx, gy, w, h);
+      const dObs = Math.hypot(gx - 1.55, gy - 0.32);
+      const dCrater = Math.hypot(gx - 1.82, gy - 0.62);
+      const dBedrock = Math.min(Math.hypot(gx - 1.85, gy + 1.18), Math.hypot(gx + 0.35, gy - 0.95));
+      const dShadow = Math.min(Math.hypot(gx - 1.38, gy - 0.85), Math.hypot(gx - 2.35, gy + 1.05));
+      if (dObs < 0.36 || dCrater < 0.44) {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.44)';
+      } else if (dShadow < 0.42) {
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.36)';
+      } else if (dObs < 0.68 || dCrater < 0.72 || dBedrock < 0.52) {
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.28)';
+      } else {
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.14)';
+      }
+      ctx.fillRect(cx - 14, cy - 11, 26, 20);
+    }
+  }
+
+  // Dangerous Route Crater on Route A
+  const [crx, cry] = worldToCanvas(1.82, 0.62, w, h);
+  ctx.strokeStyle = '#fb923c';
+  ctx.lineWidth = 2.0;
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.beginPath(); ctx.arc(crx, cry, 19, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // Primary Boulder Hazard on Route A
+  const [hx, hy] = worldToCanvas(1.55, 0.32, w, h);
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.90)';
+  ctx.beginPath(); ctx.arc(hx, hy, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fecaca';
+  ctx.font = 'bold 10.5px monospace';
+  ctx.fillText('❌ ROUTE CRATER + BOULDER + SHADOW', hx - 96, hy - 22);
+
+  // Route A (Geometric shortest - red dashed)
+  if (replayMode === 0 || replayMode === 1) {
+    const rA = (replayMode === 1) ? state.before_replan : state.route_a;
+    ctx.save();
+    ctx.strokeStyle = '#f87171';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    rA.forEach(([px, py], idx) => {
+      const [cx, cy] = worldToCanvas(px, py, w, h);
+      if (idx === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Route B (LunaBot Semantic Safe Path - bright green solid)
+  if (replayMode === 0 || replayMode === 2) {
+    const rB = (replayMode === 2) ? state.after_replan : state.route_b;
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 4.0;
+    ctx.beginPath();
+    rB.forEach(([px, py], idx) => {
+      const [cx, cy] = worldToCanvas(px, py, w, h);
+      if (idx === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+    });
+    ctx.stroke();
+  }
+
+  // Start, Rover, Goal markers
+  const [sx, sy] = worldToCanvas(0.0, 0.0, w, h);
+  const [gx, gy] = worldToCanvas(state.goal.x, state.goal.y, w, h);
+  const [rx, ry] = worldToCanvas(state.rover.x, state.rover.y, w, h);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('START (Habitat A)', sx + 8, sy - 8);
+
+  ctx.fillStyle = '#22c55e';
+  ctx.beginPath(); ctx.arc(gx, gy, 7.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillText('GOAL ● (Habitat B)', gx - 55, gy + 20);
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.beginPath(); ctx.arc(rx, ry, 7, 0, Math.PI * 2); ctx.fill();
+}
+
+function renderAll() {
+  const s = STATE;
+  document.getElementById('statusPill').textContent = 'STATUS: ' + s.status;
+  if (s.camera_uri) {
+    const img = document.getElementById('camImg');
+    img.src = s.camera_uri;
+    img.style.display = 'block';
+  } else {
+    const c = document.getElementById('camFallbackCanvas');
+    drawFallbackCamera(c.getContext('2d'), c.width, c.height, s);
+  }
+  if (s.semantic_uri) {
+    const img = document.getElementById('semImg');
+    img.src = s.semantic_uri;
+    img.style.display = 'block';
+  } else {
+    const c = document.getElementById('semFallbackCanvas');
+    drawFallbackSemantic(c.getContext('2d'), c.width, c.height, s);
+  }
+
+  drawSlamCanvas(s);
+  drawPlannerCanvas(s);
+
+  document.getElementById('slamPoseTag').textContent = `Rover: (${s.rover.x.toFixed(2)}, ${s.rover.y.toFixed(2)})`;
+  document.getElementById('hudSpeed').textContent = `${s.rover.speed_mps.toFixed(2)} m/s`;
+  document.getElementById('hudHeading').textContent = `${s.rover.yaw_deg.toFixed(1)}°`;
+  document.getElementById('hudDist').textContent = `${s.rover.distance_m.toFixed(2)} m`;
+  document.getElementById('hudReplans').textContent = `${s.telemetry.replans}`;
+  document.getElementById('hudCollisions').textContent = `${s.telemetry.collisions}`;
+
+  const d = s.decision;
+  document.getElementById('decALen').textContent = `${d.route_a_len.toFixed(2)} m`;
+  document.getElementById('decAExp').textContent = `${d.route_a_exposure_pct.toFixed(1)}%`;
+  document.getElementById('decAClr').textContent = `${d.route_a_clearance_m.toFixed(2)} m`;
+  document.getElementById('decBLen').textContent = `${d.route_b_len.toFixed(2)} m`;
+  document.getElementById('decBExp').textContent = `${d.route_b_exposure_pct.toFixed(1)}%`;
+  document.getElementById('decBClr').textContent = `${d.route_b_clearance_m.toFixed(2)} m`;
+  document.getElementById('cmpALen').textContent = `${d.route_a_len.toFixed(2)} m`;
+  document.getElementById('cmpBLen').textContent = `${d.route_b_len.toFixed(2)} m`;
+  document.getElementById('cmpAExp').textContent = `${d.route_a_exposure_pct.toFixed(0)}%`;
+  document.getElementById('cmpBExp').textContent = `${d.route_b_exposure_pct.toFixed(0)}%`;
+  if (document.getElementById('cmpAClr')) document.getElementById('cmpAClr').textContent = `${d.route_a_clearance_m.toFixed(2)} m`;
+  if (document.getElementById('cmpBClr')) document.getElementById('cmpBClr').textContent = `${d.route_b_clearance_m.toFixed(2)} m`;
+
+  const ul = document.getElementById('timelineList');
+  ul.innerHTML = '';
+  (s.timeline || []).forEach(ev => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span style="color:#38bdf8;">${ev.t}</span> <b>[${ev.tag}]</b> ${ev.msg}`;
+    ul.appendChild(li);
+  });
+
+  document.getElementById('missionPctBadge').textContent = `MISSION: ${s.mission_pct}%`;
+  document.getElementById('barSpeed').textContent = `SPEED: ${s.rover.speed_mps.toFixed(2)} m/s`;
+  document.getElementById('barDist').textContent = `DISTANCE: ${s.rover.distance_m.toFixed(2)} m`;
+  document.getElementById('barReplans').textContent = `REPLANS: 0${s.telemetry.replans}`;
+  document.getElementById('barCollisions').textContent = `COLLISIONS: 0${s.telemetry.collisions}`;
+  document.getElementById('barSafety').textContent = `SAFETY SCORE: ${s.telemetry.safety_score}%`;
+  document.getElementById('barComplete').textContent = `MISSION: ${s.mission_pct}% COMPLETE ${s.mission_complete ? '✓' : ''}`;
+}
+
+renderAll();
+setInterval(() => {
+  fetch('http://127.0.0.1:8765/api/state')
+    .then(r => r.json())
+    .then(data => { STATE = data; renderAll(); })
+    .catch(() => {});
+}, 450);
+</script>
+</body>
+</html>

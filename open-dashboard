@@ -1,0 +1,52 @@
+#!/bin/bash
+# Open the LunaBot Mission Control Dashboard in WSL2 (Windows Browser) or Native Linux Browser
+set -u
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HTML_FILE="${1:-$SCRIPT_DIR/evidence/phase-l-launch-l/mission_control_dashboard.html}"
+
+if [ -f "$SCRIPT_DIR/scripts/mission_control_dashboard.py" ]; then
+  python3 "$SCRIPT_DIR/scripts/mission_control_dashboard.py" --from-evidence "$SCRIPT_DIR/evidence/phase-l-launch-l" >/dev/null 2>&1 || true
+fi
+
+if [ ! -f "$HTML_FILE" ]; then
+  echo "Dashboard file not found at: $HTML_FILE"
+  echo "Run: HEADLESS=0 DEMO=1 EVIDENCE=1 ./launch-l"
+  exit 1
+fi
+
+# 1. WSL2 (Windows host browser via cmd.exe / powershell.exe / explorer.exe)
+if [ -d "/mnt/c/Users/Public" ] && [ -w "/mnt/c/Users/Public" ]; then
+  cp -f "$HTML_FILE" "/mnt/c/Users/Public/lunabot_mission_control.html" 2>/dev/null || true
+  if command -v cmd.exe >/dev/null 2>&1; then
+    cmd.exe /c start "" "C:\\Users\\Public\\lunabot_mission_control.html" >/dev/null 2>&1 &
+    echo "Opened LunaBot Mission Control Dashboard in Windows browser (C:\\Users\\Public\\lunabot_mission_control.html)"
+    exit 0
+  elif [ -x "/mnt/c/Windows/System32/cmd.exe" ]; then
+    /mnt/c/Windows/System32/cmd.exe /c start "" "C:\\Users\\Public\\lunabot_mission_control.html" >/dev/null 2>&1 &
+    echo "Opened LunaBot Mission Control Dashboard in Windows browser (C:\\Users\\Public\\lunabot_mission_control.html)"
+    exit 0
+  elif [ -x "/mnt/c/Windows/explorer.exe" ]; then
+    /mnt/c/Windows/explorer.exe "C:\\Users\\Public\\lunabot_mission_control.html" >/dev/null 2>&1 &
+    echo "Opened LunaBot Mission Control Dashboard via explorer.exe"
+    exit 0
+  fi
+fi
+
+if command -v wslpath >/dev/null 2>&1 && [ -x "/mnt/c/Windows/explorer.exe" ]; then
+  WIN_PATH="$(wslpath -w "$HTML_FILE")"
+  /mnt/c/Windows/explorer.exe "$WIN_PATH" >/dev/null 2>&1 &
+  echo "Opened LunaBot Mission Control Dashboard in Windows browser ($WIN_PATH)"
+  exit 0
+fi
+
+# 2. Native Linux desktop browsers
+for browser in google-chrome chromium-browser chromium firefox xdg-open; do
+  if command -v "$browser" >/dev/null 2>&1; then
+    "$browser" "$HTML_FILE" >/dev/null 2>&1 &
+    echo "Opened LunaBot Mission Control Dashboard with $browser"
+    exit 0
+  fi
+done
+
+echo "Dashboard ready at: $HTML_FILE"

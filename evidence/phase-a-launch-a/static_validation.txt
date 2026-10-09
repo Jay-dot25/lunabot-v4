@@ -1,5 +1,5 @@
 LunaBot V4 - Phase A - static validation report
-date: 2026-09-17T04:39:44Z
+date: 2026-10-09T05:34:08Z
 ============================================================
 [PASS] world SDF XML well-formed
 [PASS] world name == lunar_world - got lunar_world
@@ -11,8 +11,8 @@ date: 2026-09-17T04:39:44Z
 [PASS] world plugin Contact
 [PASS] terrain model present
 [PASS] terrain static
-[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /tmp/lunabot-phase-a/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
-[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /tmp/lunabot-phase-a/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
+[PASS] terrain collision mesh exists (meshes/lunar_terrain_collision.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain_collision.obj
+[PASS] terrain visual mesh exists (meshes/lunar_terrain.obj) - /home/user/lunabot-v4/src/lunabot_gazebo/worlds/meshes/lunar_terrain.obj
 [PASS] horizon catch-plane present
 [PASS] GUI camera configured
 [PASS] lunar habitat presentation model present
@@ -49,8 +49,8 @@ date: 2026-09-17T04:39:44Z
 [PASS] lunar_terrain.obj: normals for all vertices - vn=102400 v=102400
 [PASS] lunar_terrain.obj: color vertices expected=True - c=102400
 [PASS] lunar_terrain.obj: face indices in bounds - 102400
-[PASS] lunar_terrain.obj: extent ~400x400 m - [398.8, 398.8, 14.4]
-[PASS] lunar_terrain.obj: relief within [-12, +10] m - z=[-9.39, 4.97]
+[PASS] lunar_terrain.obj: extent ~400x400 m - [398.8, 398.8, 14.1]
+[PASS] lunar_terrain.obj: relief within [-12, +10] m - z=[-9.31, 4.84]
 [PASS] lunar_terrain_collision.obj: has vertices - 10000
 [PASS] lunar_terrain_collision.obj: vertex count square grid - 10000
 [PASS] lunar_terrain_collision.obj: normals for all vertices - vn=10000 v=10000

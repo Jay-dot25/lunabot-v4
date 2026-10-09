@@ -1,0 +1,24 @@
+services:
+  lunabot-validate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace/lunabot-v4
+    command: >
+      /bin/bash -c "python3 -m unittest discover -s tests -v &&
+      python3 tools/validate_phase_l.py"
+
+  lunabot-sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace/lunabot-v4
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./evidence:/workspace/lunabot-v4/evidence
+    command: >
+      /bin/bash -c "source /opt/ros/humble/setup.bash &&
+      ./launch-l --auto-test --no-rviz"

@@ -1,0 +1,53 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    🌕 LUNABOT — MISSION CONTROL DASHBOARD                   ║
+║  MISSION: HABITAT A -> LUNAR HABITAT B   MODE: AUTONOMOUS   GPS: OFFLINE ✓   ║
+╠═════════════════════════╦══════════════════════════╦═════════════════════════╣
+║ 1. TERRAIN CAMERA       ║ 2. SEMANTIC VISION (AI)  ║ 3. SLAM & LOCALIZATION  ║
+║ [South-Pole RGB-D]      ║ 🟩 HABITAT/REGOLITH (Low)║ Map Frame : ACTIVE ✓    ║
+║ Obstacle @ 1.48 m       ║ 🟨 BEDROCK / SMALL ROCKS ║ Pose      : (0.00, 0.00)║
+║ Crater/Rock/Shadow/Soil ║ 🟥 CRATER/BOULDER/SHADOW ║ Goal      : Habitat B   ║
+╠═════════════════════════╩══════════════════════════╩═════════════════════════╣
+║ SCENE 2 — SEMANTIC TERRAIN CLASSES & 3 SOUTH-POLE DIFFICULTY ZONES           ║
+║   CAMERA + LiDAR ──► TERRAIN AI ──► SEMANTIC MAP ──► SLAM ──► WEIGHTED A*    ║
+║   • Zone 1 (Safe)     : Safe Habitat Zone (Very Low) │ Regolith (Low Cost)   ║
+║   • Zone 2 (Moderate) : Bedrock (Medium)             │ Small Rocks (Medium)  ║
+║   • Zone 3 (Dangerous): Crater (High) │ Shadow (High) │ Steep Wall/Rock (Max)║
+║   "The rover understands what kind of terrain it is and changes its cost."   ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ SCENE 3 — PATH DECISION (WHY DID LUNABOT CHOOSE THIS PATH?)                  ║
+║                                                                              ║
+║              ROUTE A (GEOMETRIC)              ROUTE B (LUNABOT)              ║
+║              ───────────────────              ─────────────────              ║
+║                   1.82 m                           2.18 m                    ║
+║                  HIGH RISK                        LOW RISK                   ║
+║                   62% HAZARD                         4% HAZARD                  ║
+║                                      ↓                                       ║
+║                        LUNABOT SELECTS ROUTE B                               ║
+║                           SAFETY > DISTANCE                                  ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ SCENE 4 — ⚠ TERRAIN CHANGE DETECTED & DYNAMIC REPLANNING                     ║
+║   Current path: INVALID  │  Obstacle cost: INCREASED  │  Planner: REPLANNING ║
+║   Start ● ───────────────╮   (Route B: Safe Semantic Terrain-Aware Path)     ║
+║                          ╰───────────╮                                       ║
+║                    ❌ Hazard Zone     ╰──────────────► Goal ● (Habitat B)    ║
+║    00:01 [MISSION  ] MISSION 01 started: Habitat A -> Lunar Habitat B (GPS O ║
+║    00:02 [SLAM     ] slam_toolbox active: publishing /map and map -> odom TF ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ SCENE 5 — AUTOMATED DEMONSTRATION SCENARIO (TEST SCENARIO RESULT)            ║
+║   Metric                  │ Geometric (Route A)    │ LunaBot (Route B)       ║
+║   ────────────────────────┼────────────────────────┼─────────────────────────║
+║   Path length             │  1.82 m                │  2.18 m                 ║
+║   Hazard exposure         │   62%                  │    4%                   ║
+║   Min clearance           │ 0.14 m                 │ 0.58 m                  ║
+║   Collisions              │ 1                      │ 0                       ║
+║   Outcome                 │ Unsafe (❌)            │ Success (✓)             ║
+║                                                                              ║
+║   "LunaBot deliberately chose a longer path because the shorter path         ║
+║    was dangerous."                                                           ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ MISSION COMPLETE — TELEMETRY & VERIFICATION SUMMARY                          ║
+║   ✓ Goal reached     ✓ 0 collisions     ✓ Dynamic replanning                 ║
+║   ✓ Semantic terrain awareness          ✓ SLAM localization                  ║
+║   MODE: AUTONOMOUS  │ GPS: OFFLINE ✓  │ SLAM: ACTIVE ✓  │ AI: ACTIVE ✓   ║
+║   SAFETY SCORE: 96% │ REPLANS: 0     │ HAZARDS AVOIDED: 1 │ RESULT: PASS ✓ ║
+╚══════════════════════════════════════════════════════════════════════════════╝

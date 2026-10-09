@@ -39,10 +39,11 @@ class TerrainAwarePlanner(Node):
             "status_topic", "/lunabot/terrain/planner/status")
         self.declare_parameter("map_frame", "map")
         self.declare_parameter("base_frame", "chassis")
-        self.declare_parameter("blocked_cost", 100)
-        self.declare_parameter("cost_weight", 2.0)
-        self.declare_parameter("unknown_cost", 80)
+        self.declare_parameter("blocked_cost", 95)
+        self.declare_parameter("cost_weight", 3.0)
+        self.declare_parameter("unknown_cost", 50)
         self.declare_parameter("replan_period", 1.0)
+        self.declare_parameter("smooth_path", True)
 
         get = self.get_parameter
         self.cost_map_topic = str(get("cost_map_topic").value)
@@ -56,6 +57,7 @@ class TerrainAwarePlanner(Node):
         self.cost_weight = max(0.0, float(get("cost_weight").value))
         self.unknown_cost = max(0, min(100, int(get("unknown_cost").value)))
         self.replan_period = max(0.2, float(get("replan_period").value))
+        self.smooth_path = bool(get("smooth_path").value)
 
         map_qos = QoSProfile(depth=1)
         map_qos.reliability = ReliabilityPolicy.RELIABLE
@@ -127,7 +129,7 @@ class TerrainAwarePlanner(Node):
 
     @staticmethod
     def _yaw(q) -> float:
-        return math.atan2(2.0 * (q.w * q.z),
+        return math.atan2(2.0 * (q.w * q.z + q.x * q.y),
                           1.0 - 2.0 * (q.y * q.y + q.z * q.z))
 
     def _transform_xy(self, x: float, y: float, yaw: float,
@@ -189,7 +191,7 @@ class TerrainAwarePlanner(Node):
     def _nearest_traversable(self, cell):
         if self._cell_cost(cell) is not None:
             return cell
-        for radius in range(1, 20):
+        for radius in range(1, 40):
             for dy in range(-radius, radius + 1):
                 for dx in range(-radius, radius + 1):
                     candidate = (cell[0] + dx, cell[1] + dy)
@@ -227,6 +229,57 @@ class TerrainAwarePlanner(Node):
                 heapq.heappush(open_set, (tentative + heuristic, nxt))
         return [], float("inf")
 
+    def _line_of_sight_safe(self, cell_a: tuple[int, int],
+                            cell_b: tuple[int, int],
+                            max_allowed_cost: int) -> bool:
+        """Check that the straight segment between two grid cells is safe."""
+        x0, y0 = cell_a
+        x1, y1 = cell_b
+        steps = max(abs(x1 - x0), abs(y1 - y0)) * 2
+        if steps <= 0:
+            return self._cell_cost(cell_a) is not None
+        for i in range(steps + 1):
+            t = i / steps
+            cx = int(round(x0 + (x1 - x0) * t))
+            cy = int(round(y0 + (y1 - y0) * t))
+            c = self._cell_cost((cx, cy))
+            if c is None or c > max_allowed_cost:
+                return False
+        return True
+
+    def _prune_path(self, cells: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        """Smooth 8-connected staircase artifacts while preserving dense waypoints."""
+        if len(cells) <= 2 or not self.smooth_path:
+            return cells
+        anchors = [cells[0]]
+        idx = 0
+        while idx < len(cells) - 1:
+            best = idx + 1
+            max_cost = min(84, self._cell_cost(cells[idx]) or self.unknown_cost)
+            look_limit = min(len(cells) - 1, idx + 5)
+            for cand in range(idx + 1, look_limit + 1):
+                c_val = self._cell_cost(cells[cand])
+                if c_val is None or c_val > 84:
+                    break
+                max_cost = max(max_cost, c_val)
+                if self._line_of_sight_safe(cells[idx], cells[cand], max_cost):
+                    best = cand
+            anchors.append(cells[best])
+            idx = best
+        dense: list[tuple[int, int]] = [anchors[0]]
+        for a, b in zip(anchors[:-1], anchors[1:]):
+            dist = math.hypot(b[0] - a[0], b[1] - a[1])
+            sub = max(1, int(math.ceil(dist / 1.0)))
+            for s in range(1, sub + 1):
+                t = s / sub
+                pt = (int(round(a[0] + (b[0] - a[0]) * t)),
+                      int(round(a[1] + (b[1] - a[1]) * t)))
+                if pt != dense[-1] and self._cell_cost(pt) is not None:
+                    dense.append(pt)
+        if dense[-1] != cells[-1]:
+            dense.append(cells[-1])
+        return dense if len(dense) >= 2 else cells
+
     def _plan(self) -> None:
         if self.cost_map is None or self.goal is None:
             return
@@ -240,28 +293,42 @@ class TerrainAwarePlanner(Node):
         except (RuntimeError, tf2_ros.TransformException) as exc:
             self.publish_status(f"TERRAIN_PLANNER_WAITING_FOR_TF {exc}")
             return
-        start_cell = self._nearest_traversable(
-            self._world_to_grid(current_x, current_y))
-        goal_cell = self._nearest_traversable(
-            self._world_to_grid(goal_x, goal_y))
+        raw_start_cell = self._world_to_grid(current_x, current_y)
+        raw_goal_cell = self._world_to_grid(goal_x, goal_y)
+        start_cell = self._nearest_traversable(raw_start_cell)
+        goal_cell = self._nearest_traversable(raw_goal_cell)
         if start_cell is None or goal_cell is None:
             self.publish_status("TERRAIN_PLANNER_NO_SAFE_START_OR_GOAL")
             return
         cells, total_cost = self._weighted_astar(start_cell, goal_cell)
+        if not cells and self.blocked_cost < 100:
+            saved_blocked = self.blocked_cost
+            self.blocked_cost = 100
+            start_cell = self._nearest_traversable(raw_start_cell) or start_cell
+            goal_cell = self._nearest_traversable(raw_goal_cell) or goal_cell
+            cells, total_cost = self._weighted_astar(start_cell, goal_cell)
+            self.blocked_cost = saved_blocked
         if not cells:
             self.publish_status("TERRAIN_PLANNER_NO_PATH")
             return
+        if len(cells) == 1:
+            cells = [start_cell, goal_cell]
+        cells = self._prune_path(cells)
+        world_pts = [self._grid_to_world(cell) for cell in cells]
+        if world_pts:
+            world_pts[0] = (current_x, current_y)
+            if goal_cell == raw_goal_cell:
+                world_pts[-1] = (goal_x, goal_y)
         path = Path()
         path.header.frame_id = self.map_frame
         path.header.stamp = self.get_clock().now().to_msg()
-        for index, cell in enumerate(cells):
-            x, y = self._grid_to_world(cell)
+        for index, (x, y) in enumerate(world_pts):
             pose = PoseStamped()
             pose.header = path.header
             pose.pose.position.x = x
             pose.pose.position.y = y
-            if index + 1 < len(cells):
-                nx, ny = self._grid_to_world(cells[index + 1])
+            if index + 1 < len(world_pts):
+                nx, ny = world_pts[index + 1]
                 heading = math.atan2(ny - y, nx - x)
             else:
                 heading = goal_yaw

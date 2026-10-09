@@ -6,7 +6,11 @@ __pycache__/
 .DS_Store
 
 # Logs that are regenerated on every run are kept small on purpose;
-# ignore only editor/IDE noise:
+# ignore only editor/IDE noise and local colcon/venv build trees:
 .idea/
 .vscode/
 *.swp
+.venv*/
+build/
+install/
+log/

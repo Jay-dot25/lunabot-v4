@@ -1,0 +1,153 @@
+{
+  "settlement_name": "Artemis / Nobile-Rim Lunar Settlement Region",
+  "world_extent_m": [400.0, 400.0],
+  "navigation_framing": "LunaBot demonstrates autonomous local navigation in a GPS/GNSS-independent lunar settlement simulation, using onboard perception (RGB-D + 3D LiDAR), SLAM, a Local Settlement Map & Landmark Database, 5-class semantic terrain understanding, and terrain-aware path planning (A* / D*-Lite).",
+  "semantic_cost_model": {
+    "REGOLITH": {"relative_weight": 1, "cost_grid_value": 20, "description": "Fine gray dusty lunar soil — primary low-cost traversable surface"},
+    "BEDROCK": {"relative_weight": 3, "cost_grid_value": 38, "description": "Exposed stepped geological rock shelves — moderate traversal cost"},
+    "SMALL_ROCK": {"relative_weight": 5, "cost_grid_value": 75, "description": "Scattered basalt ejecta fragments — high caution cost"},
+    "LARGE_ROCK": {"relative_weight": 8, "cost_grid_value": 100, "description": "Angular boulders (0.5m–4m) — impassable obstacle + safety inflation halo"},
+    "SHADOW": {"relative_weight": 8, "cost_grid_value": 72, "description": "Low-angle South-Pole umbra/penumbra shadow zone — degraded visual perception penalty"},
+    "CRATER": {"relative_weight": 10, "cost_grid_value": 100, "description": "Raised ejecta rim + steep inner crater bowl — forbidden hazard"},
+    "STEEP_SLOPE": {"relative_weight": 12, "cost_grid_value": 100, "description": "High-gradient ridge or crater wall (>20 deg) — forbidden rollover hazard"}
+  },
+  "locations": {
+    "habitat_hub": {
+      "id": "L1",
+      "name": "Lunar Habitat Hub",
+      "facility_coordinates_m": [-10.5, 7.5, -2.80],
+      "rover_start_pose_m": [0.0, 0.0, 0.0],
+      "distance_from_hub_m": 0.0,
+      "difficulty_rank": 1,
+      "difficulty_label": "1/6 — Easiest (Safe Regolith Basin)",
+      "purpose": "Central settlement base, rover garage, airlock, equipment storage, and mission departure/return hub.",
+      "terrain_classes": ["REGOLITH", "BEDROCK"],
+      "landmarks": ["lunar_habitat_main", "lunar_rover_garage", "lunar_habitat_equipment"]
+    },
+    "solar_station": {
+      "id": "L2",
+      "name": "Solar Power Station",
+      "facility_coordinates_m": [58.0, 26.0, -0.80],
+      "corridor_target_pose_m": [1.75, -0.52, 0.0],
+      "distance_from_hub_m": 63.6,
+      "difficulty_rank": 2,
+      "difficulty_label": "2/6 — Easy-Moderate (Elevated Sunlit Ridge & Regolith)",
+      "purpose": "High-illumination polar ridge solar array farm, battery storage, and power substation.",
+      "terrain_classes": ["REGOLITH", "BEDROCK", "SMALL_ROCK"],
+      "landmarks": ["lunar_solar_power_station", "lunar_boulder_slalom_left"]
+    },
+    "landing_zone": {
+      "id": "L6",
+      "name": "Landing / Logistics Zone",
+      "facility_coordinates_m": [-64.0, -38.0, -0.80],
+      "corridor_target_pose_m": [1.60, -0.68, 0.0],
+      "distance_from_hub_m": 74.4,
+      "difficulty_rank": 2,
+      "difficulty_label": "2/6 — Moderate (Open Mare Plain & Ejecta Apron)",
+      "purpose": "Spacecraft descent/ascent pad, Vikram/Artemis lander, and logistics cargo transfer waypoint.",
+      "terrain_classes": ["REGOLITH", "SMALL_ROCK"],
+      "landmarks": ["lunar_landing_zone", "lunar_boulder_right_outcrop"]
+    },
+    "comms_relay": {
+      "id": "L3",
+      "name": "Communication Relay Tower",
+      "facility_coordinates_m": [92.0, 58.0, 0.10],
+      "corridor_target_pose_m": [1.72, -0.56, 0.0],
+      "distance_from_hub_m": 108.8,
+      "difficulty_rank": 3,
+      "difficulty_label": "3/6 — Moderate-Hard (High Promontory Ridge & Bedrock)",
+      "purpose": "Elevated line-of-sight communications relay linking Habitat Hub, Earth, and remote exploration sites.",
+      "terrain_classes": ["REGOLITH", "BEDROCK", "SHADOW"],
+      "landmarks": ["lunar_comms_relay_tower", "lunar_solar_power_station"]
+    },
+    "mining_site": {
+      "id": "L5",
+      "name": "Resource / Mining Site",
+      "facility_coordinates_m": [-56.0, 48.0, 0.13],
+      "corridor_target_pose_m": [1.62, -0.64, 0.0],
+      "distance_from_hub_m": 73.8,
+      "difficulty_rank": 4,
+      "difficulty_label": "4/6 — Hard (Rough Regolith, Boulders & Crater Edges)",
+      "purpose": "ISRU regolith excavation, core drilling structure, and resource processing containers.",
+      "terrain_classes": ["REGOLITH", "BEDROCK", "LARGE_ROCK", "CRATER"],
+      "landmarks": ["lunar_mining_site", "presentation_rock_left"]
+    },
+    "science_station": {
+      "id": "L4",
+      "name": "Science / Geological Station",
+      "facility_coordinates_m": [78.0, -28.0, -1.34],
+      "corridor_target_pose_m": [1.65, -0.62, 0.0],
+      "distance_from_hub_m": 82.9,
+      "difficulty_rank": 5,
+      "difficulty_label": "5/6 — Very Hard (Rocky Ridge, Boulder Field & Crater Corridor)",
+      "purpose": "Geological sampling & spectrometer station beyond the hazardous crater field and rocky ridge.",
+      "terrain_classes": ["REGOLITH", "BEDROCK", "LARGE_ROCK", "CRATER", "SHADOW"],
+      "landmarks": ["lunar_science_station", "presentation_obstacle_forward", "lunar_boulder_slalom_right", "lunar_boulder_far_ridge"]
+    },
+    "shadow_crater": {
+      "id": "L7",
+      "name": "Permanently Shadowed Crater / Research Zone",
+      "facility_coordinates_m": [64.0, -64.0, -9.23],
+      "rim_station_coordinates_m": [48.0, -48.0, -0.28],
+      "corridor_target_pose_m": [1.68, -0.66, 0.0],
+      "distance_from_hub_m": 90.5,
+      "difficulty_rank": 6,
+      "difficulty_label": "6/6 — Hardest (Steep Crater Rim, Deep Permanent Shadow & Ejecta)",
+      "purpose": "Extreme polar crater floor (-9.23m depth) in permanent shadow for volatile/illumination perception research.",
+      "terrain_classes": ["CRATER", "SHADOW", "LARGE_ROCK", "STEEP_SLOPE", "REGOLITH"],
+      "landmarks": ["lunar_shadow_crater_site", "lunar_shadow_crater_probe", "lunar_boulder_right_outcrop"]
+    }
+  },
+  "missions": {
+    "M1_SOLAR": {
+      "id": "M1",
+      "name": "Mission 1 — Habitat Hub -> Solar Power Station",
+      "origin": "habitat_hub",
+      "destination": "solar_station",
+      "purpose": "Basic GPS-free local navigation over mostly traversable regolith and gentle ridge slopes.",
+      "expected_behavior": "Planner selects low-cost regolith corridor avoiding departure hazards."
+    },
+    "M2_MINING": {
+      "id": "M2",
+      "name": "Mission 2 — Habitat Hub -> Resource / Mining Site",
+      "origin": "habitat_hub",
+      "destination": "mining_site",
+      "purpose": "Terrain-aware navigation across rocks, rough regolith, moderate slopes, and crater edges.",
+      "expected_behavior": "Planner penalizes rock fields and crater rims, routing through safe regolith troughs."
+    },
+    "M3_SCIENCE": {
+      "id": "M3",
+      "name": "Mission 3 — Habitat Hub -> Science / Geological Station",
+      "origin": "habitat_hub",
+      "destination": "science_station",
+      "purpose": "Route A (short but crosses boulder + 3.2m crater hazard) vs. Route B (longer, lower semantic cost).",
+      "expected_behavior": "Semantic cost map blocks direct Route A (cost=100) and selects Safe Route B."
+    },
+    "M4_SHADOW": {
+      "id": "M4",
+      "name": "Mission 4 — Habitat Hub -> Permanently Shadowed Crater",
+      "origin": "habitat_hub",
+      "destination": "shadow_crater",
+      "purpose": "Extreme illumination contrast (SUNLIT REGOLITH -> DEEP SHADOW), crater slopes, and rocks.",
+      "expected_behavior": "Segmentation & cost map distinguish dark shadow zones from physical crater walls/boulders."
+    },
+    "M5_LANDING_ROUNDTRIP": {
+      "id": "M5",
+      "name": "Mission 5 — Habitat Hub -> Landing Zone -> Habitat Hub",
+      "origin": "habitat_hub",
+      "destination": "landing_zone",
+      "round_trip": true,
+      "purpose": "Outbound and return navigation using SLAM pose estimation and landmark constraints.",
+      "expected_behavior": "Rover reaches landing corridor waypoint and maintains bounded SLAM/odometry drift."
+    },
+    "M6_DYNAMIC_OBSTACLE": {
+      "id": "M6",
+      "name": "Mission 6 — Dynamic Obstacle & Real-Time Replanning",
+      "origin": "habitat_hub",
+      "destination": "science_station",
+      "dynamic_replan": true,
+      "purpose": "Detect unmapped/newly sensed boulder hazard on route and trigger real-time path replanning.",
+      "expected_behavior": "LiDAR/RGB-D updates obstacle overlay and planner recomputes safe trajectory in <0.25s."
+    }
+  }
+}

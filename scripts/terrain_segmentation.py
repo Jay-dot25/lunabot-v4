@@ -56,6 +56,11 @@ class TerrainSegmentation(Node):
         self.declare_parameter("max_depth", 8.0)
         self.declare_parameter("max_rate", 5.0)
         self.declare_parameter("saturation_threshold", 0.55)
+        self.declare_parameter("horizontal_fov", 1.047)
+        self.declare_parameter("camera_height", 1.24)
+        self.declare_parameter("obstacle_height_threshold", 0.35)
+        self.declare_parameter("vertical_step_threshold", 0.03)
+        self.declare_parameter("enable_geometric_obstacles", False)
 
         get = self.get_parameter
         self.image_topic = str(get("image_topic").value)
@@ -68,6 +73,14 @@ class TerrainSegmentation(Node):
         self.max_rate = max(0.1, float(get("max_rate").value))
         self.saturation_threshold = max(
             0.0, min(1.0, float(get("saturation_threshold").value)))
+        self.horizontal_fov = max(0.2, float(get("horizontal_fov").value))
+        self.camera_height = max(0.1, float(get("camera_height").value))
+        self.obstacle_height_threshold = max(
+            0.05, float(get("obstacle_height_threshold").value))
+        self.vertical_step_threshold = max(
+            0.005, float(get("vertical_step_threshold").value))
+        self.enable_geometric_obstacles = bool(
+            get("enable_geometric_obstacles").value)
 
         self.image_sub = self.create_subscription(
             Image, self.image_topic, self._image_callback, qos_profile_sensor_data)
@@ -165,6 +178,20 @@ class TerrainSegmentation(Node):
         msg.data = data
         return msg
 
+    def _is_geometric_obstacle(self, depth: Image, depth_x: int, depth_y: int,
+                               distance: float, fy: float, cy: float) -> bool:
+        """Detect vertical 3D obstacles (such as grey rocks/walls) from depth geometry."""
+        if distance > 3.5 or depth.height < 16:
+            return False
+        height_above_ground = self.camera_height - distance * ((depth_y - cy) / max(1.0, fy))
+        if height_above_ground < self.obstacle_height_threshold:
+            return False
+        step_y = depth_y - 8 if depth_y >= 8 else min(depth.height - 1, depth_y + 8)
+        neighbor_dist = self._depth_at(depth, depth_x, step_y)
+        if not math.isfinite(neighbor_dist):
+            return False
+        return abs(neighbor_dist - distance) <= self.vertical_step_threshold
+
     def _process_latest(self) -> None:
         image = self.latest_image
         depth = self.latest_depth
@@ -172,14 +199,14 @@ class TerrainSegmentation(Node):
             return
         stamp_ns = max(self._stamp_ns(image), self._stamp_ns(depth))
         now_ns = self.get_clock().now().nanoseconds
-        if stamp_ns <= self.last_stamp_ns:
-            return
-        if self.last_process_ns and now_ns - self.last_process_ns < int(1e9 / self.max_rate):
+        if self.last_process_ns and 0 < (now_ns - self.last_process_ns) < int(1e9 / self.max_rate):
             return
         self.last_stamp_ns = stamp_ns
         self.last_process_ns = now_ns
 
         width, height = int(image.width), int(image.height)
+        fy = max(1.0, depth.width / (2.0 * math.tan(self.horizontal_fov / 2.0)))
+        cy = (depth.height - 1) / 2.0
         mask = bytearray(width * height)
         overlay = bytearray(width * height * 3)
         terrain_count = 0
@@ -198,10 +225,15 @@ class TerrainSegmentation(Node):
                     red, green, blue = self._rgb_at(image, x, y)
                     luminance = max(red, green, blue) / 255.0
                     saturation = (max(red, green, blue) - min(red, green, blue)) / 255.0
+                    geom_obstacle = (
+                        self.enable_geometric_obstacles and
+                        self._is_geometric_obstacle(
+                            depth, depth_x, depth_y, distance, fy, cy)
+                    )
                     # Lunar terrain is expected to be a low-saturation return in
-                    # the lower field. Bright or saturated returns are treated
-                    # conservatively as obstacle candidates.
-                    if lower_roi and saturation <= self.saturation_threshold and luminance < 0.98:
+                    # the lower field without steep vertical obstacle geometry.
+                    if (lower_roi and not geom_obstacle and
+                            saturation <= self.saturation_threshold and luminance < 0.98):
                         label = TERRAIN
                         terrain_count += 1
                     else:
@@ -210,7 +242,18 @@ class TerrainSegmentation(Node):
                 mask[y * width + x] = label
                 index = (y * width + x) * 3
                 if label == TERRAIN:
-                    overlay[index:index + 3] = bytes((40, 210, 60))
+                    if luminance < 0.08:
+                        # Deep South-Pole Shadow (Umbra)
+                        overlay[index:index + 3] = bytes((145, 85, 235))
+                    elif luminance < 0.21:
+                        # Steep Crater Wall / Penumbra
+                        overlay[index:index + 3] = bytes((245, 115, 35))
+                    elif (red - blue) >= 7 and luminance <= 0.48:
+                        # Exposed Warm-Slate Bedrock
+                        overlay[index:index + 3] = bytes((235, 175, 40))
+                    else:
+                        # Traversable Regolith
+                        overlay[index:index + 3] = bytes((40, 210, 60))
                 elif label == OBSTACLE:
                     overlay[index:index + 3] = bytes((235, 55, 45))
                 else:

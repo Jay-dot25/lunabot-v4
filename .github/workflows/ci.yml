@@ -1,0 +1,31 @@
+name: LunaBot V4 CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  static-and-unit-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile all Python scripts and tools
+        run: |
+          python3 -m py_compile scripts/*.py tools/*.py tests/*.py launch/*.py
+
+      - name: Run unit tests for math, perception, planning, and control
+        run: |
+          python3 -m unittest discover -s tests -v
+
+      - name: Run full Phase A through Phase L static validation suite
+        run: |
+          python3 tools/validate_phase_l.py

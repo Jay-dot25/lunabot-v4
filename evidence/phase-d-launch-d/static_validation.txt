@@ -46,16 +46,16 @@
 [PASS] bash syntax: scripts/launch-d.sh
 [PASS] world SDF well-formed
 [PASS] model SDF well-formed
-[PASS] existing static gate remains green: tools/validate_phase_a.py - ==
+[PASS] existing static gate remains green: tools/validate_phase_a.py - =
 RESULT: 80/80 checks passed - ALL PASS
 ============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-a-launch-a/static_validation.txt
+report: /home/user/lunabot-v4/evidence/phase-a-launch-a/static_validation.txt
 [PASS] existing static gate remains green: tools/validate_phase_b.py - RESULT: 103/103 checks passed - ALL PASS
 ============================================================
-report: /tmp/lunabot-phase-a/evidence/phase-b-launch-b/static_validation.txt
-[PASS] existing static gate remains green: tools/validate_phase_c.py - ULT: 133/133 checks passed - ALL PASS
+report: /home/user/lunabot-v4/evidence/phase-b-launch-b/static_validation.txt
+[PASS] existing static gate remains green: tools/validate_phase_c.py - LT: 133/133 checks passed - ALL PASS
 ================================================================
-report: /tmp/lunabot-phase-a/evidence/phase-c-launch-c/static_validation.txt
+report: /home/user/lunabot-v4/evidence/phase-c-launch-c/static_validation.txt
 [PASS] root launch-d resolves its real path
 [PASS] root launch-d execs scripts/launch-d.sh
 [PASS] Phase D does not invoke launch-a

@@ -11,10 +11,16 @@ from pathlib import Path
 import ast
 import subprocess
 import sys
+import os
+import tempfile
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 checks = []
+_CACHE_TMP = None
+if "LUNABOT_VALIDATOR_CACHE_DIR" not in os.environ:
+    _CACHE_TMP = tempfile.TemporaryDirectory()
+    os.environ["LUNABOT_VALIDATOR_CACHE_DIR"] = _CACHE_TMP.name
 
 
 def check(name, ok, detail=""):
@@ -26,6 +32,15 @@ def read(rel):
 
 
 def run(cmd):
+    cache_dir = os.environ.get("LUNABOT_VALIDATOR_CACHE_DIR")
+    if cache_dir and len(cmd) == 2 and str(cmd[1]).startswith("tools/validate_phase_"):
+        cache_file = Path(cache_dir) / (Path(cmd[1]).name + ".out")
+        if cache_file.is_file():
+            return subprocess.CompletedProcess(cmd, 0, cache_file.read_text(encoding="utf-8"), "")
+        res = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if res.returncode == 0:
+            cache_file.write_text(res.stdout, encoding="utf-8")
+        return res
     return subprocess.run(cmd, cwd=ROOT, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE, text=True)
 

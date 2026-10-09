@@ -37,14 +37,19 @@ class ObstacleDetector(Node):
         self.declare_parameter("map_topic", "/lunabot/obstacles/map")
         self.declare_parameter("map_frame", "map")
         self.declare_parameter("base_frame", "chassis")
-        self.declare_parameter("front_half_angle", 0.60)
-        self.declare_parameter("detection_distance", 1.50)
+        self.declare_parameter("front_half_angle", 1.25)
+        self.declare_parameter("detection_distance", 1.65)
         self.declare_parameter("minimum_distance", 0.25)
         self.declare_parameter("map_resolution", 0.10)
         self.declare_parameter("map_width", 160)
         self.declare_parameter("map_height", 160)
         self.declare_parameter("map_origin_x", -8.0)
         self.declare_parameter("map_origin_y", -8.0)
+        self.declare_parameter("lidar_height", 1.37)
+        self.declare_parameter("lidar_pitch", 0.50)
+        self.declare_parameter("min_obstacle_height", 0.45)
+        self.declare_parameter("persist_obstacles", False)
+        self.declare_parameter("use_3d_projection", True)
 
         get = self.get_parameter
         self.scan_topic = str(get("scan_topic").value)
@@ -61,6 +66,11 @@ class ObstacleDetector(Node):
         self.map_height = max(10, int(get("map_height").value))
         self.map_origin_x = float(get("map_origin_x").value)
         self.map_origin_y = float(get("map_origin_y").value)
+        self.lidar_height = max(0.1, float(get("lidar_height").value))
+        self.lidar_pitch = float(get("lidar_pitch").value)
+        self.min_obstacle_height = max(0.0, float(get("min_obstacle_height").value))
+        self.persist_obstacles = bool(get("persist_obstacles").value)
+        self.use_3d_projection = bool(get("use_3d_projection").value)
 
         self.scan_sub = self.create_subscription(
             LaserScan, self.scan_topic, self._scan_callback,
@@ -80,6 +90,8 @@ class ObstacleDetector(Node):
         self.last_status = ""
         self.last_scan: Optional[LaserScan] = None
         self.last_points: list[tuple[float, float, float]] = []
+        self.obstacle_cells = [-1] * (self.map_width * self.map_height)
+        self._recent_frames: list[list[int]] = []
         self.frame_count = 0
         self.publish_status("OBSTACLE_DETECTOR_WAITING_FOR_LIDAR")
 
@@ -106,6 +118,21 @@ class ObstacleDetector(Node):
         except tf2_ros.TransformException:
             return None
 
+    @staticmethod
+    def _rotate_xy_by_quaternion(x: float, y: float, q) -> tuple[float, float]:
+        """Project a point (x, y, 0) in a tilted sensor frame into map XY."""
+        r00 = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+        r01 = 2.0 * (q.x * q.y - q.w * q.z)
+        r10 = 2.0 * (q.x * q.y + q.w * q.z)
+        r11 = 1.0 - 2.0 * (q.x * q.x + q.z * q.z)
+        return r00 * x + r01 * y, r10 * x + r11 * y
+
+    def _is_above_ground(self, distance: float, angle: float) -> bool:
+        """Reject tilted-LiDAR strikes on flat ground while keeping real obstacles."""
+        vertical_drop = distance * math.sin(self.lidar_pitch) * math.cos(angle)
+        height_above_ground = self.lidar_height - vertical_drop
+        return height_above_ground >= self.min_obstacle_height
+
     def _scan_callback(self, scan: LaserScan) -> None:
         self.frame_count += 1
         points: list[tuple[float, float, float]] = []
@@ -116,6 +143,8 @@ class ObstacleDetector(Node):
             if not math.isfinite(value):
                 continue
             if value < self.minimum_distance or value > self.detection_distance:
+                continue
+            if not self._is_above_ground(value, angle):
                 continue
             points.append((value * math.cos(angle), value * math.sin(angle), value))
 
@@ -168,17 +197,40 @@ class ObstacleDetector(Node):
         output.info.origin.position.x = self.map_origin_x
         output.info.origin.position.y = self.map_origin_y
         output.info.origin.orientation.w = 1.0
-        output.data = [-1] * (self.map_width * self.map_height)
-        yaw = self._yaw(transform)
         tx = transform.transform.translation.x
         ty = transform.transform.translation.y
-        for x, y, _ in points:
-            map_x = tx + math.cos(yaw) * x - math.sin(yaw) * y
-            map_y = ty + math.sin(yaw) * x + math.cos(yaw) * y
-            cell_x = int((map_x - self.map_origin_x) / self.map_resolution)
-            cell_y = int((map_y - self.map_origin_y) / self.map_resolution)
-            if 0 <= cell_x < self.map_width and 0 <= cell_y < self.map_height:
-                output.data[cell_y * self.map_width + cell_x] = 100
+        q = transform.transform.rotation
+        yaw = self._yaw(transform)
+        frame_cells: list[int] = []
+        depth_offsets = (0.0, 0.12, 0.24)
+        for x, y, dist in points:
+            ux = x / max(dist, 1e-6)
+            uy = y / max(dist, 1e-6)
+            for d_off in depth_offsets:
+                px = x + d_off * ux
+                py = y + d_off * uy
+                if self.use_3d_projection:
+                    rx, ry = self._rotate_xy_by_quaternion(px, py, q)
+                else:
+                    rx = math.cos(yaw) * px - math.sin(yaw) * py
+                    ry = math.sin(yaw) * px + math.cos(yaw) * py
+                map_x = tx + rx
+                map_y = ty + ry
+                cell_x = int(math.floor((map_x - self.map_origin_x) / self.map_resolution))
+                cell_y = int(math.floor((map_y - self.map_origin_y) / self.map_resolution))
+                if 0 <= cell_x < self.map_width and 0 <= cell_y < self.map_height:
+                    idx = cell_y * self.map_width + cell_x
+                    frame_cells.append(idx)
+                    self.obstacle_cells[idx] = 100
+        if not self.persist_obstacles:
+            self._recent_frames.append(frame_cells)
+            if len(self._recent_frames) > 25:
+                self._recent_frames.pop(0)
+            self.obstacle_cells = [-1] * (self.map_width * self.map_height)
+            for past in self._recent_frames:
+                for idx in past:
+                    self.obstacle_cells[idx] = 100
+        output.data = list(self.obstacle_cells)
         self.map_pub.publish(output)
 
 

@@ -39,7 +39,7 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-      Marker Scale: 1
+      Marker Scale: 0.35
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -142,14 +142,14 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/Odometry
       Enabled: true
-      Keep: 100
+      Keep: 25
       Name: Odometry
-      Position Tolerance: 0.1
-      Angle Tolerance: 0.1
+      Position Tolerance: 0.15
+      Angle Tolerance: 0.15
       Shape:
         Alpha: 1
-        Axes Length: 0.3
-        Axes Radius: 0.03
+        Axes Length: 0.15
+        Axes Radius: 0.015
         Head Length: 0.1
         Head Radius: 0.05
         Shaft Length: 0.1
@@ -325,17 +325,17 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 45
+      Distance: 7.5
       Focal Point:
-        X: 0
-        Y: 0
+        X: 1.5
+        Y: -0.2
         Z: 0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5
+      Pitch: 0.65
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
       Yaw: 4.7123888

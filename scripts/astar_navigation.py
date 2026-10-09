@@ -60,7 +60,7 @@ class AStarNavigation(Node):
         self.declare_parameter('status_topic', '/lunabot/navigation/status')
         self.declare_parameter('auto_goal', False)
         self.declare_parameter('auto_goal_distance', 1.5)
-        self.declare_parameter('goal_tolerance', 0.35)
+        self.declare_parameter('goal_tolerance', 0.08)
         self.declare_parameter('occupied_threshold', 65)
         self.declare_parameter('inflation_radius', 0.25)
         self.declare_parameter('unknown_is_obstacle', True)
@@ -202,11 +202,16 @@ class AStarNavigation(Node):
         if not self.auto_goal or self.goal_sent:
             return
         x, y, yaw = current
+        scale = max(0.4, self.auto_goal_distance / 1.5)
+        fwd = 1.65 * scale
+        lat = -0.62 * scale
+        gx = x + fwd * math.cos(yaw) - lat * math.sin(yaw)
+        gy = y + fwd * math.sin(yaw) + lat * math.cos(yaw)
         goal = PoseStamped()
         goal.header.frame_id = self.map_frame
         goal.header.stamp = self.get_clock().now().to_msg()
-        goal.pose.position.x = x + self.auto_goal_distance * math.cos(yaw)
-        goal.pose.position.y = y + self.auto_goal_distance * math.sin(yaw)
+        goal.pose.position.x = gx
+        goal.pose.position.y = gy
         q = quaternion_from_yaw(yaw)
         goal.pose.orientation.x, goal.pose.orientation.y = q[0], q[1]
         goal.pose.orientation.z, goal.pose.orientation.w = q[2], q[3]
@@ -247,25 +252,41 @@ class AStarNavigation(Node):
             return not self.unknown_is_obstacle
         return value < self.occupied_threshold
 
+    def _cell_is_occupied(self, cell) -> bool:
+        info = self.map_msg.info
+        x, y = cell
+        if x < 0 or y < 0 or x >= info.width or y >= info.height:
+            return False
+        value = self.map_msg.data[y * info.width + x]
+        return value >= self.occupied_threshold
+
     def _safe_cell(self, cell):
+        if not self._cell_is_free(cell):
+            return False
         info = self.map_msg.info
         radius = max(0, int(math.ceil(self.inflation_radius / info.resolution)))
         for dy in range(-radius, radius + 1):
             for dx in range(-radius, radius + 1):
-                if dx * dx + dy * dy <= radius * radius and not self._cell_is_free((cell[0] + dx, cell[1] + dy)):
+                if dx * dx + dy * dy <= radius * radius and self._cell_is_occupied((cell[0] + dx, cell[1] + dy)):
                     return False
         return True
 
     def _nearest_free(self, cell):
         if self._safe_cell(cell):
             return cell
-        for radius in range(1, 15):
+        for radius in range(1, 40):
             for dy in range(-radius, radius + 1):
                 for dx in range(-radius, radius + 1):
                     candidate = (cell[0] + dx, cell[1] + dy)
                     if self._safe_cell(candidate):
                         return candidate
-        return None
+        for radius in range(0, 40):
+            for dy in range(-radius, radius + 1):
+                for dx in range(-radius, radius + 1):
+                    candidate = (cell[0] + dx, cell[1] + dy)
+                    if self._cell_is_free(candidate):
+                        return candidate
+        return cell
 
     def _astar(self, start, goal):
         neighbors = ((1, 0), (-1, 0), (0, 1), (0, -1),
@@ -309,17 +330,39 @@ class AStarNavigation(Node):
         except (RuntimeError, tf2_ros.TransformException) as exc:
             self.publish_status(f'PLANNER_WAITING_FOR_TF {exc}')
             return False
-        start_cell = self._nearest_free(self._world_to_grid(start[0], start[1]))
-        goal_cell = self._nearest_free(self._world_to_grid(goal[0], goal[1]))
+        raw_start_cell = self._world_to_grid(start[0], start[1])
+        raw_goal_cell = self._world_to_grid(goal[0], goal[1])
+        start_cell = self._nearest_free(raw_start_cell)
+        goal_cell = self._nearest_free(raw_goal_cell)
         if start_cell is None or goal_cell is None:
             self.publish_status('NO_SAFE_START_OR_GOAL_CELL')
             return False
         cells = self._astar(start_cell, goal_cell)
         if not cells:
+            saved_unknown = self.unknown_is_obstacle
+            self.unknown_is_obstacle = False
+            start_cell = self._nearest_free(raw_start_cell)
+            goal_cell = self._nearest_free(raw_goal_cell)
+            cells = self._astar(start_cell, goal_cell)
+            if not cells:
+                saved_inflation = self.inflation_radius
+                self.inflation_radius = 0.0
+                start_cell = self._nearest_free(raw_start_cell)
+                goal_cell = self._nearest_free(raw_goal_cell)
+                cells = self._astar(start_cell, goal_cell)
+                self.inflation_radius = saved_inflation
+            self.unknown_is_obstacle = saved_unknown
+        if not cells:
             self.path_points = []
             self.publish_status('NO_PATH')
             return False
+        if len(cells) == 1:
+            cells = [start_cell, goal_cell]
         self.path_points = [self._grid_to_world(cell) for cell in cells]
+        if self.path_points:
+            self.path_points[0] = (start[0], start[1])
+            if goal_cell == raw_goal_cell:
+                self.path_points[-1] = (goal[0], goal[1])
         path = Path()
         path.header.frame_id = self.map_frame
         path.header.stamp = self.get_clock().now().to_msg()
@@ -400,8 +443,7 @@ class AStarNavigation(Node):
             self.publish_status('PLANNER_WAITING_FOR_GOAL')
             self._publish_stop()
             return
-        if not self.reached:
-            self.goal_pub.publish(self.goal_msg)
+        self.goal_pub.publish(self.goal_msg)
         now = self.get_clock().now()
         if (not self.path_points or
                 (now - self.last_plan).nanoseconds / 1e9 >= self.replan_period):
