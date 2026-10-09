@@ -775,6 +775,20 @@ class TestLunaBotMathAndAutonomy(unittest.TestCase):
             self.assertGreater(mpath.stat().st_size, 1024)
             self.assertIn(sem_mesh, sdf_text)
 
+        albedo_png = mesh_dir / "lunar_regolith_albedo.png"
+        mtl_file = mesh_dir / "lunar_regolith.mtl"
+        self.assertTrue(albedo_png.is_file(), "Missing lunar_regolith_albedo.png texture")
+        self.assertGreater(albedo_png.stat().st_size, 50000)
+        self.assertTrue(mtl_file.is_file(), "Missing lunar_regolith.mtl material")
+        self.assertIn("lunar_regolith_albedo.png", sdf_text)
+        has_uv = False
+        with (mesh_dir / "lunar_impact_crater.obj").open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("vt "):
+                    has_uv = True
+                    break
+        self.assertTrue(has_uv, "lunar_impact_crater.obj must have UV texture coordinates (vt)")
+
         replan_mon = dynamic_replan_monitor.DynamicReplanMonitor()
         eval_k = phase_k_evaluator.PhaseKEvaluator()
         mission_l = phase_l_mission.PhaseLMission()

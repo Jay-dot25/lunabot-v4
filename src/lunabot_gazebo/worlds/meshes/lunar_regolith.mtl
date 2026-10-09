@@ -1,0 +1,7 @@
+# High-resolution Lunar Regolith & Rover Tyre-Track Material
+newmtl LunarRegolith
+Ka 0.5200 0.5200 0.5400
+Kd 0.8400 0.8400 0.8600
+Ks 0.0300 0.0300 0.0300
+Ns 8.0
+map_Kd lunar_regolith_albedo.png

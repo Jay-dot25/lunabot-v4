@@ -146,9 +146,9 @@
             </mesh>
           </geometry>
           <material>
-            <ambient>0.36 0.36 0.38 1</ambient>
-            <diffuse>0.68 0.68 0.70 1</diffuse>
-            <specular>0.04 0.04 0.04 1</specular>
+            <ambient>0.34 0.34 0.36 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.03 0.03 0.03 1</specular>
           </material>
         </visual>
       </link>
@@ -162,18 +162,25 @@
           <cast_shadows>false</cast_shadows>
           <geometry><mesh><uri>file://meshes/lunar_impact_crater.obj</uri></mesh></geometry>
           <material>
-            <ambient>0.36 0.36 0.38 1</ambient>
-            <diffuse>0.68 0.68 0.70 1</diffuse>
-            <specular>0.04 0.04 0.04 1</specular>
+            <ambient>0.44 0.44 0.46 1</ambient>
+            <diffuse>0.76 0.76 0.78 1</diffuse>
+            <specular>0.03 0.03 0.03 1</specular>
+            <pbr>
+              <metal>
+                <albedo_map>file://meshes/lunar_regolith_albedo.png</albedo_map>
+                <roughness>0.96</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
           </material>
         </visual>
         <visual name="angular_basalt_rocks_visual">
           <cast_shadows>false</cast_shadows>
           <geometry><mesh><uri>file://meshes/lunar_small_rocks.obj</uri></mesh></geometry>
           <material>
-            <ambient>0.09 0.10 0.12 1</ambient>
-            <diffuse>0.18 0.19 0.22 1</diffuse>
-            <specular>0.12 0.12 0.14 1</specular>
+            <ambient>0.11 0.12 0.13 1</ambient>
+            <diffuse>0.22 0.23 0.25 1</diffuse>
+            <specular>0.08 0.08 0.09 1</specular>
           </material>
         </visual>
       </link>
@@ -187,9 +194,9 @@
           <cast_shadows>false</cast_shadows>
           <geometry><mesh><uri>file://meshes/lunar_bedrock_patches.obj</uri></mesh></geometry>
           <material>
-            <ambient>0.16 0.14 0.11 1</ambient>
-            <diffuse>0.32 0.27 0.22 1</diffuse>
-            <specular>0.20 0.18 0.15 1</specular>
+            <ambient>0.18 0.17 0.16 1</ambient>
+            <diffuse>0.36 0.34 0.31 1</diffuse>
+            <specular>0.08 0.08 0.07 1</specular>
           </material>
         </visual>
       </link>
@@ -203,18 +210,18 @@
           <cast_shadows>false</cast_shadows>
           <geometry><mesh><uri>file://meshes/lunar_route_crater_rim.obj</uri></mesh></geometry>
           <material>
-            <ambient>0.52 0.52 0.54 1</ambient>
-            <diffuse>0.88 0.88 0.91 1</diffuse>
-            <specular>0.08 0.08 0.09 1</specular>
+            <ambient>0.34 0.34 0.36 1</ambient>
+            <diffuse>0.60 0.60 0.63 1</diffuse>
+            <specular>0.04 0.04 0.04 1</specular>
           </material>
         </visual>
         <visual name="crater_steep_walls_visual">
           <cast_shadows>false</cast_shadows>
           <geometry><mesh><uri>file://meshes/lunar_route_crater_wall.obj</uri></mesh></geometry>
           <material>
-            <ambient>0.07 0.07 0.09 1</ambient>
-            <diffuse>0.15 0.15 0.18 1</diffuse>
-            <specular>0.06 0.06 0.07 1</specular>
+            <ambient>0.11 0.11 0.13 1</ambient>
+            <diffuse>0.23 0.23 0.25 1</diffuse>
+            <specular>0.03 0.03 0.03 1</specular>
           </material>
         </visual>
       </link>
@@ -267,7 +274,7 @@
     <!-- ========================================================================= -->
     <model name="lunar_habitat_main">
       <static>true</static>
-      <pose>-10.50 7.50 -2.778 0 0 -0.45</pose>
+      <pose>-10.50 7.50 -2.772 0 0 -0.45</pose>
       <link name="habitat_body">
         <collision name="body_collision"><geometry><box><size>8.4 8.4 4.5</size></box></geometry></collision>
         <visual name="main_hab_skirt"><pose>0 0 0.70 0 0 0</pose><geometry><cylinder><radius>4.35</radius><length>1.40</length></cylinder></geometry><material><ambient>0.58 0.36 0.08 1</ambient><diffuse>0.82 0.54 0.14 1</diffuse></material></visual>
@@ -281,7 +288,7 @@
     <!-- Habitat Hub Rover Garage, Equipment Storage & Maintenance Area -->
     <model name="lunar_rover_garage">
       <static>true</static>
-      <pose>-11.00 -4.50 -2.753 0 0 0.25</pose>
+      <pose>-11.00 -4.50 -2.788 0 0 0.25</pose>
       <link name="garage_link">
         <visual name="garage_arch_shell"><pose>0 0 0.40 0 1.5708 0</pose><geometry><cylinder><radius>2.45</radius><length>5.60</length></cylinder></geometry><material><ambient>0.34 0.35 0.37 1</ambient><diffuse>0.52 0.53 0.55 1</diffuse></material></visual>
         <visual name="equipment_storage_rack_1"><pose>-0.80 3.20 0.55 0 0 0</pose><geometry><box><size>1.80 0.95 1.10</size></box></geometry><material><ambient>0.58 0.38 0.10 1</ambient><diffuse>0.82 0.56 0.16 1</diffuse></material></visual>
@@ -293,7 +300,7 @@
     <!-- Habitat Hub EVA Activity Area Astronaut -->
     <model name="lunar_astronaut_1">
       <static>true</static>
-      <pose>-8.20 4.20 -2.826 0 0 -0.35</pose>
+      <pose>-8.20 4.20 -2.570 0 0 -0.35</pose>
       <link name="astro1_link">
         <visual name="leg_left"><pose>0 0.11 0.42 0 0 0</pose><geometry><cylinder><radius>0.085</radius><length>0.84</length></cylinder></geometry><material><ambient>0.75 0.76 0.78 1</ambient><diffuse>0.88 0.89 0.91 1</diffuse></material></visual>
         <visual name="leg_right"><pose>0 -0.11 0.42 0 0 0</pose><geometry><cylinder><radius>0.085</radius><length>0.84</length></cylinder></geometry><material><ambient>0.75 0.76 0.78 1</ambient><diffuse>0.88 0.89 0.91 1</diffuse></material></visual>
@@ -307,7 +314,7 @@
     <!-- Habitat Hub Navigation Reference Marker (Marks Safe Route-B Departure Corridor) -->
     <model name="lunar_habitat_equipment">
       <static>true</static>
-      <pose>3.80 -2.20 -2.748 0 0 -0.42</pose>
+      <pose>3.80 -2.20 -2.764 0 0 -0.42</pose>
       <link name="equipment_body">
         <collision name="equipment_collision"><pose>0 0 0.12 0 0 0</pose><geometry><box><size>0.38 0.38 0.24</size></box></geometry></collision>
         <visual name="marker_base"><pose>0 0 0.14 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>0.28</length></cylinder></geometry><material><ambient>0.58 0.40 0.10 1</ambient><diffuse>0.82 0.56 0.16 1</diffuse></material></visual>
@@ -493,7 +500,7 @@
 
     <model name="presentation_rock_left">
       <static>true</static>
-      <pose>4.80 3.90 -2.247 0 0 1.15</pose>
+      <pose>4.80 3.90 -2.615 0 0 1.15</pose>
       <link name="rock_body">
         <collision name="rock_collision">
           <pose>0 0 0.32 0 0 0</pose>
@@ -513,7 +520,7 @@
 
     <model name="lunar_boulder_right_outcrop">
       <static>true</static>
-      <pose>5.40 -5.80 -2.608 0 0 -0.65</pose>
+      <pose>5.40 -5.80 -2.358 0 0 -0.65</pose>
       <link name="outcrop_body">
         <collision name="outcrop_collision">
           <pose>0 0 0.30 0 0 0</pose>
@@ -533,7 +540,7 @@
 
     <model name="lunar_boulder_slalom_right">
       <static>true</static>
-      <pose>18.50 -5.20 -2.922 0 0 0.85</pose>
+      <pose>18.50 -5.20 -2.906 0 0 0.85</pose>
       <link name="slalom_right_body">
         <collision name="slalom_right_collision">
           <pose>0 0 0.28 0 0 0</pose>
