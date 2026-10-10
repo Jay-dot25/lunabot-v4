@@ -229,7 +229,7 @@ The SDF camera looks along local `+X`; the fixed camera-to-optical transform and
 
 ## 9. Acceptance tests
 
-The current host cannot execute ROS or Gazebo runtime tests. The exact per-criterion state and reason are recorded in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). After installing the target stack:
+The agent host cannot execute ROS or Gazebo runtime tests. The user has since reported a successful four-package Humble build and initial Fortress launch; the ROS smoke check still needs diagnosis, and remaining criteria are listed in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). Continue the target-workstation checks:
 
 1. Build with the commands in §3; expected: all four packages build.
 2. Launch with the command in §4; expected: world and rover appear and remain stable.
@@ -246,7 +246,7 @@ This check sequence does **not** test or imply autonomous stopping or obstacle a
 
 - **Gazebo will not start:** confirm `ROS_DISTRO=humble`, source `/opt/ros/humble/setup.bash`, and install `ros-humble-ros-ign-bridge`. Check `ign gazebo --version` (not `gz sim --version`) and launch output. This workspace uses Fortress plugins and SDF 1.8.
 - **Rover model is missing:** verify the `lunabot_phase1_description` package built and sourced. The launch adds its installed `models/` directory to `IGN_GAZEBO_RESOURCE_PATH`; inspect `echo "$IGN_GAZEBO_RESOURCE_PATH"` and the world include `model://lunabot_rover`.
-- **ROS topics do not appear:** check that `lunabot_phase1_bridge` is running, inspect `ros2 node list`, `ros2 topic list -t`, the Gazebo log, and the `/clock` bridge. Confirm the bridge YAML is installed under the bringup package share directory.
+- **ROS topics do not appear or the smoke test misses a node:** confirm the launch is still running and both terminals use the same `ROS_DOMAIN_ID`/RMW environment. Restart the ROS CLI graph daemon with `ros2 daemon stop`, then check `ros2 node list` and `ros2 topic list -t`. The smoke script waits up to 20 seconds for each expected node. Also inspect the Gazebo log, `/clock` bridge, and installed bridge YAML.
 - **Camera image is absent or blank:** confirm the world Sensors system loaded with `ogre2`, that a rendering-capable display/GPU is available, and that Gazebo Transport advertises `/camera/image_raw`. The camera and LiDAR bridges are launched separately with `override_frame_id` set to `camera_optical_frame` and `lidar_link`, respectively. Use `rqt_image_view` or a best-effort subscriber when inspecting sensor topics.
 - **LiDAR returns are invalid:** check the GPU sensor's `ignition-gazebo-sensors-system`, `ogre2` rendering, `/scan` topic type, scan `range_min`/`range_max`, and that physical collision objects intersect the horizontal scan plane. `NO_VALID_MEASUREMENTS` is intentionally distinct from `CLEAR`.
 - **Odometry or TF is missing:** inspect `/odom`, `/tf`, and `/tf_static`; check that one DiffDrive plugin loaded and the Humble bridge maps `ignition.msgs.Odometry` and `ignition.msgs.Pose_V`. Use `tf2_echo odom base_footprint`. Do not add a second publisher for `odom -> base_footprint`.
@@ -256,7 +256,7 @@ This check sequence does **not** test or imply autonomous stopping or obstacle a
 
 ## 11. Known limitations and scope boundary
 
-- No live build or simulation has been run in the agent host because ROS 2, Gazebo, the ROS-Gazebo bridge, and `colcon` are absent. The user’s Ubuntu 22.04/Humble/Fortress workstation does not yet contain this new workspace directory, so the revised tree must be synced there before runtime checks. Gazebo schema/plugin loading, sensor images/ranges, physics stability, drive direction, TF connectivity, watchdog timing and restart repeatability remain unverified.
+- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. The user reports that the Humble build completed and the Fortress world launched; DiffDrive and bridge setup appeared in logs, and the obstacle monitor reported live scan ranges. The smoke script's node-list check still needs resolution. Camera image delivery, rover stability and commanded motion, odometry/TF, watchdog timing, all monitor states, and repeat-launch behavior remain unverified.
 - The code offers static XML/topic checks and pure-Python unit tests only; these are not a substitute for the ROS/Gazebo acceptance gate.
 - The command watchdog protects against a stale upstream velocity publisher while `command_guard` is alive. It is not an independent hardware stop and cannot guarantee a safe stop if the guard, bridge, or simulator itself terminates unexpectedly.
 - Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The current model has no suspension, deformable regolith, SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI.

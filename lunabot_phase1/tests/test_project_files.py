@@ -190,6 +190,8 @@ class ProjectFileTests(unittest.TestCase):
         smoke = (ROOT / "scripts" / "phase1_smoke_test.sh").read_text(encoding="utf-8")
         self.assertIn('"${ROS_DISTRO}" != "humble"', smoke)
         self.assertIn("/opt/ros/humble/setup.bash", smoke)
+        self.assertIn("wait_for_node()", smoke)
+        self.assertIn('grep -Eq "(^|/)${node_name}$"', smoke)
         self.assertNotIn('"${ROS_DISTRO}" != "jazzy"', smoke)
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("Ubuntu 22.04 (Jammy) + ROS 2 Humble + Gazebo Fortress", readme)

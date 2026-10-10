@@ -43,20 +43,30 @@ assert_type() {
   printf 'Type %-28s %s\n' "$topic" "$actual"
 }
 
+wait_for_node() {
+  local node_name="$1"
+  local attempt
+  for ((attempt = 1; attempt <= 20; attempt++)); do
+    if ros2 node list 2>/dev/null | grep -Eq "(^|/)${node_name}$"; then
+      printf 'Node %-32s OK\n' "$node_name"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "ERROR: ${node_name} was not visible in the ROS graph after 20 seconds." >&2
+  echo "Nodes currently visible:" >&2
+  ros2 node list >&2 || true
+  return 1
+}
+
 echo "LunaBot Phase 1 live-interface smoke test"
-ros2 node list | grep -q '/command_guard' || {
-  echo "ERROR: command_guard is not running." >&2
-  exit 1
-}
-ros2 node list | grep -q '/obstacle_monitor' || {
-  echo "ERROR: obstacle_monitor is not running." >&2
-  exit 1
-}
-for bridge_node in lunabot_phase1_bridge lunabot_phase1_camera_bridge lunabot_phase1_lidar_bridge; do
-  ros2 node list | grep -q "/${bridge_node}" || {
-    echo "ERROR: ${bridge_node} is not running." >&2
-    exit 1
-  }
+for node_name in \
+  command_guard \
+  obstacle_monitor \
+  lunabot_phase1_bridge \
+  lunabot_phase1_camera_bridge \
+  lunabot_phase1_lidar_bridge; do
+  wait_for_node "$node_name"
 done
 
 assert_type /cmd_vel geometry_msgs/msg/Twist
