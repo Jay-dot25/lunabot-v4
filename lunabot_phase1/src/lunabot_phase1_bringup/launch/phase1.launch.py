@@ -113,11 +113,11 @@ def generate_launch_description():
     transforms = [
         _static_transform(
             "base_footprint_to_base_link", "base_footprint", "base_link",
-            (0.0, 0.0, 0.32),
+            (0.0, 0.0, 0.28),
         ),
         _static_transform(
             "base_link_to_camera", "base_link", "camera_link",
-            (0.40, 0.0, 0.28),
+            (0.43, 0.0, 0.28),
         ),
         _static_transform(
             "camera_to_optical", "camera_link", "camera_optical_frame",

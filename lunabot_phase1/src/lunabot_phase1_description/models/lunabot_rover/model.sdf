@@ -4,26 +4,27 @@
     <static>false</static>
 
     <!--
-      Mechanical reference dimensions (metres): chassis 0.74 x 0.56 x 0.22,
-      wheel radius 0.16, wheel separation 0.62. The corresponding controller
-      limits are repeated in the ROS command_guard config and kept in sync by
-      the static project tests. This is a simulation model, not flight hardware.
+      Phase 1 visual/physical reference: six wheels, overall envelope about
+      1.2 x 0.8 x 0.6 m, 0.15 m wheel radius, and about 80 kg simulated mass.
+      The side arms are fixed rocker-bogie-style visuals; the six wheels are
+      driven in left/right groups by Fortress DiffDrive. This is not flight
+      hardware or an articulated suspension model.
     -->
     <link name="base_link">
       <!-- base_link origin is the chassis centre; base_footprint is at z = 0. -->
-      <pose>0 0 0.32 0 0 0</pose>
+      <pose>0 0 0.28 0 0 0</pose>
       <inertial>
-        <mass>14.0</mass>
+        <mass>64.8</mass>
         <inertia>
-          <ixx>0.41</ixx><ixy>0</ixy><ixz>0</ixz>
-          <iyy>0.71</iyy><iyz>0</iyz><izz>1.01</izz>
+          <ixx>2.2918</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>5.6160</iyy><iyz>0</iyz><izz>7.4760</izz>
         </inertia>
       </inertial>
       <collision name="chassis_collision">
-        <geometry><box><size>0.74 0.56 0.22</size></box></geometry>
+        <geometry><box><size>1.00 0.62 0.20</size></box></geometry>
       </collision>
       <visual name="chassis_visual">
-        <geometry><box><size>0.74 0.56 0.22</size></box></geometry>
+        <geometry><box><size>1.00 0.62 0.20</size></box></geometry>
         <material>
           <ambient>0.66 0.67 0.64 1</ambient>
           <diffuse>0.72 0.73 0.70 1</diffuse>
@@ -32,142 +33,484 @@
       </visual>
       <visual name="upper_deck_visual">
         <pose>-0.02 0 0.13 0 0 0</pose>
-        <geometry><box><size>0.58 0.45 0.06</size></box></geometry>
+        <geometry><box><size>0.78 0.50 0.06</size></box></geometry>
         <material>
           <ambient>0.20 0.23 0.25 1</ambient>
           <diffuse>0.25 0.28 0.30 1</diffuse>
         </material>
       </visual>
       <visual name="lidar_mast_visual">
-        <pose>0.06 0 0.15 0 0 0</pose>
-        <geometry><cylinder><radius>0.035</radius><length>0.20</length></cylinder></geometry>
+        <pose>0.06 0 0.14 0 0 0</pose>
+        <geometry><cylinder><radius>0.035</radius><length>0.22</length></cylinder></geometry>
         <material>
           <ambient>0.54 0.43 0.24 1</ambient>
           <diffuse>0.64 0.52 0.30 1</diffuse>
         </material>
       </visual>
       <visual name="solar_panel_visual">
-        <pose>-0.02 0 0.166 0 0 0</pose>
-        <geometry><box><size>0.40 0.38 0.012</size></box></geometry>
+        <pose>-0.02 0 0.168 0 0 0</pose>
+        <geometry><box><size>0.56 0.44 0.012</size></box></geometry>
         <material>
-          <ambient>0.08 0.16 0.24 1</ambient>
-          <diffuse>0.10 0.22 0.34 1</diffuse>
-          <specular>0.22 0.28 0.34 1</specular>
+          <ambient>0.07 0.14 0.22 1</ambient>
+          <diffuse>0.09 0.20 0.32 1</diffuse>
+          <specular>0.28 0.34 0.40 1</specular>
         </material>
       </visual>
+      <!-- Low-profile side rails suggest rocker-bogie hardware while the Phase 1
+           chassis remains rigid; wheel groups remain manually driven. -->
+      <visual name="left_front_rocker_arm_visual">
+        <pose>0.225 0.36 -0.085 0 0.18 0</pose>
+        <geometry><box><size>0.55 0.075 0.065</size></box></geometry>
+        <material><ambient>0.17 0.19 0.20 1</ambient><diffuse>0.22 0.24 0.25 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_bogie_arm_visual">
+        <pose>-0.225 0.36 -0.085 0 -0.18 0</pose>
+        <geometry><box><size>0.55 0.075 0.065</size></box></geometry>
+        <material><ambient>0.17 0.19 0.20 1</ambient><diffuse>0.22 0.24 0.25 1</diffuse></material>
+      </visual>
+      <visual name="right_front_rocker_arm_visual">
+        <pose>0.225 -0.36 -0.085 0 0.18 0</pose>
+        <geometry><box><size>0.55 0.075 0.065</size></box></geometry>
+        <material><ambient>0.17 0.19 0.20 1</ambient><diffuse>0.22 0.24 0.25 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_bogie_arm_visual">
+        <pose>-0.225 -0.36 -0.085 0 -0.18 0</pose>
+        <geometry><box><size>0.55 0.075 0.065</size></box></geometry>
+        <material><ambient>0.17 0.19 0.20 1</ambient><diffuse>0.22 0.24 0.25 1</diffuse></material>
+      </visual>
       <visual name="front_bumper_visual">
-        <pose>0.385 0 -0.015 0 0 0</pose>
-        <geometry><box><size>0.08 0.60 0.07</size></box></geometry>
+        <pose>0.525 0 -0.015 0 0 0</pose>
+        <geometry><box><size>0.08 0.62 0.07</size></box></geometry>
         <material>
           <ambient>0.55 0.20 0.04 1</ambient>
           <diffuse>0.78 0.30 0.06 1</diffuse>
         </material>
       </visual>
-      <!-- Low-friction skid balls support the front and rear of this two-wheel
-           chassis. Without them, the single driven axle is pitch-unstable. -->
-      <collision name="front_stabilizer_skid_collision">
-        <pose>0.28 0 -0.24 0 0 0</pose>
-        <geometry><sphere><radius>0.08</radius></sphere></geometry>
-        <surface>
-          <friction>
-            <ode><mu>0.08</mu><mu2>0.08</mu2><slip1>0.10</slip1><slip2>0.10</slip2></ode>
-          </friction>
-        </surface>
-      </collision>
-      <visual name="front_stabilizer_skid_visual">
-        <pose>0.28 0 -0.24 0 0 0</pose>
-        <geometry><sphere><radius>0.08</radius></sphere></geometry>
-        <material><ambient>0.10 0.10 0.11 1</ambient><diffuse>0.14 0.14 0.15 1</diffuse></material>
+      <visual name="front_camera_mast_visual">
+        <pose>0.43 0 0.14 0 0 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>0.22</length></cylinder></geometry>
+        <material><ambient>0.12 0.13 0.14 1</ambient><diffuse>0.18 0.19 0.20 1</diffuse></material>
       </visual>
-      <collision name="rear_stabilizer_skid_collision">
-        <pose>-0.28 0 -0.24 0 0 0</pose>
-        <geometry><sphere><radius>0.08</radius></sphere></geometry>
-        <surface>
-          <friction>
-            <ode><mu>0.08</mu><mu2>0.08</mu2><slip1>0.10</slip1><slip2>0.10</slip2></ode>
-          </friction>
-        </surface>
-      </collision>
-      <visual name="rear_stabilizer_skid_visual">
-        <pose>-0.28 0 -0.24 0 0 0</pose>
-        <geometry><sphere><radius>0.08</radius></sphere></geometry>
-        <material><ambient>0.10 0.10 0.11 1</ambient><diffuse>0.14 0.14 0.15 1</diffuse></material>
+      <visual name="left_headlamp_visual">
+        <pose>0.50 0.22 0.02 0 0 0</pose>
+        <geometry><sphere><radius>0.025</radius></sphere></geometry>
+        <material><ambient>0.85 0.80 0.55 1</ambient><diffuse>0.95 0.90 0.65 1</diffuse></material>
+      </visual>
+      <visual name="right_headlamp_visual">
+        <pose>0.50 -0.22 0.02 0 0 0</pose>
+        <geometry><sphere><radius>0.025</radius></sphere></geometry>
+        <material><ambient>0.85 0.80 0.55 1</ambient><diffuse>0.95 0.90 0.65 1</diffuse></material>
       </visual>
     </link>
 
-    <!-- Left and right wheels have true revolute joints and physical contact. -->
+    <!-- Six real wheel links: three per side; front/rear rails are visual
+         rocker-bogie-inspired hardware, with all six wheels in the drive group. -->
     <link name="left_wheel">
-      <pose>0 0.31 0.16 1.57079632679 0 0</pose>
+      <pose>0.00 0.34 0.15 1.57079632679 0 0</pose>
       <inertial>
-        <mass>1.5</mass>
-        <inertia>
-          <ixx>0.0109</ixx><ixy>0</ixy><ixz>0</ixz>
-          <iyy>0.0109</iyy><iyz>0</iyz><izz>0.0192</izz>
-        </inertia>
+        <mass>2.5</mass>
+        <inertia><ixx>0.0171</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.0171</iyy><iyz>0</iyz><izz>0.0281</izz></inertia>
       </inertial>
       <collision name="wheel_collision">
-        <geometry><cylinder><radius>0.16</radius><length>0.12</length></cylinder></geometry>
-        <surface>
-          <friction>
-            <ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode>
-          </friction>
-        </surface>
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction></surface>
       </collision>
-      <visual name="wheel_visual">
-        <geometry><cylinder><radius>0.16</radius><length>0.12</length></cylinder></geometry>
-        <material>
-          <ambient>0.09 0.09 0.10 1</ambient>
-          <diffuse>0.13 0.13 0.14 1</diffuse>
-        </material>
+      <visual name="wheel_tire_visual">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.055 0.055 0.060 1</ambient><diffuse>0.095 0.095 0.100 1</diffuse></material>
+      </visual>
+      <visual name="wheel_hub_visual">
+        <geometry><cylinder><radius>0.087</radius><length>0.126</length></cylinder></geometry>
+        <material><ambient>0.34 0.37 0.39 1</ambient><diffuse>0.48 0.52 0.54 1</diffuse><specular>0.25 0.25 0.25 1</specular></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_0">
+        <pose>0.14500 0.00000 0 0 0 0.00000</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_1">
+        <pose>0.10253 0.10253 0 0 0 0.78540</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_2">
+        <pose>0.00000 0.14500 0 0 0 1.57080</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_3">
+        <pose>-0.10253 0.10253 0 0 0 2.35619</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_4">
+        <pose>-0.14500 0.00000 0 0 0 3.14159</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_5">
+        <pose>-0.10253 -0.10253 0 0 0 3.92699</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_6">
+        <pose>-0.00000 -0.14500 0 0 0 4.71239</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_wheel_tread_lug_7">
+        <pose>0.10253 -0.10253 0 0 0 5.49779</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="left_front_wheel">
+      <pose>0.45 0.34 0.15 1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.5</mass>
+        <inertia><ixx>0.0171</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.0171</iyy><iyz>0</iyz><izz>0.0281</izz></inertia>
+      </inertial>
+      <collision name="wheel_collision">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction></surface>
+      </collision>
+      <visual name="wheel_tire_visual">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.055 0.055 0.060 1</ambient><diffuse>0.095 0.095 0.100 1</diffuse></material>
+      </visual>
+      <visual name="wheel_hub_visual">
+        <geometry><cylinder><radius>0.087</radius><length>0.126</length></cylinder></geometry>
+        <material><ambient>0.34 0.37 0.39 1</ambient><diffuse>0.48 0.52 0.54 1</diffuse><specular>0.25 0.25 0.25 1</specular></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_0">
+        <pose>0.14500 0.00000 0 0 0 0.00000</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_1">
+        <pose>0.10253 0.10253 0 0 0 0.78540</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_2">
+        <pose>0.00000 0.14500 0 0 0 1.57080</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_3">
+        <pose>-0.10253 0.10253 0 0 0 2.35619</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_4">
+        <pose>-0.14500 0.00000 0 0 0 3.14159</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_5">
+        <pose>-0.10253 -0.10253 0 0 0 3.92699</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_6">
+        <pose>-0.00000 -0.14500 0 0 0 4.71239</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_front_wheel_tread_lug_7">
+        <pose>0.10253 -0.10253 0 0 0 5.49779</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="left_rear_wheel">
+      <pose>-0.45 0.34 0.15 1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.5</mass>
+        <inertia><ixx>0.0171</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.0171</iyy><iyz>0</iyz><izz>0.0281</izz></inertia>
+      </inertial>
+      <collision name="wheel_collision">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction></surface>
+      </collision>
+      <visual name="wheel_tire_visual">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.055 0.055 0.060 1</ambient><diffuse>0.095 0.095 0.100 1</diffuse></material>
+      </visual>
+      <visual name="wheel_hub_visual">
+        <geometry><cylinder><radius>0.087</radius><length>0.126</length></cylinder></geometry>
+        <material><ambient>0.34 0.37 0.39 1</ambient><diffuse>0.48 0.52 0.54 1</diffuse><specular>0.25 0.25 0.25 1</specular></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_0">
+        <pose>0.14500 0.00000 0 0 0 0.00000</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_1">
+        <pose>0.10253 0.10253 0 0 0 0.78540</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_2">
+        <pose>0.00000 0.14500 0 0 0 1.57080</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_3">
+        <pose>-0.10253 0.10253 0 0 0 2.35619</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_4">
+        <pose>-0.14500 0.00000 0 0 0 3.14159</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_5">
+        <pose>-0.10253 -0.10253 0 0 0 3.92699</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_6">
+        <pose>-0.00000 -0.14500 0 0 0 4.71239</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="left_rear_wheel_tread_lug_7">
+        <pose>0.10253 -0.10253 0 0 0 5.49779</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="right_wheel">
+      <pose>0.00 -0.34 0.15 1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.5</mass>
+        <inertia><ixx>0.0171</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.0171</iyy><iyz>0</iyz><izz>0.0281</izz></inertia>
+      </inertial>
+      <collision name="wheel_collision">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction></surface>
+      </collision>
+      <visual name="wheel_tire_visual">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.055 0.055 0.060 1</ambient><diffuse>0.095 0.095 0.100 1</diffuse></material>
+      </visual>
+      <visual name="wheel_hub_visual">
+        <geometry><cylinder><radius>0.087</radius><length>0.126</length></cylinder></geometry>
+        <material><ambient>0.34 0.37 0.39 1</ambient><diffuse>0.48 0.52 0.54 1</diffuse><specular>0.25 0.25 0.25 1</specular></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_0">
+        <pose>0.14500 0.00000 0 0 0 0.00000</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_1">
+        <pose>0.10253 0.10253 0 0 0 0.78540</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_2">
+        <pose>0.00000 0.14500 0 0 0 1.57080</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_3">
+        <pose>-0.10253 0.10253 0 0 0 2.35619</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_4">
+        <pose>-0.14500 0.00000 0 0 0 3.14159</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_5">
+        <pose>-0.10253 -0.10253 0 0 0 3.92699</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_6">
+        <pose>-0.00000 -0.14500 0 0 0 4.71239</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_wheel_tread_lug_7">
+        <pose>0.10253 -0.10253 0 0 0 5.49779</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="right_front_wheel">
+      <pose>0.45 -0.34 0.15 1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.5</mass>
+        <inertia><ixx>0.0171</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.0171</iyy><iyz>0</iyz><izz>0.0281</izz></inertia>
+      </inertial>
+      <collision name="wheel_collision">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction></surface>
+      </collision>
+      <visual name="wheel_tire_visual">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.055 0.055 0.060 1</ambient><diffuse>0.095 0.095 0.100 1</diffuse></material>
+      </visual>
+      <visual name="wheel_hub_visual">
+        <geometry><cylinder><radius>0.087</radius><length>0.126</length></cylinder></geometry>
+        <material><ambient>0.34 0.37 0.39 1</ambient><diffuse>0.48 0.52 0.54 1</diffuse><specular>0.25 0.25 0.25 1</specular></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_0">
+        <pose>0.14500 0.00000 0 0 0 0.00000</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_1">
+        <pose>0.10253 0.10253 0 0 0 0.78540</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_2">
+        <pose>0.00000 0.14500 0 0 0 1.57080</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_3">
+        <pose>-0.10253 0.10253 0 0 0 2.35619</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_4">
+        <pose>-0.14500 0.00000 0 0 0 3.14159</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_5">
+        <pose>-0.10253 -0.10253 0 0 0 3.92699</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_6">
+        <pose>-0.00000 -0.14500 0 0 0 4.71239</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_front_wheel_tread_lug_7">
+        <pose>0.10253 -0.10253 0 0 0 5.49779</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="right_rear_wheel">
+      <pose>-0.45 -0.34 0.15 1.57079632679 0 0</pose>
+      <inertial>
+        <mass>2.5</mass>
+        <inertia><ixx>0.0171</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.0171</iyy><iyz>0</iyz><izz>0.0281</izz></inertia>
+      </inertial>
+      <collision name="wheel_collision">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction></surface>
+      </collision>
+      <visual name="wheel_tire_visual">
+        <geometry><cylinder><radius>0.15</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.055 0.055 0.060 1</ambient><diffuse>0.095 0.095 0.100 1</diffuse></material>
+      </visual>
+      <visual name="wheel_hub_visual">
+        <geometry><cylinder><radius>0.087</radius><length>0.126</length></cylinder></geometry>
+        <material><ambient>0.34 0.37 0.39 1</ambient><diffuse>0.48 0.52 0.54 1</diffuse><specular>0.25 0.25 0.25 1</specular></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_0">
+        <pose>0.14500 0.00000 0 0 0 0.00000</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_1">
+        <pose>0.10253 0.10253 0 0 0 0.78540</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_2">
+        <pose>0.00000 0.14500 0 0 0 1.57080</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_3">
+        <pose>-0.10253 0.10253 0 0 0 2.35619</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_4">
+        <pose>-0.14500 0.00000 0 0 0 3.14159</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_5">
+        <pose>-0.10253 -0.10253 0 0 0 3.92699</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_6">
+        <pose>-0.00000 -0.14500 0 0 0 4.71239</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
+      </visual>
+      <visual name="right_rear_wheel_tread_lug_7">
+        <pose>0.10253 -0.10253 0 0 0 5.49779</pose>
+        <geometry><box><size>0.035 0.058 0.105</size></box></geometry>
+        <material><ambient>0.07 0.07 0.075 1</ambient><diffuse>0.11 0.11 0.115 1</diffuse></material>
       </visual>
     </link>
     <joint name="left_wheel_joint" type="revolute">
       <parent>base_link</parent><child>left_wheel</child>
       <axis>
-        <!-- Wheel link is rotated so its local Z axis is the lateral axle. -->
         <xyz>0 0 1</xyz>
-        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>80</effort><velocity>25</velocity></limit>
+        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>120</effort><velocity>25</velocity></limit>
         <dynamics><damping>0.02</damping><friction>0.0</friction></dynamics>
       </axis>
     </joint>
-
-    <link name="right_wheel">
-      <pose>0 -0.31 0.16 1.57079632679 0 0</pose>
-      <inertial>
-        <mass>1.5</mass>
-        <inertia>
-          <ixx>0.0109</ixx><ixy>0</ixy><ixz>0</ixz>
-          <iyy>0.0109</iyy><iyz>0</iyz><izz>0.0192</izz>
-        </inertia>
-      </inertial>
-      <collision name="wheel_collision">
-        <geometry><cylinder><radius>0.16</radius><length>0.12</length></cylinder></geometry>
-        <surface>
-          <friction>
-            <ode><mu>1.5</mu><mu2>1.5</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode>
-          </friction>
-        </surface>
-      </collision>
-      <visual name="wheel_visual">
-        <geometry><cylinder><radius>0.16</radius><length>0.12</length></cylinder></geometry>
-        <material>
-          <ambient>0.09 0.09 0.10 1</ambient>
-          <diffuse>0.13 0.13 0.14 1</diffuse>
-        </material>
-      </visual>
-    </link>
+    <joint name="left_front_wheel_joint" type="revolute">
+      <parent>base_link</parent><child>left_front_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>120</effort><velocity>25</velocity></limit>
+        <dynamics><damping>0.02</damping><friction>0.0</friction></dynamics>
+      </axis>
+    </joint>
+    <joint name="left_rear_wheel_joint" type="revolute">
+      <parent>base_link</parent><child>left_rear_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>120</effort><velocity>25</velocity></limit>
+        <dynamics><damping>0.02</damping><friction>0.0</friction></dynamics>
+      </axis>
+    </joint>
     <joint name="right_wheel_joint" type="revolute">
       <parent>base_link</parent><child>right_wheel</child>
       <axis>
         <xyz>0 0 1</xyz>
-        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>80</effort><velocity>25</velocity></limit>
+        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>120</effort><velocity>25</velocity></limit>
+        <dynamics><damping>0.02</damping><friction>0.0</friction></dynamics>
+      </axis>
+    </joint>
+    <joint name="right_front_wheel_joint" type="revolute">
+      <parent>base_link</parent><child>right_front_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>120</effort><velocity>25</velocity></limit>
+        <dynamics><damping>0.02</damping><friction>0.0</friction></dynamics>
+      </axis>
+    </joint>
+    <joint name="right_rear_wheel_joint" type="revolute">
+      <parent>base_link</parent><child>right_rear_wheel</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1.0e16</lower><upper>1.0e16</upper><effort>120</effort><velocity>25</velocity></limit>
         <dynamics><damping>0.02</damping><friction>0.0</friction></dynamics>
       </axis>
     </joint>
 
     <!-- The camera looks along local +X; ROS image headers use the optical frame. -->
     <link name="camera_link">
-      <pose relative_to="base_link">0.40 0 0.28 0 0 0</pose>
+      <pose relative_to="base_link">0.43 0 0.28 0 0 0</pose>
       <inertial>
         <mass>0.12</mass>
         <inertia><ixx>0.001</ixx><ixy>0</ixy><ixz>0</ixz><iyy>0.001</iyy><iyz>0</iyz><izz>0.001</izz></inertia>
@@ -180,6 +523,11 @@
           <ambient>0.16 0.19 0.22 1</ambient>
           <diffuse>0.20 0.24 0.27 1</diffuse>
         </material>
+      </visual>
+      <visual name="camera_lens_visual">
+        <pose>0.012 0 0 0 1.57079632679 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>0.025</length></cylinder></geometry>
+        <material><ambient>0.025 0.035 0.045 1</ambient><diffuse>0.035 0.055 0.070 1</diffuse></material>
       </visual>
       <sensor name="front_camera" type="camera">
         <pose>0 0 0 0 0 0</pose>
@@ -241,12 +589,18 @@
       <parent>base_link</parent><child>lidar_link</child>
     </joint>
 
-    <!-- One Gazebo DiffDrive system owns wheel control and wheel-model odometry. -->
+    <!-- One Gazebo DiffDrive system owns wheel control and wheel-model odometry.
+         Keep the centre axle first: Fortress odometry integrates the first joint
+         listed on each side, while velocity commands are applied to all entries. -->
     <plugin filename="ignition-gazebo-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <left_joint>left_wheel_joint</left_joint>
+      <left_joint>left_front_wheel_joint</left_joint>
+      <left_joint>left_rear_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
-      <wheel_separation>0.62</wheel_separation>
-      <wheel_radius>0.16</wheel_radius>
+      <right_joint>right_front_wheel_joint</right_joint>
+      <right_joint>right_rear_wheel_joint</right_joint>
+      <wheel_separation>0.68</wheel_separation>
+      <wheel_radius>0.15</wheel_radius>
       <topic>/cmd_vel_sim</topic>
       <odom_topic>/odom</odom_topic>
       <tf_topic>/tf</tf_topic>

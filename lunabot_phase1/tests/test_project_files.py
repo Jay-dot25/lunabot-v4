@@ -78,7 +78,7 @@ class ProjectFileTests(unittest.TestCase):
                 self.assertIsNotNone(model.find("link/collision/geometry"))
                 self.assertIsNotNone(model.find("link/visual/geometry"))
 
-    def test_rover_has_one_diff_drive_and_real_wheel_joints(self):
+    def test_rover_has_six_driven_wheels_and_real_wheel_joints(self):
         model = ET.parse(
             DESCRIPTION / "models" / "lunabot_rover" / "model.sdf"
         ).getroot().find("model")
@@ -91,41 +91,55 @@ class ProjectFileTests(unittest.TestCase):
         self.assertEqual(drive[0].findtext("tf_topic"), "/tf")
         self.assertEqual(drive[0].findtext("frame_id"), "odom")
         self.assertEqual(drive[0].findtext("child_frame_id"), "base_footprint")
-        self.assertEqual(drive[0].findtext("left_joint"), "left_wheel_joint")
-        self.assertEqual(drive[0].findtext("right_joint"), "right_wheel_joint")
+        left_names = [element.text for element in drive[0].findall("left_joint")]
+        right_names = [element.text for element in drive[0].findall("right_joint")]
+        self.assertEqual(left_names, ["left_wheel_joint", "left_front_wheel_joint", "left_rear_wheel_joint"])
+        self.assertEqual(right_names, ["right_wheel_joint", "right_front_wheel_joint", "right_rear_wheel_joint"])
         joint_names = {joint.attrib["name"] for joint in model.findall("joint")}
-        self.assertTrue({"left_wheel_joint", "right_wheel_joint"}.issubset(joint_names))
-        self.assertEqual(drive[0].findtext("wheel_radius"), "0.16")
-        self.assertEqual(drive[0].findtext("wheel_separation"), "0.62")
+        self.assertTrue(set(left_names + right_names).issubset(joint_names))
+        self.assertEqual(drive[0].findtext("wheel_radius"), "0.15")
+        self.assertEqual(drive[0].findtext("wheel_separation"), "0.68")
         self.assertEqual(drive[0].findtext("max_linear_velocity"), "0.35")
         self.assertEqual(drive[0].findtext("max_angular_velocity"), "0.80")
         guard_config = (BRINGUP / "config" / "command_guard.yaml").read_text(encoding="utf-8")
         self.assertIn("linear_velocity_limit_mps: 0.35", guard_config)
         self.assertIn("angular_velocity_limit_radps: 0.80", guard_config)
-        for wheel in ("left_wheel", "right_wheel"):
-            self.assertIsNotNone(model.find(f"link[@name='{wheel}']/collision"))
+        wheel_names = {
+            "left_wheel", "left_front_wheel", "left_rear_wheel",
+            "right_wheel", "right_front_wheel", "right_rear_wheel",
+        }
+        for wheel in wheel_names:
+            with self.subTest(wheel=wheel):
+                wheel_link = model.find(f"link[@name='{wheel}']")
+                self.assertIsNotNone(wheel_link)
+                self.assertIsNotNone(wheel_link.find("collision[@name='wheel_collision']"))
+                self.assertEqual(wheel_link.findtext("collision/geometry/cylinder/radius"), "0.15")
+        total_mass = sum(float(link.findtext("inertial/mass")) for link in model.findall("link"))
+        self.assertAlmostEqual(total_mass, 80.02, places=2)
 
-    def test_rover_has_stabilizer_skids_and_visible_design_details(self):
+    def test_rover_has_reference_style_body_and_rocker_bogie_visuals(self):
         model = ET.parse(
             DESCRIPTION / "models" / "lunabot_rover" / "model.sdf"
         ).getroot().find("model")
         base = model.find("link[@name='base_link']")
-        for name, expected_x in (
-            ("front_stabilizer_skid_collision", 0.28),
-            ("rear_stabilizer_skid_collision", -0.28),
+        self.assertEqual(base.findtext("pose"), "0 0 0.28 0 0 0")
+        self.assertEqual(base.findtext("collision/geometry/box/size"), "1.00 0.62 0.20")
+        self.assertEqual(base.findtext("inertial/mass"), "64.8")
+        for visual in (
+            "solar_panel_visual",
+            "front_bumper_visual",
+            "front_camera_mast_visual",
+            "left_front_rocker_arm_visual",
+            "left_rear_bogie_arm_visual",
+            "right_front_rocker_arm_visual",
+            "right_rear_bogie_arm_visual",
         ):
-            with self.subTest(skid=name):
-                skid = base.find(f"collision[@name='{name}']")
-                self.assertIsNotNone(skid)
-                pose = [float(value) for value in skid.findtext("pose").split()]
-                self.assertAlmostEqual(pose[0], expected_x)
-                self.assertAlmostEqual(pose[2], -0.24)
-                self.assertEqual(skid.findtext("geometry/sphere/radius"), "0.08")
-                self.assertEqual(
-                    skid.findtext("surface/friction/ode/mu"), "0.08"
-                )
-        self.assertIsNotNone(base.find("visual[@name='solar_panel_visual']"))
-        self.assertIsNotNone(base.find("visual[@name='front_bumper_visual']"))
+            with self.subTest(visual=visual):
+                self.assertIsNotNone(base.find(f"visual[@name='{visual}']"))
+        self.assertIsNone(base.find("collision[@name='front_stabilizer_skid_collision']"))
+        camera_link = model.find("link[@name='camera_link']")
+        self.assertIsNotNone(camera_link.find("visual[@name='camera_housing_visual']"))
+        self.assertIsNotNone(camera_link.find("visual[@name='camera_lens_visual']"))
 
     def test_world_has_shallow_regolith_mounds_around_the_test_lane(self):
         world = ET.parse(SIMULATION / "worlds" / "lunar_base_camp.sdf").getroot().find("world")
@@ -175,11 +189,11 @@ class ProjectFileTests(unittest.TestCase):
         ).getroot().find("model")
         camera_pose = model.find("link[@name='camera_link']/pose").text
         lidar_pose = model.find("link[@name='lidar_link']/pose").text
-        self.assertEqual(camera_pose, "0.40 0 0.28 0 0 0")
+        self.assertEqual(camera_pose, "0.43 0 0.28 0 0 0")
         self.assertEqual(lidar_pose, "0.06 0 0.20 0 0 0")
         integrated = (BRINGUP / "launch" / "phase1.launch.py").read_text(encoding="utf-8")
-        self.assertIn('(0.0, 0.0, 0.32)', integrated)
-        self.assertIn('(0.40, 0.0, 0.28)', integrated)
+        self.assertIn('(0.0, 0.0, 0.28)', integrated)
+        self.assertIn('(0.43, 0.0, 0.28)', integrated)
         self.assertIn('(0.06, 0.0, 0.20)', integrated)
         self.assertIn('(-1.57079632679, 0.0, -1.57079632679)', integrated)
 

@@ -2,7 +2,7 @@
 
 This directory is a **stand-alone ROS 2 workspace** for the Phase 1 simulation foundation. It reuses the rover/world ideas in the repository as reference, but does not depend on the old multi-phase launch files, ML code, planners, maps, or ROS packages. The previous project files outside `lunabot_phase1/` are retained and left untouched as reference material.
 
-The scope is manual operation only: a physical rover model moves in Gazebo, publishes a live RGB camera, a simulated 2D LiDAR scan, wheel-model odometry and TF, and a diagnostics-only obstacle monitor. There is no SLAM, semantic perception, route planning, autonomous obstacle avoidance, or mission dashboard.
+The scope is manual operation only: a six-wheel rover moves in Gazebo, publishes a live RGB camera, a simulated 2D LiDAR scan, wheel-model odometry and TF, and a diagnostics-only obstacle monitor. The side rails are rocker-bogie-inspired visuals, while the six wheels are driven in left/right groups; this is not a fully articulated suspension. There is no SLAM, semantic perception, route planning, autonomous obstacle avoidance, or mission dashboard.
 
 > **Verification status:** This repository's current host is Debian 12 with Python 3.11.2. ROS 2, Gazebo, `colcon`, and the ROS-Gazebo bridge are not installed here. Static tests can run on this host; Gazebo/ROS runtime acceptance remains **NOT VERIFIED** until the project is built and driven on the supported stack below. See [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md).
 
@@ -55,7 +55,7 @@ lunabot_phase1/
 
 `lunabot_phase1_description` owns the physical rover model and `model://lunabot_rover` asset. `lunabot_phase1_simulation` owns the lunar world and its colliding obstacles. `lunabot_phase1_tools` contains the ROS nodes. `lunabot_phase1_bringup` joins those packages and installs the launch/configuration files. Separate camera and LiDAR bridge processes are used because Humble applies `override_frame_id` at the bridge-node level.
 
-The world includes the rover model directly at a deterministic spawn pose. There is no separate asynchronous spawn step, so the rover and world are loaded together. The level central lane remains flat for baseline drive/sensor tests; four shallow physical regolith domes sit outside that lane. The rover has low-friction front/rear skid balls to stabilize the two-wheel chassis, plus a visible solar panel and front bumper. These are simple Phase 1 primitives, not a high-resolution terrain DEM or flight-hardware model. The installed model directory is added to Fortress’s `IGN_GAZEBO_RESOURCE_PATH` by the launch file.
+The world includes the rover model directly at a deterministic spawn pose. There is no separate asynchronous spawn step, so the rover and world are loaded together. The level central lane remains flat for baseline drive/sensor tests; four shallow physical regolith domes sit outside that lane. The rover follows the reference silhouette: three wheels per side, fixed rocker-bogie-style side rails, a camera mast, LiDAR, blue solar panel, and front bumper. It is about 1.2 × 0.8 × 0.6 m overall with an approximately 80 kg simulated mass. These are simple Phase 1 primitives, not a high-resolution terrain DEM, articulated suspension, or flight-hardware model. The installed model directory is added to Fortress’s `IGN_GAZEBO_RESOURCE_PATH` by the launch file.
 
 ## 3. Build and environment setup
 
@@ -221,7 +221,7 @@ The frame tree is:
 ```text
 odom
 └── base_footprint        dynamic, only from Gazebo DiffDrive
-    └── base_link          fixed chassis-centre offset (z = 0.32 m)
+    └── base_link          fixed chassis-centre offset (z = 0.28 m)
         ├── camera_link    fixed sensor mount
         │   └── camera_optical_frame  fixed REP-103 optical rotation
         └── lidar_link     fixed sensor mount
@@ -231,7 +231,7 @@ The SDF camera looks along local `+X`; the fixed camera-to-optical transform and
 
 ## 8. Configuration
 
-- `src/lunabot_phase1_description/models/lunabot_rover/model.sdf`: chassis dimensions `0.74 × 0.56 × 0.22 m`, nominal body mass `14 kg`, wheel radius `0.16 m`, wheel separation `0.62 m`, front/rear low-friction stabilizer skids, simple solar-panel/front-bumper visuals, camera and LiDAR settings, and Gazebo DiffDrive velocity/acceleration limits.
+- `src/lunabot_phase1_description/models/lunabot_rover/model.sdf`: chassis dimensions `1.00 × 0.62 × 0.20 m`, nominal body mass `64.8 kg` (about `80 kg` total simulated mass), six `0.15 m` radius driven wheels on a `0.68 m` track, rocker-bogie-style side-rail visuals, camera mast, solar panel and front bumper, camera and LiDAR settings, and Gazebo DiffDrive velocity/acceleration limits.
 - `src/lunabot_phase1_bringup/config/command_guard.yaml`: linear limit `0.35 m/s`, angular limit `0.80 rad/s`, 30 Hz guard output, and 0.50 s input watchdog. Keep its speed limits aligned with the DiffDrive SDF values.
 - `src/lunabot_phase1_bringup/config/obstacle_monitor.yaml`: 1.50 m initial warning threshold, forward half-angle, and 1.00 s no-scan timeout. Tune the threshold to rover geometry and the intended operator reaction distance; it is not a universal safety distance.
 - `src/lunabot_phase1_bringup/config/bridge.yaml`, `camera_bridge.yaml`, and `lidar_bridge.yaml`: Humble/Fortress topic/type mappings; camera and LiDAR frame overrides are set per bridge node in `phase1.launch.py`.
@@ -267,10 +267,10 @@ This check sequence does **not** test or imply autonomous stopping or obstacle a
 
 ## 11. Known limitations and scope boundary
 
-- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. The user's earlier Humble/Fortress build, live-interface smoke test, camera-info check, and clean shutdown were on the prior flat-pad/two-wheel model revision. The current branch adds four shallow physical terrain domes and front/rear stabilizer skids; this updated SDF has static-test coverage but still needs a target-workstation rebuild and runtime check. Direction-specific motion, visual rover stability, image/CameraInfo dimension matching, full TF connectivity, watchdog timing, the remaining monitor case, and controlled obstacle-in/out range behavior remain unverified.
+- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. The user's earlier Humble/Fortress build, live-interface smoke test, camera-info check, and clean shutdown were on the prior flat-pad/two-wheel model revision. The current branch adds four shallow physical terrain domes and a six-wheel rover redesign; this updated SDF has static-test coverage but still needs a target-workstation rebuild and runtime check. Direction-specific motion, visual rover stability, image/CameraInfo dimension matching, full TF connectivity, watchdog timing, the remaining monitor case, and controlled obstacle-in/out range behavior remain unverified.
 - The code offers static XML/topic checks and pure-Python unit tests only; these are not a substitute for the ROS/Gazebo acceptance gate.
 - The command watchdog protects against a stale upstream velocity publisher while `command_guard` is alive. It is not an independent hardware stop and cannot guarantee a safe stop if the guard, bridge, or simulator itself terminates unexpectedly.
-- Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The current model has no suspension, deformable regolith, SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI.
+- Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The rocker-bogie-style side rails are visual/fixed, not an articulated suspension; the terrain is a low-relief primitive test surface, not deformable regolith or a detailed heightmap. The current model has no SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI.
 - GPU camera/LiDAR rendering may need graphics-driver or headless-rendering configuration on a workstation/CI host.
 
 No Phase 2 work is included. Phase 2 is not authorized until every mandatory P1 criterion is actually verified and marked `PASS`.
