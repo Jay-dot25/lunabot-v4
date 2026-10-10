@@ -1,0 +1,11 @@
+# colcon and ROS build products
+build/
+install/
+log/
+
+# Python/editor products
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.vscode/

@@ -1,5 +1,7 @@
 # LunaBot V4 — Autonomous Navigation of a Robot for Lunar Habitats
 
+> **Clean Phase 1 restart:** The isolated, Phase 1-only ROS workspace is now in [`lunabot_phase1/`](lunabot_phase1/). It uses the existing project only as reference; the older root-level `src/`, `ml/`, phase launchers, and docs are retained but are not dependencies of this clean restart. Read [`lunabot_phase1/README.md`](lunabot_phase1/README.md) for the target stack and honest runtime-verification status.
+
 > **Goal-level development:** See the exact staged implementation, training,
 > file-migration, testing, and acceptance plan in
 > [`docs/goal-level-implementation-plan.md`](docs/goal-level-implementation-plan.md).

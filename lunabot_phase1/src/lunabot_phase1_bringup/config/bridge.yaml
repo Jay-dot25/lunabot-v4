@@ -1,0 +1,28 @@
+# ROS 2 Humble / Gazebo Fortress bridge set. On Fortress, Humble's
+# ros_ign_bridge compatibility package forwards to ros_gz_bridge and uses
+# ignition.msgs.* transport types.
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "ignition.msgs.Clock"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/odom"
+  gz_topic_name: "/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "ignition.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/tf"
+  gz_topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "ignition.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+# The ROS command_guard owns the user-facing /cmd_vel input and publishes
+# bounded commands to /cmd_vel_sim; only the bounded topic reaches DiffDrive.
+- ros_topic_name: "/cmd_vel_sim"
+  gz_topic_name: "/cmd_vel_sim"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "ignition.msgs.Twist"
+  direction: ROS_TO_GZ

@@ -1,0 +1,8 @@
+/**:
+  ros__parameters:
+    scan_topic: "/scan"
+    status_topic: "/obstacle_monitor/status"
+    range_topic: "/obstacle_monitor/closest_range"
+    warning_distance_m: 1.50
+    forward_half_angle_rad: 0.5235987756
+    scan_timeout_sec: 1.00

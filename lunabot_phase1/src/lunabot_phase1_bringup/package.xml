@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>lunabot_phase1_bringup</name>
+  <version>0.1.0</version>
+  <description>Integrated launch and ROS-Gazebo bridges for LunaBot Phase 1.</description>
+  <maintainer email="maintainers@lunabot.invalid">LunaBot Team</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ros_ign_bridge</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>lunabot_phase1_description</exec_depend>
+  <exec_depend>lunabot_phase1_simulation</exec_depend>
+  <exec_depend>lunabot_phase1_tools</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
