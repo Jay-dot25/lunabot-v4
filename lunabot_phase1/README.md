@@ -239,7 +239,7 @@ The SDF camera looks along local `+X`; the fixed camera-to-optical transform and
 
 ## 9. Acceptance tests
 
-The agent host cannot execute ROS or Gazebo runtime tests. The user has reported a successful four-package Humble build and a passing live-interface smoke check. The 2026-10-10 workstation run again launched and cleanly shut down Fortress; it reported `/camera/camera_info` at 640×480, and two `/odom` snapshots differed. Those observations are recorded in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md), but they do not replace a controlled per-key drive/stop sequence or the remaining sensor, TF, and watchdog checks. Continue:
+The agent host cannot execute ROS or Gazebo runtime tests. On 2026-10-10, the user pulled commit `cfb75da`, built all four Humble packages, and launched Fortress 6.18.0 with the six-wheel model. The GUI screenshot shows the world and rover; logs show DiffDrive/bridges started and a live forward scan return at 0.34 m. The first launch shut down cleanly. This confirms build and load/spawn, not six-wheel visibility, motion, or dynamic stability; the near-front view overlaps the wheel axles. Earlier live smoke, CameraInfo, and `/odom` observations are documented in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). Continue:
 
 1. Build with the commands in §3; expected: all four packages build.
 2. Launch with the command in §4; expected: world and rover appear and remain stable.
@@ -267,7 +267,7 @@ This check sequence does **not** test or imply autonomous stopping or obstacle a
 
 ## 11. Known limitations and scope boundary
 
-- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. The user's earlier Humble/Fortress build, live-interface smoke test, camera-info check, and clean shutdown were on the prior flat-pad/two-wheel model revision. The current branch adds four shallow physical terrain domes and a six-wheel rover redesign; this updated SDF has static-test coverage but still needs a target-workstation rebuild and runtime check. Direction-specific motion, visual rover stability, image/CameraInfo dimension matching, full TF connectivity, watchdog timing, the remaining monitor case, and controlled obstacle-in/out range behavior remain unverified.
+- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. The user built and launched the current six-wheel revision on Humble/Fortress; a screenshot confirms the GUI, world, and rover are visible at rest. Direction-specific motion, all-six-wheel visibility from a side view, dynamic/uneven-terrain stability, current image/CameraInfo matching, full TF connectivity, watchdog timing, the remaining monitor case, and controlled obstacle-in/out range behavior remain unverified.
 - The code offers static XML/topic checks and pure-Python unit tests only; these are not a substitute for the ROS/Gazebo acceptance gate.
 - The command watchdog protects against a stale upstream velocity publisher while `command_guard` is alive. It is not an independent hardware stop and cannot guarantee a safe stop if the guard, bridge, or simulator itself terminates unexpectedly.
 - Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The rocker-bogie-style side rails are visual/fixed, not an articulated suspension; the terrain is a low-relief primitive test surface, not deformable regolith or a detailed heightmap. The current model has no SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI.
