@@ -7,7 +7,6 @@ import time
 
 import rclpy
 from geometry_msgs.msg import Twist
-from rclpy.exceptions import RCLError
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 
@@ -104,7 +103,7 @@ def main(args: list[str] | None = None) -> None:
             if rclpy.ok():
                 try:
                     node.publish_stop_burst()
-                except RCLError as exc:
+                except Exception as exc:
                     node.get_logger().warning(
                         f"Could not publish the shutdown stop burst: {exc}"
                     )

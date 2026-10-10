@@ -10,7 +10,6 @@ import tty
 
 import rclpy
 from geometry_msgs.msg import Twist
-from rclpy.exceptions import RCLError
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 
@@ -98,7 +97,7 @@ def main(args: list[str] | None = None) -> int:
                     for _ in range(3):
                         node.publish(0.0, 0.0)
                         time.sleep(0.03)
-                except RCLError as exc:
+                except Exception as exc:
                     node.get_logger().warning(
                         f"Could not publish the teleop stop burst: {exc}"
                     )

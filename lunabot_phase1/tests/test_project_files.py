@@ -216,7 +216,7 @@ class ProjectFileTests(unittest.TestCase):
         for node_source in (guard, teleop):
             self.assertIn("SignalHandlerOptions.NO", node_source)
             self.assertIn("if rclpy.ok():", node_source)
-            self.assertIn("except RCLError as exc:", node_source)
+            self.assertIn("except Exception as exc:", node_source)
         self.assertIn("node.publish_stop_burst()", guard)
         self.assertIn("node.publish(0.0, 0.0)", teleop)
 
