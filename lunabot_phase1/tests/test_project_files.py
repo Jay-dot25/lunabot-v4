@@ -105,6 +105,49 @@ class ProjectFileTests(unittest.TestCase):
         for wheel in ("left_wheel", "right_wheel"):
             self.assertIsNotNone(model.find(f"link[@name='{wheel}']/collision"))
 
+    def test_rover_has_stabilizer_skids_and_visible_design_details(self):
+        model = ET.parse(
+            DESCRIPTION / "models" / "lunabot_rover" / "model.sdf"
+        ).getroot().find("model")
+        base = model.find("link[@name='base_link']")
+        for name, expected_x in (
+            ("front_stabilizer_skid_collision", 0.28),
+            ("rear_stabilizer_skid_collision", -0.28),
+        ):
+            with self.subTest(skid=name):
+                skid = base.find(f"collision[@name='{name}']")
+                self.assertIsNotNone(skid)
+                pose = [float(value) for value in skid.findtext("pose").split()]
+                self.assertAlmostEqual(pose[0], expected_x)
+                self.assertAlmostEqual(pose[2], -0.24)
+                self.assertEqual(skid.findtext("geometry/sphere/radius"), "0.08")
+                self.assertEqual(
+                    skid.findtext("surface/friction/ode/mu"), "0.08"
+                )
+        self.assertIsNotNone(base.find("visual[@name='solar_panel_visual']"))
+        self.assertIsNotNone(base.find("visual[@name='front_bumper_visual']"))
+
+    def test_world_has_shallow_regolith_mounds_around_the_test_lane(self):
+        world = ET.parse(SIMULATION / "worlds" / "lunar_base_camp.sdf").getroot().find("world")
+        models = {model.attrib["name"]: model for model in world.findall("model")}
+        mound_names = {
+            "regolith_mound_northwest",
+            "regolith_mound_northeast",
+            "regolith_mound_southwest",
+            "regolith_mound_southeast",
+        }
+        self.assertTrue(mound_names.issubset(models))
+        for name in mound_names:
+            with self.subTest(mound=name):
+                mound = models[name]
+                self.assertEqual(mound.findtext("static"), "true")
+                pose = [float(value) for value in mound.findtext("pose").split()]
+                self.assertEqual(pose[2], -3.75)
+                collision = mound.find("link/collision/geometry/sphere/radius")
+                self.assertIsNotNone(collision)
+                self.assertEqual(collision.text, "4.0")
+                self.assertIsNotNone(mound.find("link/visual/geometry/sphere"))
+
     def test_live_camera_and_lidar_are_configured_in_the_rover(self):
         model = ET.parse(
             DESCRIPTION / "models" / "lunabot_rover" / "model.sdf"

@@ -28,8 +28,8 @@
       <direction>-0.45 0.20 -0.87</direction>
     </light>
 
-    <!-- Large, level physical surface. The darker sky and hard directional light
-         give the compact test range a lunar appearance without heavy assets. -->
+    <!-- Level central test surface; low-relief mounds outside the spawn lane
+         provide visible physical terrain without disturbing straight-line tests. -->
     <model name="lunar_regolith">
       <static>true</static>
       <link name="ground_link">
@@ -69,6 +69,50 @@
         <geometry><box><size>5.0 2.0 0.002</size></box></geometry>
         <material><ambient>0.36 0.37 0.38 1</ambient><diffuse>0.38 0.39 0.40 1</diffuse></material>
       </visual></link>
+    </model>
+
+    <!-- Shallow physical regolith mounds surround (but do not intrude into) the
+         flat spawn / forward test lane. Their 4 m spheres sit mostly below the
+         plane, leaving broad, gentle 0.25 m domes above the level surface. -->
+    <model name="regolith_mound_northwest">
+      <static>true</static><pose>-8 6 -3.75 0 0 0</pose>
+      <link name="mound_link">
+        <collision name="mound_collision"><geometry><sphere><radius>4.0</radius></sphere></geometry></collision>
+        <visual name="mound_visual">
+          <geometry><sphere><radius>4.0</radius></sphere></geometry>
+          <material><ambient>0.26 0.25 0.23 1</ambient><diffuse>0.34 0.33 0.30 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="regolith_mound_northeast">
+      <static>true</static><pose>8 6 -3.75 0 0 0</pose>
+      <link name="mound_link">
+        <collision name="mound_collision"><geometry><sphere><radius>4.0</radius></sphere></geometry></collision>
+        <visual name="mound_visual">
+          <geometry><sphere><radius>4.0</radius></sphere></geometry>
+          <material><ambient>0.30 0.29 0.27 1</ambient><diffuse>0.39 0.38 0.35 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="regolith_mound_southwest">
+      <static>true</static><pose>-8 -7 -3.75 0 0 0</pose>
+      <link name="mound_link">
+        <collision name="mound_collision"><geometry><sphere><radius>4.0</radius></sphere></geometry></collision>
+        <visual name="mound_visual">
+          <geometry><sphere><radius>4.0</radius></sphere></geometry>
+          <material><ambient>0.29 0.28 0.26 1</ambient><diffuse>0.37 0.36 0.33 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="regolith_mound_southeast">
+      <static>true</static><pose>8 -7 -3.75 0 0 0</pose>
+      <link name="mound_link">
+        <collision name="mound_collision"><geometry><sphere><radius>4.0</radius></sphere></geometry></collision>
+        <visual name="mound_visual">
+          <geometry><sphere><radius>4.0</radius></sphere></geometry>
+          <material><ambient>0.24 0.23 0.22 1</ambient><diffuse>0.32 0.31 0.29 1</diffuse></material>
+        </visual>
+      </link>
     </model>
 
     <!-- Main rover: wheels contact z=0, with a clear forward test lane to the
