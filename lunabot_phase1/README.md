@@ -127,7 +127,15 @@ For reliable keyboard input, use the `ros2 run` command from its own interactive
 
 ## 5. Manual rover control
 
-Open a **second terminal** with ROS and the workspace sourced, then run:
+Open a **second terminal** and change into the `lunabot_phase1/` workspace root (the directory containing `install/setup.bash`). In that terminal, source both environments and confirm the package resolves from this workspace:
+
+```bash
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 pkg prefix lunabot_phase1_tools
+```
+
+The prefix should point under this workspace's `install/` directory. Then, in the same terminal, start teleop:
 
 ```bash
 ros2 run lunabot_phase1_tools keyboard_teleop
@@ -144,6 +152,8 @@ Controls (the command remains active until another key is pressed):
 | `Space` or `X` | Publish an explicit stop |
 | `Q` | Publish a stop and exit |
 | `Ctrl+C` | Exit; the node attempts a stop burst and the watchdog stops stale input |
+
+While `keyboard_teleop` is running, it switches the terminal to raw keyboard input: pressed keys do **not** echo, and the shell prompt does not return until you press `Q` or `Ctrl+C`. This is expected. Press one control key at a time without Enter; do not type shell commands into that terminal until teleop exits. Use a separate terminal for ROS inspection. Because movement commands persist until changed, press `X` or `Space` after each short movement.
 
 The teleop node publishes at 20 Hz. The separate `command_guard` clamps commands and publishes zero to Gazebo when its `/cmd_vel` input has been stale for 0.50 seconds. That timeout is a simulation command watchdog, not a certified emergency stop; it depends on the guard and bridge process remaining alive. Always stop manually before approaching a collision object.
 
@@ -229,7 +239,7 @@ The SDF camera looks along local `+X`; the fixed camera-to-optical transform and
 
 ## 9. Acceptance tests
 
-The agent host cannot execute ROS or Gazebo runtime tests. The user has since reported a successful four-package Humble build and initial Fortress launch; the ROS smoke check still needs diagnosis, and remaining criteria are listed in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). Continue the target-workstation checks:
+The agent host cannot execute ROS or Gazebo runtime tests. The user has reported a successful four-package Humble build and a passing live-interface smoke check. The 2026-10-10 workstation run again launched and cleanly shut down Fortress; it reported `/camera/camera_info` at 640×480, and two `/odom` snapshots differed. Those observations are recorded in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md), but they do not replace a controlled per-key drive/stop sequence or the remaining sensor, TF, and watchdog checks. Continue:
 
 1. Build with the commands in §3; expected: all four packages build.
 2. Launch with the command in §4; expected: world and rover appear and remain stable.
@@ -257,7 +267,7 @@ This check sequence does **not** test or imply autonomous stopping or obstacle a
 
 ## 11. Known limitations and scope boundary
 
-- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. On the user's Humble/Fortress workstation, the four-package build completed; runtime checks observed live camera, scan, odometry, dynamic TF, and one static transform, and Ctrl+C shut down all launch children cleanly after the shutdown fix. The live-interface smoke test now passes, including `/tf_static`. Rover stability and commanded motion, complete TF connectivity, watchdog timing, all monitor states, and camera dimensions/viewpoint changes remain unverified.
+- The agent host has no ROS 2, Gazebo, bridge, or `colcon`. On the user's Humble/Fortress workstation, the four-package build and live-interface smoke test passed, and the latest integrated launch shut down all children cleanly. The latest run also reported CameraInfo at 640×480 and two different `/odom` poses; the key-by-key drive/stop sequence and a visual camera-viewpoint change were not recorded. Direction-specific motion, rover stability, image/CameraInfo dimension matching, full TF connectivity, watchdog timing, the remaining monitor case, and controlled obstacle-in/out range behavior remain unverified.
 - The code offers static XML/topic checks and pure-Python unit tests only; these are not a substitute for the ROS/Gazebo acceptance gate.
 - The command watchdog protects against a stale upstream velocity publisher while `command_guard` is alive. It is not an independent hardware stop and cannot guarantee a safe stop if the guard, bridge, or simulator itself terminates unexpectedly.
 - Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The current model has no suspension, deformable regolith, SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI.
