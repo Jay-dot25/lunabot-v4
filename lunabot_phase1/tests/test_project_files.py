@@ -192,6 +192,10 @@ class ProjectFileTests(unittest.TestCase):
         self.assertIn("/opt/ros/humble/setup.bash", smoke)
         self.assertIn("wait_for_node()", smoke)
         self.assertIn('grep -Eq "(^|/)${node_name}$"', smoke)
+        self.assertIn(
+            "wait_for_once /tf_static --qos-reliability reliable --qos-durability transient_local",
+            smoke,
+        )
         self.assertNotIn('"${ROS_DISTRO}" != "jazzy"', smoke)
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("Ubuntu 22.04 (Jammy) + ROS 2 Humble + Gazebo Fortress", readme)

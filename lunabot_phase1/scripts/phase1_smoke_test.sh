@@ -88,7 +88,7 @@ wait_for_once /camera/camera_info --qos-reliability best_effort
 wait_for_once /scan --qos-reliability best_effort
 wait_for_once /odom
 wait_for_once /tf
-wait_for_once /tf_static --qos-durability transient_local
+wait_for_once /tf_static --qos-reliability reliable --qos-durability transient_local
 wait_for_once /obstacle_monitor/status
 wait_for_once /obstacle_monitor/closest_range
 

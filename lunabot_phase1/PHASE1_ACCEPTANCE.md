@@ -2,7 +2,7 @@
 
 ## Result
 
-**Gate status: `NOT VERIFIED`.** The user built all four packages and launched the Fortress world. Runtime evidence confirms live sensor/odometry/dynamic-TF topics and four transient-local static-TF publishers; a static transform message was received. On the latest launch, `command_guard` failed at import because Humble does not export `RCLError` from `rclpy.exceptions`; the shutdown fix has been corrected to catch a general exception around the best-effort stop, and requires another target rebuild and launch. Full Phase 1 acceptance remains incomplete.
+**Gate status: `NOT VERIFIED`.** The user built all four packages and launched the Fortress world after the Humble exception fix. `command_guard` now starts and exits cleanly on Ctrl+C. Runtime evidence confirms live sensor/odometry/dynamic-TF topics and four transient-local static-TF publishers; a static transform message was received with explicit reliable/transient-local QoS. The smoke test's `/tf_static` subscription omitted explicit reliability and timed out; its QoS settings are corrected, pending a rerun. Full Phase 1 acceptance remains incomplete.
 
 ## Environments
 
@@ -32,9 +32,9 @@ The target for this isolated workspace is **Ubuntu 22.04 + ROS 2 Humble + Gazebo
 | ROS workspace build | `colcon build --symlink-install --event-handlers console_direct+` | `PASS` — user log reports 4 packages finished on Humble |
 | Initial Fortress launch | `ros2 launch lunabot_phase1_bringup phase1.launch.py` | Partial `PASS` — Gazebo Sim 6.18.0 world initialized; bridges started and DiffDrive subscribed to `/cmd_vel_sim` |
 | Live scan / obstacle-monitor evidence | Launch log from obstacle monitor | Partial evidence — it reported a valid nearest forward return of 2.75 m, then an obstacle at 1.42 m |
-| Live smoke script | `./scripts/phase1_smoke_test.sh` | `NOT VERIFIED` — first run reached `/tf_static` but timed out; latest run stopped at `command_guard` missing because its new shutdown module import failed |
-| Static TF inspection | `ros2 topic info /tf_static --verbose` and transient-local echo | Partial evidence — four reliable/transient-local publishers were listed and one static transform was received; full tree/uniqueness still needs `tf2_echo`/`view_frames` |
-| Shutdown behavior | Ctrl+C in integrated launch | `NOT VERIFIED` — first shutdown raised `RCLError`; the attempted fix then failed to import `RCLError` on Humble. Source now catches `Exception` only around best-effort shutdown publish; requires another rebuild and runtime check |
+| Live smoke script | `./scripts/phase1_smoke_test.sh` | `NOT VERIFIED` — earlier run passed nodes/types and all streams through dynamic `/tf`, but `/tf_static` timed out because smoke omitted explicit reliability QoS; script updated to request reliable + transient-local |
+| Static TF inspection | `ros2 topic info /tf_static --verbose` and reliable/transient-local echo | Partial evidence — four reliable/transient-local publishers were listed and a static transform was received; full tree/uniqueness still needs `tf2_echo`/`view_frames` |
+| Shutdown behavior | Ctrl+C in integrated launch | `PASS` — after rebuilding the correction, `command_guard` and all launch children exited cleanly without the prior context-invalid traceback |
 | Manual drive, watchdog timing and repeatability | README runtime procedures | `NOT VERIFIED` — no commanded motion, timeout measurement, or second clean launch reported |
 
 Static checks do not establish SDF schema acceptance by Fortress, plugin loading, bridge operation, sensor output, TF connectivity, physics stability, or rover motion. Runtime criteria remain `NOT VERIFIED` until executed on the target workstation.
@@ -56,7 +56,7 @@ Static checks do not establish SDF schema acceptance by Fortress, plugin loading
 | P1-09 | LiDAR publishes valid data | Live LaserScan with valid scan metadata/readings | PASS | Monitor received live scan data and reported valid nearest forward returns (2.75 m and later 1.42 m) |
 | P1-10 | Physical obstacles affect range | Compare scan/forward range with obstacle in/out of sensor view | NOT VERIFIED | Range/status changed, but no controlled obstacle-in/out comparison was reported |
 | P1-11 | Motion estimates are available | Odometry changes for forward, reverse and rotation | NOT VERIFIED | Smoke received `/odom` messages, but no before/after motion comparison was reported |
-| P1-12 | Coordinate frames are valid | Inspect complete tree and confirm each transform once | NOT VERIFIED | `/tf_static` reports four transient-local publishers and an echo received `camera_link -> camera_optical_frame`; full tree/uniqueness still needs `tf2_echo` or `view_frames` |
+| P1-12 | Coordinate frames are valid | Inspect complete tree and confirm each transform once | NOT VERIFIED | `/tf_static` has four transient-local publishers and one transform was received; full tree/uniqueness still needs `tf2_echo` or `view_frames` |
 | P1-13 | Obstacle monitor works | Observe CLEAR, OBSTACLE_DETECTED and NO_VALID_MEASUREMENTS cases | NOT VERIFIED | User logs show CLEAR and OBSTACLE_DETECTED readings; NO_VALID_MEASUREMENTS has not been tested, and smoke script node discovery failed |
 | P1-14 | Manual teleoperation works | Complete keyboard control sequence, including safe stop/exit | NOT VERIFIED | No keyboard drive/stop sequence reported |
 | P1-15 | Integrated system works | Drive with camera, LiDAR, odometry, TF and monitor operating together | NOT VERIFIED | Live camera, scan, odom, and dynamic TF messages were observed; static TF, commanded motion, and coordinated behavior remain unverified |
