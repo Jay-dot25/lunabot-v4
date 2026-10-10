@@ -10,7 +10,9 @@ import tty
 
 import rclpy
 from geometry_msgs.msg import Twist
+from rclpy.exceptions import RCLError
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 
 
 class KeyboardTeleop(Node):
@@ -50,7 +52,9 @@ def main(args: list[str] | None = None) -> int:
         print("keyboard_teleop needs an interactive terminal (TTY).", file=sys.stderr)
         return 2
 
-    rclpy.init(args=args)
+    # Preserve Python's Ctrl+C handler so the explicit zero burst is sent
+    # before the ROS context is shut down in finally.
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     node: KeyboardTeleop | None = None
     original_settings = termios.tcgetattr(sys.stdin)
     linear = angular = 0.0
@@ -89,9 +93,15 @@ def main(args: list[str] | None = None) -> int:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, original_settings)
         if node is not None:
             # A brief stop burst gives the command guard an explicit zero before exit.
-            for _ in range(3):
-                node.publish(0.0, 0.0)
-                time.sleep(0.03)
+            if rclpy.ok():
+                try:
+                    for _ in range(3):
+                        node.publish(0.0, 0.0)
+                        time.sleep(0.03)
+                except RCLError as exc:
+                    node.get_logger().warning(
+                        f"Could not publish the teleop stop burst: {exc}"
+                    )
             node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()

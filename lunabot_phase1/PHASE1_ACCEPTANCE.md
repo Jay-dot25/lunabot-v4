@@ -2,7 +2,7 @@
 
 ## Result
 
-**Gate status: `NOT VERIFIED`.** The user has now built all four packages and launched the world on their Ubuntu 22.04 / Humble / Fortress workstation. Logs confirm the world, bridge mappings, DiffDrive subscription, and live LiDAR-driven monitor readings. The smoke script then failed to discover `obstacle_monitor` through the ROS node-list check; camera image, TF, manual driving, watchdog timing, and repeatability are not yet verified. Source inspection and partial runtime evidence do not establish full Phase 1 acceptance.
+**Gate status: `NOT VERIFIED`.** The user built all four packages, launched the Fortress world, and reran the smoke test while the ROS graph was visible. Nodes and message types passed; live messages were received on command, clock, camera, scan, odometry, and dynamic TF topics. The smoke test failed only on receiving `/tf_static`. On Ctrl+C, `command_guard` also logged an `RCLError` while trying its shutdown stop burst; a source fix is prepared but still needs a target-workstation rebuild and runtime check. Full Phase 1 acceptance remains incomplete.
 
 ## Environments
 
@@ -32,8 +32,10 @@ The target for this isolated workspace is **Ubuntu 22.04 + ROS 2 Humble + Gazebo
 | ROS workspace build | `colcon build --symlink-install --event-handlers console_direct+` | `PASS` — user log reports 4 packages finished on Humble |
 | Initial Fortress launch | `ros2 launch lunabot_phase1_bringup phase1.launch.py` | Partial `PASS` — Gazebo Sim 6.18.0 world initialized; bridges started and DiffDrive subscribed to `/cmd_vel_sim` |
 | Live scan / obstacle-monitor evidence | Launch log from obstacle monitor | Partial evidence — it reported a valid nearest forward return of 2.75 m, then an obstacle at 1.42 m |
-| Live smoke script | `./scripts/phase1_smoke_test.sh` | `NOT VERIFIED` — failed at `obstacle_monitor is not running` despite the monitor logging scan results; ROS graph/node discovery needs diagnosis. The smoke script has been updated to wait for nodes before failing. |
-| Camera image, TF, manual drive, watchdog timing and repeatability | README runtime procedures | `NOT VERIFIED` — not shown in the supplied logs |
+| Live smoke script | `./scripts/phase1_smoke_test.sh` | Partial — user reported all node/type checks and live messages passing for `/cmd_vel_sim`, `/clock`, camera image/info, `/scan`, `/odom`, and `/tf`; `tf_static` timed out without a message |
+| Static TF inspection | `ros2 topic echo /tf_static --once --qos-durability transient_local` (smoke test) | `NOT VERIFIED` — static publishers are listed, but no transient-local message arrived; inspect `/tf_static` publisher QoS and verify with `tf2_echo` |
+| Shutdown behavior | Ctrl+C in integrated launch | `NOT VERIFIED` — `command_guard` raised `RCLError` publishing after its ROS context became invalid; shutdown handling has been changed to preserve a best-effort stop before context shutdown and needs rebuilding/retesting on the target |
+| Manual drive, watchdog timing and repeatability | README runtime procedures | `NOT VERIFIED` — no commanded motion, timeout measurement, or second clean launch reported |
 
 Static checks do not establish SDF schema acceptance by Fortress, plugin loading, bridge operation, sensor output, TF connectivity, physics stability, or rover motion. Runtime criteria remain `NOT VERIFIED` until executed on the target workstation.
 
@@ -50,17 +52,17 @@ Static checks do not establish SDF schema acceptance by Fortress, plugin loading
 | P1-05 | Both rotations work | Observed left and right yaw change | NOT VERIFIED | No ROS/Gazebo runtime |
 | P1-06 | Explicit stop works | Rover settles after zero command | NOT VERIFIED | No ROS/Gazebo runtime |
 | P1-07 | Command safety works | Measured stop after upstream publisher disappears and 0.50 s expires | NOT VERIFIED | Pure policy is unit-testable; no live timeout measurement |
-| P1-08 | Camera publishes valid data | Live image and matching camera-info dimensions; viewpoint changes on motion | NOT VERIFIED | Camera bridge configuration loaded, but no camera messages or viewpoint change were reported |
+| P1-08 | Camera publishes valid data | Live image and matching camera-info dimensions; viewpoint changes on motion | NOT VERIFIED | Smoke received live image and CameraInfo messages; dimensions and viewpoint change on motion were not checked |
 | P1-09 | LiDAR publishes valid data | Live LaserScan with valid scan metadata/readings | PASS | Monitor received live scan data and reported valid nearest forward returns (2.75 m and later 1.42 m) |
 | P1-10 | Physical obstacles affect range | Compare scan/forward range with obstacle in/out of sensor view | NOT VERIFIED | Range/status changed, but no controlled obstacle-in/out comparison was reported |
-| P1-11 | Motion estimates are available | Odometry changes for forward, reverse and rotation | NOT VERIFIED | DiffDrive loaded and the odometry bridge was created; no live `/odom` sample or movement comparison was reported |
-| P1-12 | Coordinate frames are valid | Inspect complete tree and confirm each transform once | NOT VERIFIED | No TF runtime inspection |
+| P1-11 | Motion estimates are available | Odometry changes for forward, reverse and rotation | NOT VERIFIED | Smoke received `/odom` messages, but no before/after motion comparison was reported |
+| P1-12 | Coordinate frames are valid | Inspect complete tree and confirm each transform once | NOT VERIFIED | Dynamic `/tf` message arrived; `/tf_static` echo timed out, so the full tree is not established |
 | P1-13 | Obstacle monitor works | Observe CLEAR, OBSTACLE_DETECTED and NO_VALID_MEASUREMENTS cases | NOT VERIFIED | User logs show CLEAR and OBSTACLE_DETECTED readings; NO_VALID_MEASUREMENTS has not been tested, and smoke script node discovery failed |
 | P1-14 | Manual teleoperation works | Complete keyboard control sequence, including safe stop/exit | NOT VERIFIED | No keyboard drive/stop sequence reported |
-| P1-15 | Integrated system works | Drive with camera, LiDAR, odometry, TF and monitor operating together | NOT VERIFIED | Integrated launch started and LiDAR monitor ran; camera message, TF, odometry change and commanded motion were not demonstrated |
+| P1-15 | Integrated system works | Drive with camera, LiDAR, odometry, TF and monitor operating together | NOT VERIFIED | Live camera, scan, odom, and dynamic TF messages were observed; static TF, commanded motion, and coordinated behavior remain unverified |
 | P1-16 | Rebuild/relaunch is repeatable | Build, restart Gazebo and repeat the integrated check | NOT VERIFIED | One build and launch completed; a second clean rebuild/relaunch cycle has not been reported |
 | P1-17 | Documentation is complete | Humble/Fortress reproduction guide, interfaces, acceptance procedures and limitations are present | PASS | README and this acceptance record describe the selected target stack and retain the runtime gate |
 
 ## Final gate decision
 
-**`NOT VERIFIED`** — P1-01 and P1-09 have runtime evidence and are marked `PASS`; the remaining required behaviors are incomplete or unverified. The next step is to diagnose the smoke-test node discovery, verify camera/TF/odometry topics, complete the keyboard drive and watchdog checks, exercise the obstacle monitor's unknown-scan case, and repeat a clean rebuild/relaunch. Do not declare Phase 1 passed or begin Phase 2 until every mandatory row is `PASS`.
+**`NOT VERIFIED`** — P1-01 and P1-09 have runtime evidence and are marked `PASS`; additional live topics are observed, but `/tf_static` and the full behavior checks remain incomplete. Diagnose static-TF QoS/publication, rebuild with the Ctrl+C shutdown fix, verify frame connectivity and camera dimensions, then perform manual driving, command-timeout, all monitor states, and repeatability checks. Do not declare Phase 1 passed or begin Phase 2 until every mandatory row is `PASS`.

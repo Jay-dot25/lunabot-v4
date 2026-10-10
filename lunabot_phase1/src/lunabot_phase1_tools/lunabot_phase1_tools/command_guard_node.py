@@ -7,7 +7,9 @@ import time
 
 import rclpy
 from geometry_msgs.msg import Twist
+from rclpy.exceptions import RCLError
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 
 from lunabot_phase1_tools.command_guard_core import resolve_command
 
@@ -88,7 +90,9 @@ class CommandGuard(Node):
 
 
 def main(args: list[str] | None = None) -> None:
-    rclpy.init(args=args)
+    # Leave SIGINT as Python's KeyboardInterrupt so finally can publish the
+    # best-effort zero burst before shutting down the ROS context.
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     node: CommandGuard | None = None
     try:
         node = CommandGuard()
@@ -97,7 +101,13 @@ def main(args: list[str] | None = None) -> None:
         pass
     finally:
         if node is not None:
-            node.publish_stop_burst()
+            if rclpy.ok():
+                try:
+                    node.publish_stop_burst()
+                except RCLError as exc:
+                    node.get_logger().warning(
+                        f"Could not publish the shutdown stop burst: {exc}"
+                    )
             node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()

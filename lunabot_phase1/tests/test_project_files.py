@@ -210,6 +210,16 @@ class ProjectFileTests(unittest.TestCase):
         self.assertIn('"camera_optical_frame"', integrated)
         self.assertIn('"lidar_link"', integrated)
 
+    def test_ros_nodes_defer_sigint_shutdown_until_best_effort_stop(self):
+        guard = (TOOLS / "lunabot_phase1_tools" / "command_guard_node.py").read_text(encoding="utf-8")
+        teleop = (TOOLS / "lunabot_phase1_tools" / "keyboard_teleop.py").read_text(encoding="utf-8")
+        for node_source in (guard, teleop):
+            self.assertIn("SignalHandlerOptions.NO", node_source)
+            self.assertIn("if rclpy.ok():", node_source)
+            self.assertIn("except RCLError as exc:", node_source)
+        self.assertIn("node.publish_stop_burst()", guard)
+        self.assertIn("node.publish(0.0, 0.0)", teleop)
+
     def test_python_entry_points_and_ros_runtime_dependencies_are_declared(self):
         setup = (TOOLS / "setup.py").read_text(encoding="utf-8")
         for entry in ("command_guard", "obstacle_monitor", "keyboard_teleop"):

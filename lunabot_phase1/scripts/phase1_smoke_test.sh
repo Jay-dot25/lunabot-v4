@@ -75,6 +75,7 @@ assert_type /odom nav_msgs/msg/Odometry
 assert_type /camera/image_raw sensor_msgs/msg/Image
 assert_type /camera/camera_info sensor_msgs/msg/CameraInfo
 assert_type /scan sensor_msgs/msg/LaserScan
+assert_type /tf_static tf2_msgs/msg/TFMessage
 assert_type /obstacle_monitor/status std_msgs/msg/String
 assert_type /obstacle_monitor/closest_range std_msgs/msg/Float32
 
