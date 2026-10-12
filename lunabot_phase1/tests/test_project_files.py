@@ -97,6 +97,9 @@ class ProjectFileTests(unittest.TestCase):
         self.assertEqual(right_names, ["right_wheel_joint", "right_front_wheel_joint", "right_rear_wheel_joint"])
         joint_names = {joint.attrib["name"] for joint in model.findall("joint")}
         self.assertTrue(set(left_names + right_names).issubset(joint_names))
+        for joint_name in left_names + right_names:
+            joint = model.find(f"joint[@name='{joint_name}']")
+            self.assertEqual(joint.findtext("axis/xyz"), "0 0 -1")
         self.assertEqual(drive[0].findtext("wheel_radius"), "0.15")
         self.assertEqual(drive[0].findtext("wheel_separation"), "0.68")
         self.assertEqual(drive[0].findtext("max_linear_velocity"), "0.35")
