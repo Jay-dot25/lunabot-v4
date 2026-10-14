@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .eyes_of_luna_dataset import DatasetError, load_capture_group_split, load_manifest
+from .pillow_compat import resampling_filter
 
 
 def create_dataset(root: Path, split: str, config: dict, training: bool = False):
@@ -52,9 +53,9 @@ def create_dataset(root: Path, split: str, config: dict, training: bool = False)
                 image = ImageEnhance.Brightness(image).enhance(brightness)
                 image = ImageEnhance.Contrast(image).enhance(contrast)
 
-            image = image.resize(size, Image.Resampling.BILINEAR)
-            terrain = terrain.resize(size, Image.Resampling.NEAREST)
-            shadow = shadow.resize(size, Image.Resampling.NEAREST)
+            image = image.resize(size, resampling_filter(Image, "BILINEAR"))
+            terrain = terrain.resize(size, resampling_filter(Image, "NEAREST"))
+            shadow = shadow.resize(size, resampling_filter(Image, "NEAREST"))
             array = np.asarray(image, dtype=np.float32) / 255.0
             array = ((array - mean) / std).transpose(2, 0, 1).copy()
             terrain_array = np.asarray(terrain, dtype=np.int64).copy()

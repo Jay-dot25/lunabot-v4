@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .eyes_of_luna_model import build_model, load_model_config
+from .pillow_compat import resampling_filter
 
 
 class EyesOfLunaInferenceError(RuntimeError):
@@ -118,7 +119,8 @@ def infer_rgb(model, rgb, config: dict, device: str = "cpu") -> dict:
 
     target_height, target_width = config["training"]["input_size"]
     resized = np.asarray(
-        Image.fromarray(rgb).resize((target_width, target_height), Image.Resampling.BILINEAR),
+        Image.fromarray(rgb).resize(
+            (target_width, target_height), resampling_filter(Image, "BILINEAR")),
         dtype=np.float32) / 255.0
     mean = np.asarray(config["normalization"]["mean"], dtype=np.float32)
     std = np.asarray(config["normalization"]["std"], dtype=np.float32)

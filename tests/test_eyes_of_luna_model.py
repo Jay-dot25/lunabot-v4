@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 ML = ROOT / "ml"
@@ -21,6 +22,7 @@ from lunabot_ml.eyes_of_luna_metrics import (  # noqa: E402
     terrain_report,
 )
 from lunabot_ml.eyes_of_luna_model import build_model, load_model_config  # noqa: E402
+from lunabot_ml.pillow_compat import resampling_filter  # noqa: E402
 from lunabot_ml.eyes_of_luna_runtime import (  # noqa: E402
     EyesOfLunaInferenceError,
     config_sha256,
@@ -30,6 +32,15 @@ from lunabot_ml.eyes_of_luna_runtime import (  # noqa: E402
     load_exported_model,
     save_prediction_masks,
 )
+
+
+class PillowCompatibilityTests(unittest.TestCase):
+    def test_resampling_supports_legacy_and_enum_apis(self):
+        legacy = SimpleNamespace(BILINEAR=2, NEAREST=0)
+        modern = SimpleNamespace(Resampling=SimpleNamespace(BILINEAR=3, NEAREST=1))
+        self.assertEqual(resampling_filter(legacy, "BILINEAR"), 2)
+        self.assertEqual(resampling_filter(modern, "BILINEAR"), 3)
+        self.assertEqual(resampling_filter(modern, "NEAREST"), 1)
 
 
 @unittest.skipUnless(importlib.util.find_spec("torch"), "PyTorch is not installed")
