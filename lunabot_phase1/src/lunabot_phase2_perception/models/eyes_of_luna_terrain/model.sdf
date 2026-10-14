@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<sdf version="1.8"><model name="eyes_of_luna_terrain"><static>true</static><link name="terrain_link"><visual name="terrain_visual"><geometry><mesh><uri>model://eyes_of_luna_terrain/meshes/regolith_scene01.obj</uri></mesh></geometry></visual></link></model></sdf>

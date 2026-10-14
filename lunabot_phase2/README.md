@@ -19,9 +19,11 @@ checksum-bound `torch.export` deployment bundles; and a separate ROS 2 image
 node/launch file for `/camera/image_raw`. Local CPU tests check shapes, loss,
 serialization, mask IDs, dataset contracts, and static ROS package contracts.
 They use temporary synthetic fixtures and are not model-quality evidence. The
-ROS package has not yet been built or run on the target Humble workstation. No
-training outputs, prediction visuals, metrics, or target runtime result exist.
-**Phase 2 is NOT PASSED.** See [PHASE2_ACCEPTANCE.md](PHASE2_ACCEPTANCE.md).
+original perception package build passed on the target (user-reported), but the
+new optional capture-world launch/assets must be rebuilt and exercised there.
+No reviewed dataset, training outputs, prediction visuals, metrics, or live
+inference result exist. **Phase 2 is NOT PASSED.** See
+[PHASE2_ACCEPTANCE.md](PHASE2_ACCEPTANCE.md).
 
 ## Output contract
 
@@ -190,6 +192,106 @@ or defaulted to the filename stem) and original dimensions to its JSON report.
 The `.terrain.png` and `.shadow.png` outputs preserve class IDs (`0–3` and
 `0/1` respectively); `.shadow_visualization.png` is a separate `0/255` preview,
 not a machine mask.
+
+## Optional Phase 2 terrain-capture worlds
+
+The Phase 1 base-camp world contains a flat regolith lane, rocks and obstacles;
+it has no explicit bedrock or crater geometry. To collect more varied RGB data
+without changing the Phase 1 world or `launch-1`, the optional Phase 2 package
+now installs three separate Gazebo Fortress capture worlds: `scene01`,
+`scene02`, and `scene03`. Each has a cratered regolith height mesh, a broad
+faceted bedrock outcrop, irregular boulders, and directional lighting that
+casts shadows. Each world includes the same rover/camera model and publishes
+`/camera/image_raw` and `/camera/camera_info`.
+
+These worlds are **synthetic simulator scenes**, not verified semantic cameras
+and not ground-truth masks. They provide candidate visual examples only; make
+both terrain and shadow masks manually and have a person review them. The SDF
+terrain geometry and model names must not be used to claim pixel-label accuracy.
+Target rendering, mesh collision behavior, camera framing, and rover traversal
+have not yet been tested on Fortress; inspect each scene before recording.
+
+Build the optional package and its workspace dependencies from the Phase 1
+workspace root:
+
+```bash
+REPO_ROOT="$HOME/lunabot-v4-humble.tDEKWr/repo"
+source /opt/ros/humble/setup.bash
+cd "$REPO_ROOT/lunabot_phase1"
+colcon build --symlink-install --packages-up-to lunabot_phase2_perception \\
+  --event-handlers console_direct+
+source install/setup.bash
+```
+
+Stop any existing `launch-1`/Phase 1 simulator before starting one of the
+separate capture worlds. Pick one scene per capture group:
+
+```bash
+ros2 launch lunabot_phase2_perception eyes_of_luna_capture.launch.py scene:=scene01
+# Also available: scene:=scene02 or scene:=scene03
+```
+
+The launch starts Fortress, the camera/odometry/TF bridges, static camera TF,
+and the existing Phase 1 command guard. It does **not** start Phase 2 inference
+or an autonomous controller. In another sourced Humble terminal, start manual
+teleop (use short movements and stop between maneuvers):
+
+```bash
+REPO_ROOT="$HOME/lunabot-v4-humble.tDEKWr/repo"
+source /opt/ros/humble/setup.bash
+source "$REPO_ROOT/lunabot_phase1/install/setup.bash"
+ros2 run lunabot_phase1_tools keyboard_teleop
+```
+
+Record the camera, calibration, ordinary wheel odometry, TF, and command topics
+in one terminal, and the Gazebo simulator pose stream in a separate terminal.
+Do not substitute `/odom` for simulator ground truth. Start both logs before
+moving the rover; stop both with Ctrl+C. For `scene01`, for example:
+
+```bash
+REPO_ROOT="$HOME/lunabot-v4-humble.tDEKWr/repo"
+source /opt/ros/humble/setup.bash
+source "$REPO_ROOT/lunabot_phase1/install/setup.bash"
+CAPTURE_ROOT="$HOME/eyes_of_luna_capture"
+GROUP_ID="scene01"
+mkdir -p "$CAPTURE_ROOT"
+test ! -e "$CAPTURE_ROOT/$GROUP_ID" || { echo "Bag path already exists" >&2; exit 2; }
+ros2 bag record -o "$CAPTURE_ROOT/$GROUP_ID" \\
+  /camera/image_raw /camera/camera_info /odom /tf /tf_static /cmd_vel /cmd_vel_sim
+```
+
+In a second terminal, capture Fortress dynamic poses to a distinct file:
+
+```bash
+source /opt/ros/humble/setup.bash
+CAPTURE_ROOT="$HOME/eyes_of_luna_capture"
+GROUP_ID="scene01"
+WORLD="eyes_of_luna_capture_scene01"
+POSE_LOG="$CAPTURE_ROOT/${GROUP_ID}_gazebo_ground_truth.txt"
+test ! -e "$POSE_LOG" || { echo "Pose log already exists" >&2; exit 2; }
+ign topic -e -t "/world/$WORLD/dynamic_pose/info" > "$POSE_LOG"
+```
+
+Use `GROUP_ID=scene02` / `scene03` and their corresponding world names for the
+other layouts. One bag per scene group is recommended; keep all frames from a
+scene together in one split. The pose log and rosbag are not yet automatically
+time-aligned, so preserve both and verify alignment before metadata registration.
+Then extract frames as usual:
+
+```bash
+REPO_ROOT="$HOME/lunabot-v4-humble.tDEKWr/repo"
+CAPTURE_ROOT="$HOME/eyes_of_luna_capture"
+GROUP_ID="scene01"
+python3 "$REPO_ROOT/ml/extract_eyes_of_luna_frames.py" \\
+  --bag "$CAPTURE_ROOT/$GROUP_ID" \\
+  --output "$CAPTURE_ROOT/${GROUP_ID}_extracted" \\
+  --group-id "$GROUP_ID" --every-n 30
+```
+
+Collect one reviewed contact sheet per scene before creating masks. Keep the
+existing `session01` and 2026-10-14 captures intact; they remain useful examples
+of the original base-camp appearance but do not visibly cover all four terrain
+classes.
 
 ## Optional ROS 2 integration
 
