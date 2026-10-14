@@ -29,5 +29,30 @@
     "schema": "eyes_of_luna_camera_v1",
     "group_split_required": true,
     "human_review_required_for_each_head": true
+  },
+  "normalization": {
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225]
+  },
+  "model": {
+    "architecture": "unet_multitask",
+    "base_channels": 16
+  },
+  "training": {
+    "seed": 42,
+    "input_size": [240, 320],
+    "batch_size": 2,
+    "epochs": 40,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "terrain_dice_weight": 0.5,
+    "shadow_loss_weight": 1.0,
+    "shadow_dice_weight": 0.5,
+    "early_stopping_patience": 8,
+    "num_workers": 0
+  },
+  "evaluation": {
+    "shadow_threshold": 0.5,
+    "ignore_id": 255
   }
 }

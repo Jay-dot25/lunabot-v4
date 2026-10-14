@@ -48,12 +48,13 @@ lunabot_phase1/
     │   └── worlds/lunar_base_camp.sdf
     ├── lunabot_phase1_tools/
     │   └── lunabot_phase1_tools/  # command guard, teleop, obstacle monitor
-    └── lunabot_phase1_bringup/
-        ├── launch/                # integrated, monitor-only and teleop launches
-        └── config/                # bridge and node parameters
+    ├── lunabot_phase1_bringup/
+    │   ├── launch/                # integrated, monitor-only and teleop launches
+    │   └── config/                # bridge and node parameters
+    └── lunabot_phase2_perception/ # optional independent dual-head inference node
 ```
 
-`lunabot_phase1_description` owns the physical rover model and `model://lunabot_rover` asset. `lunabot_phase1_simulation` owns the lunar world and its colliding obstacles. `lunabot_phase1_tools` contains the ROS nodes. `lunabot_phase1_bringup` joins those packages and installs the launch/configuration files. Separate camera and LiDAR bridge processes are used because Humble applies `override_frame_id` at the bridge-node level.
+The four `lunabot_phase1_*` packages own the Phase 1 rover, world, tools, and bringup. The separate `lunabot_phase2_perception` package subscribes to the existing `/camera/image_raw` stream only when explicitly launched; `launch-1` does not start it. Separate camera and LiDAR bridge processes are used because Humble applies `override_frame_id` at the bridge-node level.
 
 The world includes the rover model directly at a deterministic spawn pose. There is no separate asynchronous spawn step, so the rover and world are loaded together. The level central lane remains flat for baseline drive/sensor tests; four shallow physical regolith domes sit outside that lane. The rover follows the reference silhouette: three wheels per side, fixed rocker-bogie-style side rails, a camera mast, LiDAR, blue solar panel, and front bumper. It is about 1.2 × 0.8 × 0.6 m overall with an approximately 80 kg simulated mass. These are simple Phase 1 primitives, not a high-resolution terrain DEM, articulated suspension, or flight-hardware model. The installed model directory is added to Fortress’s `IGN_GAZEBO_RESOURCE_PATH` by the launch file.
 
@@ -245,7 +246,7 @@ The SDF camera looks along local `+X`; the fixed camera-to-optical transform and
 
 The agent host cannot execute ROS or Gazebo runtime tests. Earlier Humble/Fortress runs and a GUI screenshot confirm that the world and rover loaded. On the pre-fix `aa3d678` source, `W` produced +1.5242489 m world-X displacement and `/odom` x=1.5242496 m; after `S`, world displacement was -1.5697497 m and `/odom` x=-1.5697504 m, agreeing within about 0.0000007 m. Keep Gazebo `dynamic_pose/info` ground truth distinct from wheel-model `/odom`. A later probe found a 0.339 m return at -0.8 degrees (beam 358), matching the predicted 0.345 m camera-mast self-return; commit `45e6464` moved the LiDAR mount to x=0.50 m and updated the static TF. The user reports that the post-fix monitor now shows `CLEAR` above 1.50 m and `OBSTACLE_DETECTED` below it. On 2026-10-14, the user further reported that every remaining prescribed check passed, including post-fix build/relaunch/smoke, watchdog timing, camera viewpoint while turning, A/D odometry, integrated live streams during motion, and `NO_VALID_MEASUREMENTS` with NaN. All mandatory P1 rows are therefore marked `PASS` based on the user's report. The exact target HEAD, raw logs, watchdog interval and numeric turn samples were not pasted, so this is not an independent ROS/Gazebo reproduction. Earlier smoke output and matching 640×480 image/CameraInfo dimensions, and the 2026-10-13 `view_frames` result, are documented in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). Continue:
 
-1. Build with the commands in §3; expected: all four packages build.
+1. Build with the commands in §3; expected: the four Phase 1 packages and the optional Phase 2 perception package build.
 2. Launch with the command in §4; expected: world and rover appear and remain stable.
 3. Run the smoke script; expected: all listed ROS messages arrive with the listed types.
 4. In a confirmed-clear area, drive forward and reverse briefly, rotate left/right, and stop using the keyboard controls. For each motion, inspect Gazebo's `/world/lunar_base_camp/dynamic_pose/info` pose for `lunabot` separately from `/odom`; press `X` after each movement. Use the current monitor reading and visible clearance; the historical 0.34 m pre-fix return was likely a mast self-return.
@@ -274,7 +275,38 @@ This check sequence does **not** test or imply autonomous stopping or obstacle a
 - The agent host has no ROS 2, Gazebo, bridge, or `colcon`. The user reports all mandatory Humble/Fortress acceptance checks passed after the LiDAR-mount correction, including the post-fix rebuild/relaunch/smoke and motion/sensor checks; see [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). Exact logs and numeric watchdog/rotation results were not pasted, so the gate is recorded as user-reported rather than independently reproduced. The old 0.34 m return was consistent with a camera-mast self-return and is not current obstacle evidence.
 - The code offers static XML/topic checks and pure-Python unit tests only; these are not a substitute for the ROS/Gazebo acceptance gate.
 - The command watchdog protects against a stale upstream velocity publisher while `command_guard` is alive. It is not an independent hardware stop and cannot guarantee a safe stop if the guard, bridge, or simulator itself terminates unexpectedly.
-- Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The rocker-bogie-style side rails are visual/fixed, not an articulated suspension; the terrain is a low-relief primitive test surface, not deformable regolith or a detailed heightmap. The current model has no SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI.
+- Lunar gravity, rigid obstacles and wheel friction are simplified simulation assumptions. The rocker-bogie-style side rails are visual/fixed, not an articulated suspension; the terrain is a low-relief primitive test surface, not deformable regolith or a detailed heightmap. Phase 1 itself has no SLAM, localization fusion, mapping, deep-learning perception, path planning, autonomy or mission-control UI. Phase 2 is a separate, unaccepted optional package.
 - GPU camera/LiDAR rendering may need graphics-driver or headless-rendering configuration on a workstation/CI host.
 
-Phase 2 (“Eyes of Luna”) is now authorized, but authorization is not acceptance. Its data/output contract and dependency-free data tools live alongside the existing `ml/` scaffold; the Phase 1 ROS/Gazebo workspace remains unchanged. See [`../lunabot_phase2/README.md`](../lunabot_phase2/README.md) and [`../lunabot_phase2/PHASE2_ACCEPTANCE.md`](../lunabot_phase2/PHASE2_ACCEPTANCE.md) for current scope and evidence. Phase 1's reported direct launch acceptance remains distinct from the still-pending target test of the `launch-1` wrapper.
+Phase 2 (“Eyes of Luna”) is authorized, but authorization is not acceptance. An optional `lunabot_phase2_perception` package is part of this same workspace; it does not alter the Phase 1 launch and is not started by `launch-1`. It requires a real trained `deployment.json` bundle before it can publish predictions. See [`../lunabot_phase2/README.md`](../lunabot_phase2/README.md) and [`../lunabot_phase2/PHASE2_ACCEPTANCE.md`](../lunabot_phase2/PHASE2_ACCEPTANCE.md). Phase 1's reported direct launch acceptance remains distinct from the still-pending target test of the `launch-1` wrapper.
+
+## 12. Optional Phase 2 dual-head perception
+
+The Phase 2 node is separate from Phase 1 bringup and uses the already-running
+`/camera/image_raw`; it does not start a second world or rover. First build the
+workspace with the §3 `colcon build` command. Only after a real training run has
+created a `deployment.json` bundle, set its actual path and launch the node from
+a Humble terminal with this workspace sourced:
+
+```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+export EYES_OF_LUNA_BUNDLE="$REPO_ROOT/results/eyes_of_luna/run01/deployment.json"
+ros2 launch lunabot_phase2_perception eyes_of_luna.launch.py \
+  model_bundle_path:="$EYES_OF_LUNA_BUNDLE" device:=cpu
+```
+
+Do not run this before a trained bundle exists: without one, the node reports
+`ERROR` on `/eyes_of_luna/status` and publishes no masks. The machine-readable
+outputs are `/eyes_of_luna/terrain_mask` (`mono8`, class IDs `0–3`) and
+`/eyes_of_luna/shadow_mask` (`mono8`, IDs `0`/`1`); the status topic is a JSON
+string. Verify after inference starts with:
+
+```bash
+ros2 topic hz /eyes_of_luna/terrain_mask
+ros2 topic hz /eyes_of_luna/shadow_mask
+ros2 topic echo /eyes_of_luna/status
+```
+
+These commands are not Phase 2 acceptance evidence until the outputs are backed
+by a validated checkpoint and held-out evaluation. Current checks are synthetic
+or interface-level only; no training bundle or real-data quality result exists.

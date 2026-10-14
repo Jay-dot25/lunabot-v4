@@ -1,55 +1,40 @@
 # Phase 2 — Eyes of Luna acceptance record
 
-**Overall status: NOT PASSED.** Phase 2 is authorized, but there is no usable
-annotated camera dataset, trained checkpoint, held-out prediction/metric report,
-or tested live ROS 2/Gazebo inference pipeline. No model quality or deployment
+**Overall status: NOT PASSED.** The model, data, training/evaluation, standalone
+inference, and ROS integration code has been implemented and locally tested at
+the interface level. There is still no reviewed camera dataset, trained
+checkpoint, held-out evaluation, prediction artifact, target colcon build, or
+live Phase 2 ROS/Gazebo inference result. No model quality or deployment
 performance is claimed.
 
 | Section | Criterion / evidence | Status |
 |---|---|---|
-| **A. Phase 1 prerequisite** | The Phase 1 acceptance record says `PASSED (user-reported)`. This is not an independent agent-host reproduction. The target test for the newer `launch-1` wrapper remains separate and pending. | **PASS (user-reported)** for the reported direct Phase 1 launch; wrapper **NOT VERIFIED** |
-| **B. Available environment** | Agent host is Debian 12 / Python 3.11.2 with 2 CPUs and about 4 GB RAM. `ros2`, `ign`, `gz`, `colcon`, `nvidia-smi`, PyTorch, NumPy, Pillow, OpenCV, ONNX Runtime, `rclpy`, and `cv_bridge` are absent. The Phase 1 target was reported as Ubuntu 22.04 / ROS 2 Humble / Gazebo Fortress 6.18.0; Phase 2 ML/runtime dependency availability on that target is not established. | **BLOCKED / NOT VERIFIED** |
-| **C. Camera and data inventory** | Phase 1 SDF declares ordinary RGB at `/camera/image_raw`, 640×480, `R8G8B8`, 20 Hz. On 2026-10-14, user terminal output showed the live-interface smoke test receiving `/camera/image_raw` and `/camera/camera_info`; `ros2 topic hz` observed about 11.4–11.9 Hz under that run. This confirms a live message stream, not a verified 20 Hz rate or a viewed image. Repository inventory found only two terrain-preview PNGs; no annotated camera images, dual masks, Phase 2 manifest, or capture groups exist. | Camera stream **PASS (user-reported live smoke)**; observed rate **below configured 20 Hz**; dataset **BLOCKED** |
-| **D. Annotation and provenance** | The Phase 1 camera is not a semantic camera. No valid terrain or shadow annotations were found. The new contract requires separate, human-reviewed terrain and shadow masks and records capture/annotation provenance. A metadata declaration cannot independently prove that a person reviewed or that labels are correct. | **BLOCKED** — real human-reviewed masks unavailable |
-| **E. Dataset contract and collection/validation tooling** | Added `ml/configs/eyes_of_luna.json`, a camera/multi-output contract, and dependency-free collector/validator. Checks cover 8-bit RGB PNG decoding, two independent grayscale masks, dimensions, label IDs, checksums, capture metadata, and declared human review. `python3 -m unittest -v tests.test_eyes_of_luna_dataset`: **17 tests passed**. Fixtures are synthetic test-only PNGs, not training data. | **PASS (tooling only)**; no real dataset validation |
-| **F. Train/validation/test split** | Added deterministic whole-capture-group splitting and leakage checks. Unit tests confirm reproducibility and no group/sample overlap on synthetic fixtures. No real split file exists; class coverage in held-out groups is not established. | **PASS (tooling only)**; real split **NOT VERIFIED** |
-| **G. Model architecture and outputs** | Required contract is a four-class terrain softmax (`0 regolith`, `1 bedrock`, `2 rock/boulder`, `3 crater`) and a separate one-logit shadow sigmoid (`0 not-shadow`, `1 shadow`), with `255` ignored. Existing repository model is a mutually-exclusive nine-class single head and is incompatible. No Phase 2 model implementation/checkpoint was produced. | **NOT IMPLEMENTED / NOT VERIFIED** |
-| **H. Training or fine-tuning** | No real labels, PyTorch environment, or Phase 2 training configuration/checkpoint are available. No synthetic or guessed data was used for training. | **BLOCKED** |
-| **I. Held-out evaluation** | No held-out annotated images or trained checkpoint exist; there are no real predictions, confusion matrices, IoU/precision/recall, failure-case outputs, or test reports. | **BLOCKED** |
-| **J. Standalone inference** | The existing ONNX core expects one nine-class logits output. It does not implement the Phase 2 dual-mask contract. No Phase 2 checkpoint/ONNX artifact exists to reload or test. | **BLOCKED / NOT IMPLEMENTED** |
-| **K. ROS 2 and live Gazebo integration** | Phase 1 camera topic is statically known. This host has no ROS 2/Gazebo runtime, and the existing root perception node is not the requested Phase 2 dual-head implementation. No Phase 2 node, live topic outputs, or Gazebo camera smoke test is claimed. | **NOT VERIFIED** |
-| **L. Performance and reliability measurements** | No model or deployment runtime was available; FPS, latency, memory, confidence/calibration, and failure behavior were not measured. | **NOT MEASURED** |
-| **M. Acceptance decision** | Required evidence is absent: valid reviewed annotations, reloadable Phase 2 checkpoint, real held-out metrics/predictions, standalone inference, and tested live Gazebo camera pipeline. | **NOT PASSED** |
+| **A. Phase 1 prerequisite** | The Phase 1 acceptance record says `PASSED (user-reported)`. This was not independently reproduced on the agent host. The newer `launch-1` wrapper still needs its target smoke test. Phase 1 launch behavior remains separate from the optional Phase 2 node. | **PASS (user-reported)** for the direct Phase 1 launch; wrapper **NOT VERIFIED** |
+| **B. Available environment** | Agent host: Debian 12, Python 3.11.2, x86_64, 2 CPUs, about 3.8 GiB RAM, no swap. `/tmp/lunabot-ml-venv`: PyTorch 2.14.0+cu130, CUDA unavailable (`torch.cuda.is_available() == False`), NumPy 1.26.4, Pillow 12.3.0; CPU was used for tests. Pillow 12.3.0 is outside the existing `ml/requirements.txt` `<12` bound. OpenCV, ONNX Runtime, ROS 2, Gazebo, `colcon`, `rclpy`, and `cv_bridge` are absent on this host. Jay reported the target as Ubuntu 22.04.5 / ROS 2 Humble / Gazebo Fortress 6.18.0 with `rclpy` and `cv_bridge`; target PyTorch/runtime compatibility is not independently verified. | CPU code environment **AVAILABLE WITH VERSION CAVEAT**; target ROS/ML environment **NOT VERIFIED** |
+| **C. Camera and data inventory** | Phase 1 SDF declares `/camera/image_raw`, 640×480 RGB (`R8G8B8`), 20 Hz. On 2026-10-15, Jay reported one 155.8 s ROS bag with 2,148 `/camera/image_raw` and 2,148 `/camera/camera_info` messages (about 13.8 image messages/s), plus `/odom` and TF. The separate 898,156-line Gazebo dynamic-pose log contains pose entries named `lunabot` and `base_link`. These are user-reported raw-capture results; image extraction, timestamp alignment, and visual inspection have not yet been done. Repository has no reviewed masks or Phase 2 manifest. | Raw capture **PASS (user-reported)**; observed image rate **below configured 20 Hz**; dataset **BLOCKED** |
+| **D. Annotation and provenance** | The Phase 1 camera is an ordinary RGB camera, not a verified semantic camera. Data contract requires independently annotated terrain and shadow masks, capture metadata, checksums, and human review for each head. Metadata declarations cannot prove the review or semantic correctness. No authoritative labels were found. | **BLOCKED** — reviewed annotations unavailable |
+| **E. Dataset contract and tools** | Added the Phase 2 config, dependency-light collector/validator, image/mask integrity checks, human-review provenance fields, group-split validation, and a ROS bag frame extractor that preserves image/header/bag metadata in explicitly unreviewed sidecars. Synthetic fixtures test file processing and sample export only; the user's actual 1.8 GiB bag has not been extracted on this host or target. | **PASS (tooling only)**; real extraction/dataset **NOT VERIFIED** |
+| **F. Capture-group split** | Deterministic whole-capture-group split and leakage checks are implemented. Tests cover repeatability, empty splits, overlap/leakage, and required groups on synthetic fixtures. No real split or held-out class coverage exists. | **PASS (tooling only)**; real split **NOT VERIFIED** |
+| **G. Model and output contract** | Implemented a compact dual-head U-Net: independent four-class terrain softmax (`0 regolith`, `1 bedrock`, `2 rocks/boulders`, `3 craters`) and one-logit binary shadow sigmoid (`0 not-shadow`, `1 shadow`). Ignore ID `255` is masked in losses and annotations. Inference returns separate source-size masks; machine mask files preserve class IDs. Tests cover shapes, overlap independence, ignore-aware loss/backpropagation, and mask IDs. Architecture/threshold defaults have not been validated on real data. | **PASS (implementation/interface tests only)**; model quality **NOT VERIFIED** |
+| **H. Training** | Training CLI checks reviewed dataset validity, label coverage, and non-empty capture-group splits before creating output. A missing manifest fails closed and leaves no output directory. No real training was run; no checkpoint or deployment bundle exists. | Fail-closed check **PASS**; real training **BLOCKED** |
+| **I. Held-out evaluation** | Evaluation CLI checks manifest and split checksums, uses only the test capture groups, and writes terrain/shadow metrics and per-frame class-ID masks. Metric helpers have synthetic arithmetic tests only. No real held-out metrics, confusion matrix, prediction cases, calibration, or visual result exists. | Implementation **TESTED**; real evaluation **BLOCKED** |
+| **J. Standalone inference and export** | Standalone inference supports a config-bound checkpoint and writes original-size masks plus a JSON report with source image ID/path and dimensions. Evaluation filenames and records retain dataset `sample_id`. Training is designed to save `best.pt`, a `torch.export` `best.pt2`, and a checksum-bearing `deployment.json`; the loader validates model/config checksums. Temporary test artifacts round-trip through export/load/inference, but no trained artifact exists. | **PASS (temporary interface tests only)**; real checkpoint **NOT VERIFIED** |
+| **K. ROS 2 integration** | Added `lunabot_phase1/src/lunabot_phase2_perception`, an optional `ament_python` package, node, launch file, and ROS-independent decoder for 8-bit RGB/BGR/RGBA/BGRA/mono camera encodings including `R8G8B8`. The node subscribes to `/camera/image_raw` with sensor-data QoS and copies the input header onto separate `mono8` masks; JSON status includes stamp/frame ID and source dimensions/encoding. Static manifest/launch/source and decoder tests pass; Phase 1 launch files do not start this node. The package has not been colcon-built or run; no mask/status topic or live camera was exercised. | Source/static checks **PASS**; target build/runtime **NOT VERIFIED** |
+| **L. Performance and reliability** | No real model or target runtime was exercised. FPS, latency, memory, thermals, message drop behavior under load, and output quality on the target remain unknown. CPU fallback is used in local tests; it is not a performance result. | **NOT MEASURED** |
+| **M. Acceptance decision** | Acceptance requires reviewed real data, a trained and reloadable checkpoint, held-out evaluation, inspected visual outputs, and exercised target ROS/Gazebo integration/performance. These are absent. | **NOT PASSED** |
 
-## Implementation and test evidence
+## Executed verification
 
-- Dataset/output contract: `ml/configs/eyes_of_luna.json`.
-- Data utilities: `ml/lunabot_ml/eyes_of_luna_dataset.py` and the three
-  `ml/*eyes_of_luna*` command-line tools.
-- Tests: `tests/test_eyes_of_luna_dataset.py` (17 passing); these verify schema
-  and file-processing behavior only, not semantic accuracy.
-- `python3 -m unittest discover -s tests`: **161 passed, 4 skipped**.
-- `python3 tools/validate_all.py --no-phase-validators --no-write`:
-  **195 passed, 0 failed, 12 skipped**. These static/unit checks do not exercise
-  ROS 2, Gazebo, model quality, or target performance.
-- Full training/inference acceptance remains gated on real annotated data and
-  access to the ROS 2/Gazebo target. Do not treat source presence or unit tests
-  as a passing model/runtime gate.
+- Focused Phase 2 suite: `/tmp/lunabot-ml-venv/bin/python -m unittest -v tests.test_eyes_of_luna_model tests.test_eyes_of_luna_dataset tests.test_eyes_of_luna_ros_package` — **34 passed**.
+- Repository suite: `/tmp/lunabot-ml-venv/bin/python -m unittest discover -s tests` — **178 passed**.
+- Isolated Phase 1 workspace suite: `python3 -m unittest discover -s tests -v` from `lunabot_phase1/` — **26 passed**. This includes static checks for the optional Phase 2 package manifest and confirms the Phase 1 launch remains independent.
+- `python3 tools/validate_all.py --no-phase-validators --no-write` — **206 passed, 0 failed, 12 skipped**. This is a static/unit validation run; it does not test model quality or ROS/Gazebo runtime.
+- No `colcon build`, ROS node launch, real training/evaluation, prediction screenshot, or target performance test was possible on this host.
 
-## Evidence required to resume
+## Required next evidence
 
-1. Supply or capture aligned Phase 1 RGB frames and separate terrain/shadow
-   masks; every mask must receive human review and its provenance must be
-   recorded. Preserve capture-group/world IDs and keep simulator ground-truth
-   pose distinct from wheel odometry.
-2. Run the dataset validator and group splitter on that real dataset; retain
-   the manifest/checksums and verify class coverage in each split.
-3. Provide a usable PyTorch training environment and target ROS 2/Gazebo access
-   (or logs/artifacts from that target). Then adapt and test a separate-head
-   model, train it, reload an independently saved checkpoint, and evaluate only
-   on the held-out groups.
-4. Integrate the resulting model with the existing `/camera/image_raw` stream,
-   publish the two machine-readable masks, and record live smoke/performance
-   evidence on the target.
-5. Update this record only from observed evidence. Until all required gates pass,
-   Phase 2 remains **NOT PASSED** and no later phase should begin.
+1. Capture representative `/camera/image_raw` frames with preserved timestamps and capture-group identity. Create separate aligned terrain and shadow masks, have a person review **both**, record provenance, then validate the dataset and inspect class coverage in the group split.
+2. On a supported CPU environment, train from that reviewed dataset and preserve the exact config, manifest, split, checkpoint, export bundle, and hashes. Do not tune against test groups.
+3. Evaluate only on held-out capture groups; inspect per-class terrain and independent shadow metrics and visual predictions. Report limitations and failures, not only aggregate scores.
+4. On the Humble/Fortress target, check that the active ROS Python can load the required NumPy/Pillow/PyTorch versions, build the five-package workspace, launch Phase 2 explicitly against the trained bundle, and exercise live `/camera/image_raw` input plus output headers, encodings, status, and resource/latency behavior. Do not alter `launch-1` to start Phase 2.
+5. Update this record only from observed evidence. Until all gates pass, Phase 2 remains **NOT PASSED**. No later navigation phase is authorized by this work; continue Phase 2 only.

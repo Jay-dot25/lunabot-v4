@@ -523,8 +523,8 @@ def split_by_capture_group(dataset: Path, seed: int = 42,
     return result
 
 
-def save_capture_group_split(dataset: Path, split: dict) -> Path:
-    """Atomically persist a complete split after checking coverage and leakage."""
+def validate_capture_group_split(dataset: Path, split: dict) -> dict:
+    """Validate a complete, non-leaking split document against its dataset."""
     if not isinstance(split, dict) or split.get("schema_version") != DATASET_SCHEMA_VERSION or split.get("task") != TASK_NAME:
         raise DatasetError("invalid Phase 2 split document")
     names = ("train", "validation", "test")
@@ -540,6 +540,8 @@ def save_capture_group_split(dataset: Path, split: dict) -> Path:
         if (not isinstance(groups, list) or not isinstance(samples, list)
                 or any(not isinstance(value, str) for value in groups + samples)):
             raise DatasetError(f"{name} split groups and samples must be string lists")
+        if len(groups) != len(set(groups)) or len(samples) != len(set(samples)):
+            raise DatasetError(f"{name} split contains duplicate IDs")
         group_sets.append(set(groups))
         sample_sets.append(set(samples))
     if any(not groups for groups in group_sets) or any(not samples for samples in sample_sets):
@@ -566,6 +568,21 @@ def save_capture_group_split(dataset: Path, split: dict) -> Path:
         }
         if samples != expected_samples_for_groups:
             raise DatasetError(f"{name} split samples do not match their capture groups")
+    return split
+
+
+def load_capture_group_split(dataset: Path) -> dict:
+    path = Path(dataset) / "splits" / "capture_group_split.json"
+    try:
+        split = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise DatasetError(f"invalid or missing capture-group split {path}: {exc}") from exc
+    return validate_capture_group_split(dataset, split)
+
+
+def save_capture_group_split(dataset: Path, split: dict) -> Path:
+    """Atomically persist a complete split after checking coverage and leakage."""
+    validate_capture_group_split(dataset, split)
     directory = Path(dataset) / "splits"
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / "capture_group_split.json"

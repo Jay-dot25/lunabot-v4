@@ -16,7 +16,7 @@ TOOLS = SRC / "lunabot_phase1_tools"
 class ProjectFileTests(unittest.TestCase):
     def test_ros_package_manifests_are_well_formed_and_unique(self):
         manifests = sorted(SRC.glob("*/package.xml"))
-        self.assertEqual(len(manifests), 4)
+        self.assertEqual(len(manifests), 5)
         names = []
         for manifest in manifests:
             package = ET.parse(manifest).getroot()
@@ -30,6 +30,7 @@ class ProjectFileTests(unittest.TestCase):
                 "lunabot_phase1_simulation",
                 "lunabot_phase1_tools",
                 "lunabot_phase1_bringup",
+                "lunabot_phase2_perception",
             },
         )
 

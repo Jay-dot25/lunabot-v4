@@ -7,19 +7,21 @@ workspace or simulator. The Phase 1 camera interface is `/camera/image_raw`,
 
 ## Current status
 
-The repository does **not** contain a usable annotated camera dataset or model
-checkpoint. Its two PNGs are terrain-preview images, not camera frames or
-annotations. The existing `ml/` training and `src/lunabot_perception/` inference
-scaffolds use a different nine-class, single-output schema; they are not a
-Phase 2 model and cannot be accepted as one. The agent host also lacks PyTorch,
-ROS 2, Gazebo, NumPy, Pillow, and ONNX Runtime.
+The repository has **no reviewed camera dataset, trained checkpoint, held-out
+evaluation, or ROS runtime result**. The two existing terrain-preview PNGs are
+not camera frames or annotations. The prior nine-class, single-output pipeline
+was not reused as a Phase 2 model.
 
-This increment implements and tests only a dependency-free Phase 2 data
-contract, collection/validation utilities, and capture-group splits. Unit tests
-use throwaway synthetic PNGs to test file handling only; those fixtures are not
-training data and supply no quality or runtime evidence. No model was trained,
-no metrics or predictions were generated, and no ROS/Gazebo integration was
-claimed. See [PHASE2_ACCEPTANCE.md](PHASE2_ACCEPTANCE.md).
+Implemented incrementally: a compact four-class terrain head plus an independent
+binary shadow head; reviewed-mask dataset validation and capture-group split
+loading; ignore-aware losses; CPU/GPU-capable train/evaluate/inference tools;
+checksum-bound `torch.export` deployment bundles; and a separate ROS 2 image
+node/launch file for `/camera/image_raw`. Local CPU tests check shapes, loss,
+serialization, mask IDs, dataset contracts, and static ROS package contracts.
+They use temporary synthetic fixtures and are not model-quality evidence. The
+ROS package has not yet been built or run on the target Humble workstation. No
+training outputs, prediction visuals, metrics, or target runtime result exist.
+**Phase 2 is NOT PASSED.** See [PHASE2_ACCEPTANCE.md](PHASE2_ACCEPTANCE.md).
 
 ## Output contract
 
@@ -31,10 +33,10 @@ and may overlap any terrain pixel.
 | Terrain mask | 8-bit grayscale PNG; IDs `0–3`; `255` = ignore/uncertain | `0 regolith`, `1 bedrock`, `2 rock/boulder`, `3 crater` |
 | Shadow mask | 8-bit grayscale PNG; IDs `0–1`; `255` = ignore/uncertain | `0 not-shadow`, `1 shadow` |
 
-`ml/configs/eyes_of_luna.json` records the source camera and independent output
-heads: four-class terrain softmax and one-logit binary shadow sigmoid. It is a
-data/output contract, **not** a trained model configuration or evidence of a
-checkpoint.
+`ml/configs/eyes_of_luna.json` records the source camera, output heads, U-Net
+architecture defaults, input size, normalization, and provisional shadow
+threshold. These settings are unvalidated against real data; they are not a
+trained model or evidence of a checkpoint.
 
 ## Dataset layout and tools
 
@@ -76,6 +78,7 @@ or that pixels are semantically correct.
 Validate files, dimensions, checksums, class IDs, and metadata:
 
 ```bash
+set -euo pipefail
 python3 ml/validate_eyes_of_luna_dataset.py \
   --dataset datasets/eyes_of_luna \
   --output results/eyes-of-luna-dataset-validation.json
@@ -115,11 +118,122 @@ held-out set has adequate examples of every class.
    split manifests immutable for reproducibility; do not tune a model on the
    test groups.
 
+## Extract frames from a ROS 2 bag
+
+After a Phase 1 bag has been recorded, source the Humble environment and extract
+an initial inspection subset. Run from the repository root after the Phase 2
+code is synced; the exporter uses the target's `rosbag2_py` and preserves the
+source header timestamp, frame ID, width, height, encoding, step, and bag receive
+timestamp in capture sidecars.
+
+```bash
+set -euo pipefail
+source /opt/ros/humble/setup.bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CAPTURE_ROOT="$HOME/eyes_of_luna_capture"
+SESSION="$(cat "$CAPTURE_ROOT/active_session.txt")"
+python3 "$REPO_ROOT/ml/extract_eyes_of_luna_frames.py" \\
+  --bag "$CAPTURE_ROOT/$SESSION" \\
+  --output "$CAPTURE_ROOT/${SESSION}_extracted" \\
+  --group-id "$SESSION" \\
+  --every-n 30
+```
+
+This creates RGB PNGs in `rgb/`, provenance sidecars in
+`capture_metadata/`, and `capture_manifest.json`. The sidecars are deliberately
+marked `pending_human_review` and are **not ready for dataset registration**:
+fill verified world/session, simulator/renderer, lighting, camera and rover
+poses from capture evidence, annotate and review both masks, then create the
+collector metadata. Check the extracted frames for visible class diversity
+before deciding whether to capture more sessions. `--every-n 30` is an initial
+sampling choice, not an accepted dataset sampling rate.
+
+## Train, evaluate, and run standalone inference
+
+Use only a reviewed dataset with a valid capture-group split. Run the following
+from the repository root. These commands use the configured CPU path; `run01` is
+the chosen output directory, not an existing artifact. The current checkout has
+no dataset, so these commands have not produced a checkpoint here.
+
+```bash
+python3 ml/validate_eyes_of_luna_dataset.py \
+  --dataset datasets/eyes_of_luna \
+  --output results/eyes_of_luna/run01/dataset_validation.json
+python3 ml/split_eyes_of_luna_dataset.py \
+  --dataset datasets/eyes_of_luna --seed 42
+python3 ml/train_eyes_of_luna.py \
+  --dataset datasets/eyes_of_luna \
+  --output results/eyes_of_luna/run01 \
+  --device cpu
+python3 ml/evaluate_eyes_of_luna.py \
+  --dataset datasets/eyes_of_luna \
+  --checkpoint results/eyes_of_luna/run01/best.pt \
+  --output results/eyes_of_luna/run01/test_metrics.json \
+  --device cpu
+FRAME="$(find datasets/eyes_of_luna/rgb -maxdepth 1 -type f -name '*.png' -print -quit)"
+test -n "$FRAME" || { echo "No RGB frames found in the dataset" >&2; exit 2; }
+python3 ml/infer_eyes_of_luna_image.py \
+  --checkpoint results/eyes_of_luna/run01/best.pt \
+  --image "$FRAME" \
+  --image-id "$(basename "$FRAME" .png)" \
+  --output-prefix results/eyes_of_luna/run01/visuals/frame01 \
+  --device cpu
+```
+
+Training fails closed on missing/invalid data, incomplete class coverage, or missing
+capture groups; it does not generate synthetic annotations. Evaluation enforces
+the saved manifest/split checksums and uses only the test capture groups. The
+report's metrics are meaningful only if those labels and splits are valid and
+representative. Evaluation prediction records and filenames retain each dataset
+`sample_id`; standalone inference writes `image_id` (supplied with `--image-id`,
+or defaulted to the filename stem) and original dimensions to its JSON report.
+The `.terrain.png` and `.shadow.png` outputs preserve class IDs (`0–3` and
+`0/1` respectively); `.shadow_visualization.png` is a separate `0/255` preview,
+not a machine mask.
+
+## Optional ROS 2 integration
+
+`lunabot_phase1/src/lunabot_phase2_perception` is an optional `ament_python`
+package included in the Phase 1 Humble workspace. Building it does not start or
+change the Phase 1 simulator. Runtime also requires compatible NumPy, Pillow,
+and PyTorch to be importable by the same Python interpreter used by ROS 2; this
+has not been checked on the target, and no system packages were installed here.
+After building the workspace and creating a real training bundle, run this from
+the repository root in a Humble terminal with the Phase 1 workspace sourced:
+
+```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+export EYES_OF_LUNA_BUNDLE="$REPO_ROOT/results/eyes_of_luna/run01/deployment.json"
+ros2 launch lunabot_phase2_perception eyes_of_luna.launch.py \\
+  model_bundle_path:="$EYES_OF_LUNA_BUNDLE" \\
+  image_topic:=/camera/image_raw device:=cpu
+```
+
+The bundle path here is produced by the `run01` training command above. The node
+preserves the source header on both masks and publishes:
+
+- `/eyes_of_luna/terrain_mask`: `sensor_msgs/Image`, `mono8`, terrain IDs `0–3`.
+- `/eyes_of_luna/shadow_mask`: `sensor_msgs/Image`, `mono8`, shadow IDs `0/1`.
+- `/eyes_of_luna/status`: JSON `std_msgs/String`, including state, device,
+  latency, average FPS, dropped frames, source dimensions/encoding, and header
+  timestamp/frame ID.
+
+The decoder accepts 8-bit `rgb8`/`R8G8B8`, BGR, RGBA/BGRA, and mono inputs;
+unknown encodings fail the frame safely. `sensor_msgs/Image` has no separate
+sample-ID field, so the original timestamp and `frame_id` are copied into both
+output headers and echoed in status; dataset `sample_id` is retained by the
+standalone/evaluation tools. The node publishes perception outputs only and
+does not command or control the rover.
+
+Without a loadable deployment bundle, the node reports `ERROR` and does not
+publish masks. Neither a successful colcon build nor synthetic unit tests are a
+ROS runtime test; target build, live camera subscription, message metadata,
+resource use, and latency still need to be exercised.
+
 ## Work deliberately not claimed yet
 
-Training, fine-tuning, held-out metrics, prediction artifacts, standalone
-inference, ROS 2 publication, live Gazebo camera execution, and performance
-measurements remain blocked. The present nine-class/single-head model and
-inference node need a deliberate multi-head adaptation; the root inference node
-also has a different camera-topic assumption. No Phase 2 acceptance gate is
-passed by the presence of code or by these unit tests.
+No real model has been trained, no held-out metrics or prediction results exist,
+and the ROS package has not been built or run on the target. Model quality,
+visual accuracy, FPS/resource suitability, and Phase 2 acceptance remain
+unverified. No navigation, localization, semantic mapping, traversal-cost,
+planning, autonomous driving, or dashboard work is in Phase 2 scope.
