@@ -125,7 +125,7 @@ def generate_launch_description():
         ),
         _static_transform(
             "base_link_to_lidar", "base_link", "lidar_link",
-            (0.06, 0.0, 0.20),
+            (0.50, 0.0, 0.20),
         ),
     ]
 

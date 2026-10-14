@@ -193,11 +193,24 @@ class ProjectFileTests(unittest.TestCase):
         camera_pose = model.find("link[@name='camera_link']/pose").text
         lidar_pose = model.find("link[@name='lidar_link']/pose").text
         self.assertEqual(camera_pose, "0.43 0 0.28 0 0 0")
-        self.assertEqual(lidar_pose, "0.06 0 0.20 0 0 0")
+        self.assertEqual(lidar_pose, "0.50 0 0.20 0 0 0")
+
+        # The GPU lidar renders model visuals. Its forward scan plane intersects
+        # the camera mast vertically, so the origin must sit beyond the mast's
+        # front face or the monitor sees a false ~0.345 m self-return.
+        base = model.find("link[@name='base_link']")
+        mast = base.find("visual[@name='front_camera_mast_visual']")
+        mast_pose = [float(value) for value in mast.findtext("pose").split()]
+        mast_radius = float(mast.findtext("geometry/cylinder/radius"))
+        mast_length = float(mast.findtext("geometry/cylinder/length"))
+        lidar_values = [float(value) for value in lidar_pose.split()]
+        self.assertGreater(lidar_values[0], mast_pose[0] + mast_radius)
+        self.assertLessEqual(abs(lidar_values[2] - mast_pose[2]), mast_length / 2.0)
+
         integrated = (BRINGUP / "launch" / "phase1.launch.py").read_text(encoding="utf-8")
         self.assertIn('(0.0, 0.0, 0.28)', integrated)
         self.assertIn('(0.43, 0.0, 0.28)', integrated)
-        self.assertIn('(0.06, 0.0, 0.20)', integrated)
+        self.assertIn('(0.50, 0.0, 0.20)', integrated)
         self.assertIn('(-1.57079632679, 0.0, -1.57079632679)', integrated)
 
     def test_obstacle_monitor_has_threshold_angle_and_scan_watchdog(self):
