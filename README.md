@@ -1,6 +1,6 @@
 # LunaBot V4 — Autonomous Navigation of a Robot for Lunar Habitats
 
-> **Clean Phase 1 restart:** The isolated, Phase 1-only ROS workspace is now in [`lunabot_phase1/`](lunabot_phase1/). It uses the existing project only as reference; the older root-level `src/`, `ml/`, phase launchers, and docs are retained but are not dependencies of this clean restart. Read [`lunabot_phase1/README.md`](lunabot_phase1/README.md) for the target stack and honest runtime-verification status.
+> **Independent clean Phase 1 (`launch-1`):** The isolated ROS workspace is in [`lunabot_phase1/`](lunabot_phase1/). Start it with `./launch-1` from the repository root, or create `~/launch-1` as described in [`docs/phase-1-launch-1.md`](docs/phase-1-launch-1.md). This standalone entry point leaves the established `launch-a` through `launch-l` sequence untouched. Build and verification details are in [`lunabot_phase1/README.md`](lunabot_phase1/README.md) and [`lunabot_phase1/PHASE1_ACCEPTANCE.md`](lunabot_phase1/PHASE1_ACCEPTANCE.md).
 
 > **Goal-level development:** See the exact staged implementation, training,
 > file-migration, testing, and acceptance plan in
@@ -98,6 +98,31 @@ validation procedure, success criteria, evidence, and limitations.
 For one consolidated code map, command reference, topic contract, runtime
 inspection guide, evidence guide, and final A-to-L acceptance procedure, see
 [`docs/full-launch-a-to-l.md`](docs/full-launch-a-to-l.md).
+
+## Quickstart (Clean Phase 1 — `launch-1`)
+
+This standalone Humble + Gazebo Fortress workspace is separate from the
+repository's Phase A–L sequence. Build `lunabot_phase1/` once using
+[`lunabot_phase1/README.md`](lunabot_phase1/README.md), then launch from the
+repository root:
+
+```bash
+./launch-1
+```
+
+Optional home-directory command link:
+
+```bash
+ln -sfn "$(pwd)/launch-1" "$HOME/launch-1"  # run from repository root
+~/launch-1
+```
+
+Press `Ctrl+C` in the launch terminal to stop the full Phase 1 simulation.
+The underlying Phase 1 runtime was reported passing through the direct ROS 2
+launch command; this new repository-level wrapper still needs one target run
+and smoke test after you pull it. See [`docs/phase-1-launch-1.md`](docs/phase-1-launch-1.md)
+for preflight, teleop, smoke-test, and acceptance details. `launch-1` does not
+replace or invoke `launch-a` through `launch-l`.
 
 ## Quickstart (Phase A)
 
@@ -386,8 +411,10 @@ runtime-validated, documented, evidenced.
 ## Repository layout
 
 ```
+launch-1                        standalone clean Phase 1 entry point
 launch-a                        Phase A entry point (~/launch-a)
-scripts/                        launch scripts + teleop node
+scripts/launch-1.sh             preflight + launch wrapper for lunabot_phase1
+scripts/                        A-L launch scripts + teleop node
 src/lunabot_gazebo/
   worlds/lunar_world.sdf        lunar world (terrain, horizon, plugins)
   worlds/meshes/                generated lunar terrain meshes

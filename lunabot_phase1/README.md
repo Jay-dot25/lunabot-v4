@@ -103,7 +103,9 @@ The static suite validates XML well-formedness, package/launch/topic contracts, 
 
 ## 4. Launch
 
-Start the world, included rover, bridge, command guard, static transforms, and obstacle monitor:
+The repository-level single-command entry point is `./launch-1` from the parent repository root (or `~/launch-1` after creating the symlink described in the repository README). It checks the Humble/Fortress environment and the built overlay, then runs the integrated launch. It does **not** rebuild automatically; complete §3 once before using it. The underlying Phase 1 runtime was reported passing via direct `ros2 launch`; this new wrapper still needs a first target launch and smoke test.
+
+The direct equivalent, from a Humble shell with this workspace sourced, is to start the world, included rover, bridge, command guard, static transforms, and obstacle monitor:
 
 ```bash
 ros2 launch lunabot_phase1_bringup phase1.launch.py

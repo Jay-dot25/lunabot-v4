@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# LunaBot V4 clean Phase 1 entry point.
+# Canonical command after optional symlink: ~/launch-1
+# This is separate from the existing launch-a through launch-l sequence.
+set -Eeuo pipefail
+
+SCRIPT="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_DIR="$(cd "$(dirname "$SCRIPT")" && pwd)"
+exec "$REPO_DIR/scripts/launch-1.sh" "$@"

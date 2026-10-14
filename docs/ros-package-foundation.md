@@ -51,5 +51,6 @@ LunaBot ROS 2 package foundation is discoverable.
 ```
 
 The foundation launch intentionally starts no robot process. Existing
-`./launch-a` through `./launch-l` remain the behavioral entry points until
-later phases migrate and runtime-test each subsystem.
+`./launch-a` through `./launch-l` remain the behavioral entry points for the
+original Phase A–L sequence. The separately maintained clean Phase 1 workspace
+also has `./launch-1`; it does not replace or invoke those A–L launchers.
