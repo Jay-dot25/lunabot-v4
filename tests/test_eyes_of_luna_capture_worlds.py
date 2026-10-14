@@ -15,16 +15,23 @@ SCENES = ("scene01", "scene02", "scene03")
 
 def _obj_stats(path: Path):
     vertices = []
+    normals = []
     faces = []
+    normal_refs = []
     for line in path.read_text(encoding="ascii").splitlines():
         fields = line.split()
         if not fields:
             continue
         if fields[0] == "v":
             vertices.append(tuple(float(value) for value in fields[1:4]))
+        elif fields[0] == "vn":
+            normals.append(tuple(float(value) for value in fields[1:4]))
         elif fields[0] == "f":
-            faces.append(tuple(int(value.split("/")[0]) for value in fields[1:]))
-    return vertices, faces
+            records = [value.split("/") for value in fields[1:]]
+            faces.append(tuple(int(value[0]) for value in records))
+            normal_refs.append(tuple(int(value[2]) if len(value) > 2 and value[2] else 0
+                                     for value in records))
+    return vertices, normals, faces, normal_refs
 
 
 class EyesOfLunaCaptureWorldTests(unittest.TestCase):
@@ -58,13 +65,19 @@ class EyesOfLunaCaptureWorldTests(unittest.TestCase):
             bedrock = MODEL_ROOT / "meshes" / f"bedrock_{scene}.obj"
             self.assertTrue(terrain.is_file())
             self.assertTrue(bedrock.is_file())
-            for asset in (terrain, bedrock):
-                vertices, faces = _obj_stats(asset)
+            for asset in (terrain, bedrock, MODEL_ROOT / "meshes" / "boulder_irregular.obj"):
+                vertices, normals, faces, normal_refs = _obj_stats(asset)
                 self.assertGreater(len(vertices), 20)
                 self.assertGreater(len(faces), 20)
+                self.assertEqual(len(normals), len(vertices), f"{asset} needs one normal per vertex")
                 self.assertTrue(all(math.isfinite(value) for point in vertices for value in point))
+                self.assertTrue(all(math.isfinite(value) for normal in normals for value in normal))
+                self.assertTrue(all(abs(math.sqrt(sum(value * value for value in normal)) - 1.0) < 1e-5
+                                    for normal in normals))
                 self.assertTrue(all(1 <= index <= len(vertices) for face in faces for index in face))
-            terrain_vertices, terrain_faces = _obj_stats(terrain)
+                self.assertTrue(all(1 <= index <= len(normals)
+                                    for face in normal_refs for index in face))
+            terrain_vertices, _, terrain_faces, _ = _obj_stats(terrain)
             z_values = [point[2] for point in terrain_vertices]
             self.assertLess(min(z_values), -0.4, "crater bowls must dip below the surrounding regolith")
             self.assertGreater(max(z_values), 0.05, "crater rims must rise above the surrounding regolith")

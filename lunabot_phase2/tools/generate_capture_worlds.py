@@ -74,13 +74,49 @@ SCENES = {
 
 def _write_obj(path: Path, vertices: list[tuple[float, float, float]],
                faces: list[tuple[int, ...]], comment: str) -> None:
+    """Write indexed OBJ geometry with one computed normal per vertex.
+
+    Fortress' DART collision importer requires per-vertex normals for OBJ mesh
+    shapes; vertices/faces without ``vn`` records can crash physics initialization.
+    Face indices accepted here are 1-based OBJ vertex indices.
+    """
+    accumulators = [[0.0, 0.0, 0.0] for _ in vertices]
+    for face in faces:
+        if len(face) < 3:
+            continue
+        first = face[0] - 1
+        for offset in range(1, len(face) - 1):
+            indices = (first, face[offset] - 1, face[offset + 1] - 1)
+            if any(index < 0 or index >= len(vertices) for index in indices):
+                raise ValueError(f"face index outside vertex array while writing {path}")
+            a, b, c = (vertices[index] for index in indices)
+            ab = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+            ac = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+            normal = (
+                ab[1] * ac[2] - ab[2] * ac[1],
+                ab[2] * ac[0] - ab[0] * ac[2],
+                ab[0] * ac[1] - ab[1] * ac[0],
+            )
+            for index in set(indices):
+                for axis in range(3):
+                    accumulators[index][axis] += normal[axis]
+
+    normals = []
+    for normal in accumulators:
+        length = math.sqrt(sum(component * component for component in normal))
+        if length < 1e-12:
+            raise ValueError(f"vertex without a usable normal while writing {path}")
+        normals.append(tuple(component / length for component in normal))
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="ascii", newline="\n") as stream:
         stream.write(f"# {comment}\n")
         for x, y, z in vertices:
             stream.write(f"v {x:.5f} {y:.5f} {z:.5f}\n")
+        for x, y, z in normals:
+            stream.write(f"vn {x:.7f} {y:.7f} {z:.7f}\n")
         for face in faces:
-            stream.write("f " + " ".join(str(index) for index in face) + "\n")
+            stream.write("f " + " ".join(f"{index}//{index}" for index in face) + "\n")
 
 
 def _terrain_height(x: float, y: float,
