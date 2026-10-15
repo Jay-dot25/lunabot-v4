@@ -181,8 +181,8 @@ def save_prediction_masks(output_prefix: Path, terrain_mask, shadow_mask) -> dic
         "shadow_mask": prefix.with_name(prefix.name + ".shadow.png"),
         "shadow_visualization": prefix.with_name(prefix.name + ".shadow_visualization.png"),
     }
-    Image.fromarray(terrain.astype(np.uint8), mode="L").save(paths["terrain_mask"])
-    Image.fromarray(shadow.astype(np.uint8), mode="L").save(paths["shadow_mask"])
-    Image.fromarray(shadow.astype(np.uint8) * 255, mode="L").save(
+    Image.fromarray(terrain.astype(np.uint8)).save(paths["terrain_mask"])
+    Image.fromarray(shadow.astype(np.uint8)).save(paths["shadow_mask"])
+    Image.fromarray(shadow.astype(np.uint8) * 255).save(
         paths["shadow_visualization"])
     return {name: str(path) for name, path in paths.items()}

@@ -32,7 +32,9 @@ SCENES = {
             (7.5, 10.0, 0.92, 0.72, 0.80, 1.10),
             (17.0, 1.5, 0.60, 0.82, 0.56, 0.25),
         ],
-        "spawn": (-21.0, -1.0, 0.0),
+        # Aim the camera between the near boulder/outcrop and the first crater;
+        # with the Phase 1 60-degree horizontal FOV they all enter the initial view.
+        "spawn": (-21.0, -1.0, 0.40),
         "bedrock_seed": 117,
     },
     "scene02": {
@@ -44,7 +46,7 @@ SCENES = {
         ],
         "bedrock_pose": (-11.0, 5.0, 0.0, -0.22),
         "boulders": [
-            (-17.0, -3.0, 0.65, 0.78, 0.56, 0.40),
+            (-17.0, -0.5, 0.65, 0.78, 0.56, 0.40),
             (-2.0, 10.0, 0.88, 0.61, 0.85, 0.90),
             (8.5, -10.0, 0.54, 0.74, 0.52, 0.15),
             (18.0, 5.5, 0.72, 0.90, 0.64, 1.35),

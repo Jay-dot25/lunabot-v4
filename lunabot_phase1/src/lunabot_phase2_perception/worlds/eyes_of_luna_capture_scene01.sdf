@@ -106,7 +106,7 @@
     </model>
 
     <include><uri>model://lunabot_rover</uri><name>lunabot</name>
-      <pose>-21.000 -1.000 0 0 0 0.000</pose>
+      <pose>-21.000 -1.000 0 0 0 0.400</pose>
     </include>
   </world>
 </sdf>

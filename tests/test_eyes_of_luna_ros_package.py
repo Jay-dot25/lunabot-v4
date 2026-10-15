@@ -15,6 +15,10 @@ from lunabot_phase2_perception.image_conversion import (  # noqa: E402
     ImageEncodingError,
     decode_image_rgb,
 )
+from lunabot_phase2_perception.capture_one_frame import (  # noqa: E402
+    _write_capture,
+    build_capture_sidecar,
+)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ml"))
 from extract_eyes_of_luna_frames import save_capture_sample  # noqa: E402
 
@@ -33,6 +37,7 @@ class EyesOfLunaRosPackageTests(unittest.TestCase):
         }.issubset(dependencies))
         setup = (PACKAGE / "setup.py").read_text(encoding="utf-8")
         self.assertIn("eyes_of_luna_node = lunabot_phase2_perception.eyes_of_luna_node:main", setup)
+        self.assertIn("capture_one_camera_frame = lunabot_phase2_perception.capture_one_frame:main", setup)
         self.assertIn("launch/*.launch.py", setup)
 
     def test_node_and_launch_are_syntactically_valid_and_use_phase1_camera(self):
@@ -108,6 +113,72 @@ class EyesOfLunaRosPackageTests(unittest.TestCase):
         self.assertEqual(sidecar["capture"]["frame_id"], "camera_optical_frame")
         self.assertEqual(sidecar["annotation_status"], "pending_human_review")
         self.assertNotIn("annotations", sidecar)
+
+    def test_live_frame_sidecar_preserves_ros_metadata_and_stays_unreviewed(self):
+        image = SimpleNamespace(
+            header=SimpleNamespace(
+                stamp=SimpleNamespace(sec=123, nanosec=456),
+                frame_id="camera_optical_frame",
+            ),
+            width=640,
+            height=480,
+            encoding="rgb8",
+            step=1920,
+            is_bigendian=0,
+        )
+        sidecar = build_capture_sidecar(
+            image, "/camera/image_raw", Path("scene01_frame.png"),
+            "a" * 64, "2026-10-15T00:00:00+00:00")
+        capture = sidecar["capture"]
+        self.assertEqual(sidecar["sample_id"], "scene01_frame")
+        self.assertEqual(capture["timestamp_ns"], 123_000_000_456)
+        self.assertEqual(capture["frame_id"], "camera_optical_frame")
+        self.assertEqual(capture["width"], 640)
+        self.assertEqual(capture["height"], 480)
+        self.assertEqual(capture["encoding"], "rgb8")
+        self.assertEqual(capture["step"], 1920)
+        self.assertEqual(capture["image_sha256"], "a" * 64)
+        self.assertEqual(sidecar["annotation_status"], "pending_human_review")
+        self.assertEqual(
+            sidecar["registration_status"],
+            "blocked_pending_capture_metadata_and_both_reviewed_masks")
+        self.assertNotIn("annotations", sidecar)
+        self.assertTrue(any("pose" in value for value in
+                            sidecar["required_before_dataset_registration"]))
+
+    def test_one_frame_writer_binds_metadata_hash_and_never_overwrites(self):
+        import hashlib
+        import json
+
+        image = SimpleNamespace(
+            header=SimpleNamespace(
+                stamp=SimpleNamespace(sec=7, nanosec=9), frame_id="camera_optical_frame"),
+            width=1, height=1, encoding="rgb8", step=3, is_bigendian=0,
+        )
+
+        class Bridge:
+            @staticmethod
+            def imgmsg_to_cv2(message, desired_encoding):
+                self.assertEqual(desired_encoding, "bgr8")
+                return b"encoded-bgr-frame"
+
+        class Cv2:
+            @staticmethod
+            def imwrite(path, frame):
+                Path(path).write_bytes(frame)
+                return True
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "scene01_frame.png"
+            metadata_path = _write_capture(image, "/camera/image_raw", output, Bridge(), Cv2())
+            saved = output.read_bytes()
+            sidecar = json.loads(metadata_path.read_text(encoding="utf-8"))
+            self.assertEqual(sidecar["capture"]["image_sha256"],
+                             hashlib.sha256(saved).hexdigest())
+            self.assertEqual(metadata_path.name, "scene01_frame.json")
+            with self.assertRaises(FileExistsError):
+                _write_capture(image, "/camera/image_raw", output, Bridge(), Cv2())
+            self.assertEqual(output.read_bytes(), saved)
 
     def test_phase2_launch_does_not_change_standalone_phase1_launch(self):
         phase1_launch = ROOT / "lunabot_phase1/src/lunabot_phase1_bringup/launch/phase1.launch.py"

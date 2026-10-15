@@ -336,6 +336,21 @@ def collect_sample(dataset: Path, sample_id: str, group_id: str, rgb: Path,
         raise
 
 
+def _class_counts_match(recorded, actual: dict[str, dict[str, int]]) -> bool:
+    """Require exact integer histograms; bool/float equality is not provenance."""
+    if not isinstance(recorded, dict) or set(recorded) != set(actual):
+        return False
+    for head, expected_counts in actual.items():
+        values = recorded.get(head)
+        if not isinstance(values, dict) or set(values) != set(expected_counts):
+            return False
+        for class_id, count in expected_counts.items():
+            value = values[class_id]
+            if isinstance(value, bool) or not isinstance(value, int) or value != count:
+                return False
+    return True
+
+
 def _canonical_paths(sample_id: str) -> dict[str, str]:
     return {
         "rgb": f"rgb/{sample_id}.png",
@@ -444,7 +459,7 @@ def validate_dataset(dataset: Path) -> dict:
                     "shadow": {str(key): value for key, value in
                                sorted(Counter(shadow_pixels).items())},
                 }
-                if recorded_counts != actual_counts:
+                if not _class_counts_match(recorded_counts, actual_counts):
                     errors.append(f"{sample_id}: class_pixel_counts do not match masks")
             except DatasetError as exc:
                 errors.append(f"{sample_id}: {exc}")
@@ -571,6 +586,66 @@ def validate_capture_group_split(dataset: Path, split: dict) -> dict:
     return split
 
 
+def capture_group_split_coverage(dataset: Path, split: dict) -> dict:
+    """Report actual annotated pixel support by split without mixing groups.
+
+    Counts come from manifest histograms that `validate_dataset` checks against
+    both mask files. This reports label presence, not semantic correctness.
+    """
+    if not isinstance(split, dict) or not isinstance(split.get("splits"), dict):
+        raise DatasetError("invalid split document for coverage report")
+    manifest = load_manifest(Path(dataset))
+    records = {record.get("sample_id"): record for record in manifest["samples"]
+               if isinstance(record, dict)}
+    report = {}
+    for split_name in ("train", "validation", "test"):
+        section = split["splits"].get(split_name)
+        if not isinstance(section, dict) or not isinstance(section.get("samples"), list):
+            raise DatasetError(f"{split_name} split has no sample list for coverage report")
+        terrain_counts: Counter = Counter()
+        shadow_counts: Counter = Counter()
+        for sample_id in section["samples"]:
+            record = records.get(sample_id)
+            if record is None:
+                raise DatasetError(f"{split_name} split references unknown sample {sample_id}")
+            counts = record.get("class_pixel_counts")
+            if not isinstance(counts, dict):
+                raise DatasetError(f"{sample_id}: missing class_pixel_counts")
+            for head, totals, schema in (
+                    ("terrain", terrain_counts, TERRAIN_CLASSES),
+                    ("shadow", shadow_counts, SHADOW_CLASSES)):
+                values = counts.get(head)
+                if not isinstance(values, dict):
+                    raise DatasetError(f"{sample_id}: missing {head} class_pixel_counts")
+                for class_id, pixels in values.items():
+                    try:
+                        numeric_id = int(class_id)
+                    except (TypeError, ValueError) as exc:
+                        raise DatasetError(f"{sample_id}: invalid {head} class ID {class_id!r}") from exc
+                    if isinstance(pixels, bool) or not isinstance(pixels, int) or pixels < 0:
+                        raise DatasetError(f"{sample_id}: invalid pixel count for {head} class {class_id}")
+                    if numeric_id in schema and pixels > 0:
+                        totals[numeric_id] += pixels
+        missing_terrain = sorted(set(TERRAIN_CLASSES) - set(terrain_counts))
+        missing_shadow = sorted(set(SHADOW_CLASSES) - set(shadow_counts))
+        report[split_name] = {
+            "sample_count": len(section["samples"]),
+            "capture_group_count": len(section.get("groups", [])),
+            "terrain_pixel_counts": {str(key): terrain_counts.get(key, 0)
+                                     for key in sorted(TERRAIN_CLASSES)},
+            "terrain_classes_present": [TERRAIN_CLASSES[key]
+                                        for key in sorted(terrain_counts)],
+            "missing_terrain_classes": [TERRAIN_CLASSES[key] for key in missing_terrain],
+            "shadow_pixel_counts": {str(key): shadow_counts.get(key, 0)
+                                    for key in sorted(SHADOW_CLASSES)},
+            "shadow_classes_present": [SHADOW_CLASSES[key]
+                                       for key in sorted(shadow_counts)],
+            "missing_shadow_classes": [SHADOW_CLASSES[key] for key in missing_shadow],
+            "complete": not missing_terrain and not missing_shadow,
+        }
+    return report
+
+
 def load_capture_group_split(dataset: Path) -> dict:
     path = Path(dataset) / "splits" / "capture_group_split.json"
     try:
@@ -581,7 +656,7 @@ def load_capture_group_split(dataset: Path) -> dict:
 
 
 def save_capture_group_split(dataset: Path, split: dict) -> Path:
-    """Atomically persist a complete split after checking coverage and leakage."""
+    """Atomically persist a complete, non-leaking split tied to the manifest."""
     validate_capture_group_split(dataset, split)
     directory = Path(dataset) / "splits"
     directory.mkdir(parents=True, exist_ok=True)

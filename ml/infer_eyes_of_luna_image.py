@@ -46,8 +46,8 @@ def main() -> int:
         report_path = prefix.with_name(prefix.name + ".json")
         terrain_confidence = np.clip(result["terrain_confidence"] * 255.0, 0, 255).astype(np.uint8)
         shadow_probability = np.clip(result["shadow_probability"] * 255.0, 0, 255).astype(np.uint8)
-        Image.fromarray(terrain_confidence, mode="L").save(confidence_path)
-        Image.fromarray(shadow_probability, mode="L").save(shadow_probability_path)
+        Image.fromarray(terrain_confidence).save(confidence_path)
+        Image.fromarray(shadow_probability).save(shadow_probability_path)
         height, width = result["terrain_mask"].shape
         counts = np.bincount(result["terrain_mask"].reshape(-1), minlength=4)
         report = {
@@ -84,7 +84,7 @@ def main() -> int:
         print(json.dumps(report, indent=2, sort_keys=True))
         print("EYES_OF_LUNA_INFERENCE_PASS")
         return 0
-    except (EyesOfLunaInferenceError, OSError, ValueError, RuntimeError, KeyError) as exc:
+    except (EyesOfLunaInferenceError, ImportError, OSError, ValueError, RuntimeError, KeyError) as exc:
         print(f"EYES_OF_LUNA_INFERENCE_FAIL: {exc}")
         return 1
 

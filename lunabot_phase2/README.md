@@ -7,22 +7,25 @@ workspace or simulator. The Phase 1 camera interface is `/camera/image_raw`,
 
 ## Current status
 
-The repository has **no reviewed camera dataset, trained checkpoint, held-out
-evaluation, or ROS runtime result**. The two existing terrain-preview PNGs are
-not camera frames or annotations. The prior nine-class, single-output pipeline
-was not reused as a Phase 2 model.
+The repository has **no human-reviewed camera dataset, trained checkpoint,
+held-out evaluation, or live Phase 2 inference result**. The two tracked terrain
+preview PNGs are not camera frames or annotations. Jay reports that an earlier
+scene01 capture-world revision opened on the target and streamed
+`/camera/image_raw` at about 15.3 Hz, with a brief stable teleop smoke test. Two
+attached frames were visually reviewed; neither establishes clear crater or
+bedrock visibility. The updated spawn framing and one-frame metadata capture tool
+in this revision still require a target rebuild and runtime check. The prior
+nine-class, single-output pipeline was not reused as a Phase 2 model.
 
 Implemented incrementally: a compact four-class terrain head plus an independent
 binary shadow head; reviewed-mask dataset validation and capture-group split
-loading; ignore-aware losses; CPU/GPU-capable train/evaluate/inference tools;
-checksum-bound `torch.export` deployment bundles; and a separate ROS 2 image
-node/launch file for `/camera/image_raw`. Local CPU tests check shapes, loss,
-serialization, mask IDs, dataset contracts, and static ROS package contracts.
-They use temporary synthetic fixtures and are not model-quality evidence. The
-original perception package build passed on the target (user-reported), but the
-new optional capture-world launch/assets must be rebuilt and exercised there.
-No reviewed dataset, training outputs, prediction visuals, metrics, or live
-inference result exist. **Phase 2 is NOT PASSED.** See
+loading; per-split class-coverage reporting and fail-closed train/evaluate checks;
+ignore-aware losses; CPU/GPU-capable train/evaluate/inference tools;
+checksum-bound `torch.export` deployment bundles; and separate ROS 2 inference
+and one-frame capture commands for `/camera/image_raw`. Local tests use temporary
+synthetic fixtures and are not model-quality evidence. No reviewed dataset,
+training outputs, prediction visuals, held-out metrics, or live inference result
+exist. **Phase 2 is NOT PASSED.** See
 [PHASE2_ACCEPTANCE.md](PHASE2_ACCEPTANCE.md).
 
 ## Output contract
@@ -95,15 +98,19 @@ python3 ml/split_eyes_of_luna_dataset.py \
   --dataset datasets/eyes_of_luna --seed 42
 ```
 
-The generated split is deterministic. Inspect the returned group assignment and
-per-class coverage before model work; a valid split alone does not show that the
-held-out set has adequate examples of every class.
+The generated split is deterministic. The CLI prints annotated pixel counts and
+missing-class lists for each split. A valid, non-leaking split alone does not
+prove adequate coverage; training now fails closed unless all classes are present
+in train, validation, and test, and evaluation independently checks test coverage.
 
 ## Capture and annotation workflow
 
-1. Use the existing Phase 1 launch and capture frames from `/camera/image_raw`;
-   preserve timestamps and group frames by a whole world/scene or capture
-   session. Do not start a duplicate simulator just for Phase 2.
+1. For new class-rich captures, launch one separate Phase 2 world (`scene01`,
+   `scene02`, or `scene03`) and use its `/camera/image_raw` stream. These worlds
+   reuse the Phase 1 rover/camera but leave the Phase 1 world and `launch-1`
+   unchanged. Existing Phase 1 bags may be inspected for classes actually
+   visible; do not treat the base-camp data as crater/bedrock coverage. Preserve
+   timestamps and keep each world/session as one capture group.
 2. Record lighting, camera pose, simulator ground-truth rover pose, and—if
    available—wheel odometry as a distinct value. Record the simulator/rendering
    version and source camera topic with each capture.
@@ -182,9 +189,10 @@ python3 ml/infer_eyes_of_luna_image.py \
   --device cpu
 ```
 
-Training fails closed on missing/invalid data, incomplete class coverage, or missing
-capture groups; it does not generate synthetic annotations. Evaluation enforces
-the saved manifest/split checksums and uses only the test capture groups. The
+Training fails closed on missing/invalid data, incomplete class coverage in any
+split, or missing capture groups; it does not generate synthetic annotations.
+Evaluation enforces the saved manifest/split checksums, requires all terrain and
+shadow classes in the held-out test groups, and uses only those test groups. The
 report's metrics are meaningful only if those labels and splits are valid and
 representative. Evaluation prediction records and filenames retain each dataset
 `sample_id`; standalone inference writes `image_id` (supplied with `--image-id`,
@@ -205,11 +213,15 @@ casts shadows. Each world includes the same rover/camera model and publishes
 `/camera/image_raw` and `/camera/camera_info`.
 
 These worlds are **synthetic simulator scenes**, not verified semantic cameras
-and not ground-truth masks. They provide candidate visual examples only; make
-both terrain and shadow masks manually and have a person review them. The SDF
-terrain geometry and model names must not be used to claim pixel-label accuracy.
-Target rendering, mesh collision behavior, camera framing, and rover traversal
-have not yet been tested on Fortress; inspect each scene before recording.
+and not ground-truth masks. They provide candidate RGB examples only; make both
+terrain and shadow masks manually and have a person review them. The SDF terrain
+geometry and model names must not be used as pixel labels. The initial spawn
+headings are now aimed so the nearest boulder, bedrock outcrop, and crater centers
+fall inside the camera's horizontal field of view; a static geometry test checks
+that layout. This does not prove they render clearly or are safe to traverse.
+Jay reported the earlier scene01 revision opened and streamed a camera image, but
+the attached views did not clearly show the classes. The latest framing changes
+must be rebuilt and rendered on Fortress before capture or movement.
 
 Build the optional package and its workspace dependencies from the Phase 1
 workspace root:
@@ -243,10 +255,32 @@ source "$REPO_ROOT/lunabot_phase1/install/setup.bash"
 ros2 run lunabot_phase1_tools keyboard_teleop
 ```
 
-Record the camera, calibration, ordinary wheel odometry, TF, and command topics
-in one terminal, and the Gazebo simulator pose stream in a separate terminal.
-Do not substitute `/odom` for simulator ground truth. Start both logs before
-moving the rover; stop both with Ctrl+C. For `scene01`, for example:
+For a single diagnostic frame at the current rover pose, run the installed
+one-shot subscriber from a ROS-sourced terminal while the selected world is
+publishing. It writes an RGB PNG and a sibling JSON sidecar with the original
+ROS timestamp, frame ID, dimensions, encoding, step, and image checksum. The
+sidecar is explicitly pending review and does **not** invent scene or pose data.
+
+```bash
+REPO_ROOT="$HOME/lunabot-v4-humble.tDEKWr/repo"
+source /opt/ros/humble/setup.bash
+source "$REPO_ROOT/lunabot_phase1/install/setup.bash"
+CAPTURE_ROOT="$HOME/eyes_of_luna_capture"
+mkdir -p "$CAPTURE_ROOT"
+FRAME="$CAPTURE_ROOT/scene01_preview_$(date -u +%Y%m%dT%H%M%SZ).png"
+ros2 run lunabot_phase2_perception capture_one_camera_frame \\
+  --topic /camera/image_raw --output "$FRAME" --timeout 30
+```
+
+Attach the PNG and JSON sidecar for inspection. A one-frame sidecar is not a
+complete dataset record: verified world/session, renderer, lighting, camera and
+rover poses, and both human-reviewed masks are still required.
+
+For a reproducible capture group, record the camera, calibration, ordinary
+wheel odometry, TF, and command topics in one terminal, and the Gazebo simulator
+pose stream in a separate terminal. Do not substitute `/odom` for simulator
+ground truth. Start both logs before moving the rover; stop both with Ctrl+C.
+For `scene01`, for example:
 
 ```bash
 REPO_ROOT="$HOME/lunabot-v4-humble.tDEKWr/repo"
@@ -297,11 +331,14 @@ classes.
 
 `lunabot_phase1/src/lunabot_phase2_perception` is an optional `ament_python`
 package included in the Phase 1 Humble workspace. Building it does not start or
-change the Phase 1 simulator. Runtime also requires compatible NumPy, Pillow,
-and PyTorch to be importable by the same Python interpreter used by ROS 2; this
-has not been checked on the target, and no system packages were installed here.
-After building the workspace and creating a real training bundle, run this from
-the repository root in a Humble terminal with the Phase 1 workspace sourced:
+change the Phase 1 simulator. Jay reported that target `/usr/bin/python3` imports
+NumPy 1.26.4, Pillow 9.0.1, and CPU-only PyTorch 2.14.0; CUDA was unavailable.
+Pillow 9.0.1 is below the repository's `Pillow>=9.5` requirement, though the
+compatibility fallback passed RGB/grayscale resize smoke tests on that target.
+This does not verify model loading or inference. The current framing/capture-tool
+revision must still be built on target. After a real training bundle exists, run
+this from the repository root in a Humble terminal with the Phase 1 workspace
+sourced:
 
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -328,14 +365,17 @@ standalone/evaluation tools. The node publishes perception outputs only and
 does not command or control the rover.
 
 Without a loadable deployment bundle, the node reports `ERROR` and does not
-publish masks. Neither a successful colcon build nor synthetic unit tests are a
-ROS runtime test; target build, live camera subscription, message metadata,
-resource use, and latency still need to be exercised.
+publish masks. The prior target camera stream was user-reported, but no trained
+bundle has been loaded and no masks/status/performance behavior has been exercised.
+The latest framing and capture-tool revision still requires a target build and
+runtime check; static/unit tests are not a ROS runtime test.
 
 ## Work deliberately not claimed yet
 
 No real model has been trained, no held-out metrics or prediction results exist,
-and the ROS package has not been built or run on the target. Model quality,
-visual accuracy, FPS/resource suitability, and Phase 2 acceptance remain
-unverified. No navigation, localization, semantic mapping, traversal-cost,
-planning, autonomous driving, or dashboard work is in Phase 2 scope.
+and live inference has not been exercised. The earlier scene01 camera startup and
+brief movement report do not verify this revision's framing, mesh traversal, or
+ROS inference. Model quality, visual accuracy, FPS/resource suitability, and
+Phase 2 acceptance remain unverified. No navigation, localization, semantic
+mapping, traversal-cost, planning, autonomous driving, or dashboard work is in
+Phase 2 scope.

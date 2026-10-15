@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lunabot_ml.eyes_of_luna_dataset import (  # noqa: E402
     DatasetError,
+    capture_group_split_coverage,
     load_capture_group_split,
     validate_dataset,
 )
@@ -76,6 +77,19 @@ def main() -> int:
         for name in ("train", "validation", "test"):
             if not split["splits"][name]["samples"]:
                 raise DatasetError(f"{name} split is empty")
+        coverage = capture_group_split_coverage(args.dataset, split)
+        incomplete = {
+            name: {
+                "missing_terrain_classes": coverage[name]["missing_terrain_classes"],
+                "missing_shadow_classes": coverage[name]["missing_shadow_classes"],
+            }
+            for name in ("train", "validation", "test")
+            if not coverage[name]["complete"]
+        }
+        if incomplete:
+            raise DatasetError(
+                "capture-group split lacks required class coverage: "
+                + json.dumps(incomplete, sort_keys=True))
         import torch
         from torch.utils.data import DataLoader
         device = _resolve_device(torch, args.device)
@@ -205,7 +219,7 @@ def main() -> int:
         print(f"EYES_OF_LUNA_TRAIN_COMPLETE epoch={best['epoch']} "
               f"validation_loss={best['validation_loss']:.6f}")
         return 0
-    except (DatasetError, OSError, ValueError, RuntimeError, KeyError) as exc:
+    except (DatasetError, ImportError, OSError, ValueError, RuntimeError, KeyError) as exc:
         print(f"EYES_OF_LUNA_TRAIN_FAIL: {exc}")
         return 1
 

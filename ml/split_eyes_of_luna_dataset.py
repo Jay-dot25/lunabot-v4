@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lunabot_ml.eyes_of_luna_dataset import (  # noqa: E402
     DatasetError,
+    capture_group_split_coverage,
     load_task_config,
     save_capture_group_split,
     split_by_capture_group,
@@ -28,11 +29,13 @@ def main() -> int:
         load_task_config()
         split = split_by_capture_group(
             args.dataset, args.seed, (args.train, args.validation, args.test))
+        coverage = capture_group_split_coverage(args.dataset, split)
         output = save_capture_group_split(args.dataset, split)
     except DatasetError as exc:
         print(f"EYES_OF_LUNA_SPLIT_FAIL: {exc}")
         return 1
-    print(json.dumps(split, indent=2, sort_keys=True))
+    print(json.dumps({"split": split, "class_coverage": coverage},
+                     indent=2, sort_keys=True))
     print(f"EYES_OF_LUNA_SPLIT_PASS file={output}")
     return 0
 

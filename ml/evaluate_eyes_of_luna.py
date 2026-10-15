@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lunabot_ml.eyes_of_luna_dataset import (  # noqa: E402
     DatasetError,
+    capture_group_split_coverage,
     load_capture_group_split,
     validate_dataset,
 )
@@ -41,8 +42,6 @@ def main() -> int:
     parser.add_argument("--device", choices=("cpu", "cuda", "auto"), default="auto")
     args = parser.parse_args()
     try:
-        import numpy as np
-        import torch
         config = load_model_config(args.config)
         dataset_report = validate_dataset(args.dataset)
         if not dataset_report["valid"]:
@@ -50,6 +49,19 @@ def main() -> int:
         split = load_capture_group_split(args.dataset)
         if not split["splits"]["test"]["samples"]:
             raise DatasetError("held-out test split is empty")
+        test_coverage = capture_group_split_coverage(args.dataset, split)["test"]
+        if not test_coverage["complete"]:
+            raise DatasetError(
+                "held-out test split lacks class coverage: "
+                + json.dumps({
+                    "missing_terrain_classes": test_coverage["missing_terrain_classes"],
+                    "missing_shadow_classes": test_coverage["missing_shadow_classes"],
+                }, sort_keys=True))
+        try:
+            import numpy as np
+            import torch
+        except ImportError as exc:
+            raise RuntimeError("NumPy and PyTorch are required for evaluation") from exc
         model, checkpoint, device = load_checkpoint(args.checkpoint, config, args.device)
         manifest_hash = file_sha256(args.dataset / "manifest.json")
         split_hash = file_sha256(args.dataset / "splits" / "capture_group_split.json")

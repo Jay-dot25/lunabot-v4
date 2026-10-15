@@ -39,6 +39,7 @@ setup(
     entry_points={
         "console_scripts": [
             "eyes_of_luna_node = lunabot_phase2_perception.eyes_of_luna_node:main",
+            "capture_one_camera_frame = lunabot_phase2_perception.capture_one_frame:main",
         ],
     },
 )

@@ -58,6 +58,49 @@ class EyesOfLunaCaptureWorldTests(unittest.TestCase):
             self.assertIn("gz::sim::systems::Sensors", plugins)
         self.assertEqual(len(names), 3)
 
+    def test_spawn_camera_fov_covers_near_boulder_bedrock_and_crater(self):
+        from lunabot_phase2.tools.generate_capture_worlds import SCENES as CAPTURE_SCENES
+
+        rover_sdf = (ROOT / "lunabot_phase1/src/lunabot_phase1_description/models/"
+                     "lunabot_rover/model.sdf")
+        rover_root = ET.parse(rover_sdf).getroot()
+        camera = next(sensor for sensor in rover_root.findall(".//sensor")
+                      if sensor.get("name") == "front_camera")
+        half_fov = float(camera.findtext("camera/horizontal_fov")) / 2.0
+        far_clip = float(camera.findtext("camera/clip/far"))
+        margin = math.radians(2.0)
+
+        for scene in SCENES:
+            root = ET.parse(ROS_PACKAGE / "worlds" / f"eyes_of_luna_capture_{scene}.sdf").getroot()
+            world = root.find("world")
+            spawn = next(include for include in world.findall("include")
+                         if include.findtext("uri") == "model://lunabot_rover")
+            spawn_pose = [float(value) for value in spawn.findtext("pose").split()]
+            spawn_x, spawn_y, spawn_yaw = spawn_pose[0], spawn_pose[1], spawn_pose[5]
+            models = {model.get("name"): model for model in world.findall("model")}
+            targets = {
+                "bedrock_outcrop": [float(value) for value in
+                                    models["bedrock_outcrop"].findtext("pose").split()],
+                "boulder_01": [float(value) for value in
+                               models["boulder_01"].findtext("pose").split()],
+            }
+            crater_x, crater_y = CAPTURE_SCENES[scene]["craters"][0][:2]
+            targets["nearest crater"] = [crater_x, crater_y]
+
+            for name, pose in targets.items():
+                distance = math.hypot(pose[0] - spawn_x, pose[1] - spawn_y)
+                self.assertGreater(distance, 2.0,
+                                   f"{scene} spawn is too close to {name}")
+                self.assertLess(distance, far_clip,
+                                f"{scene} target {name} is beyond the camera far clip")
+                bearing = math.atan2(pose[1] - spawn_y, pose[0] - spawn_x)
+                relative = math.atan2(math.sin(bearing - spawn_yaw),
+                                      math.cos(bearing - spawn_yaw))
+                self.assertLessEqual(
+                    abs(relative), half_fov - margin,
+                    f"{scene} spawn view misses {name} by {math.degrees(relative):.1f} degrees",
+                )
+
     def test_scene_meshes_exist_and_include_real_crater_relief(self):
         bounds = []
         for scene in SCENES:

@@ -54,7 +54,7 @@ def save_capture_sample(image, output: Path, group_id: str, frame_index: int,
     metadata_dir.mkdir(parents=True, exist_ok=True)
     rgb_path = rgb_dir / f"{sample_id}.png"
     metadata_path = metadata_dir / f"{sample_id}.json"
-    Image.fromarray(rgb, mode="RGB").save(rgb_path)
+    Image.fromarray(rgb).save(rgb_path)
     capture = {
         "camera_topic": image_topic,
         "timestamp_ns": stamp_ns,

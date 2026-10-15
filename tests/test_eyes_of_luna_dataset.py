@@ -18,6 +18,7 @@ sys.path.insert(0, str(ML))
 
 from lunabot_ml.dataset_manifest import DatasetError, write_mask_png  # noqa: E402
 from lunabot_ml.eyes_of_luna_dataset import (  # noqa: E402
+    capture_group_split_coverage,
     collect_sample,
     load_task_config,
     save_capture_group_split,
@@ -201,12 +202,27 @@ class EyesOfLunaDatasetTests(unittest.TestCase):
         self.assertTrue(any("checksum mismatch for terrain_mask" in error
                             for error in report["errors"]))
 
+    def test_manifest_histograms_reject_float_counts_even_when_numerically_equal(self):
+        self.add("frame-histogram", "group-histogram")
+        manifest_path = self.dataset / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["samples"][0]["class_pixel_counts"]["terrain"]["0"] = 3.0
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        report = validate_dataset(self.dataset)
+        self.assertFalse(report["valid"])
+        self.assertTrue(any("class_pixel_counts do not match masks" in error
+                            for error in report["errors"]))
+
     def test_split_is_reproducible_and_keeps_capture_groups_separate(self):
         for index in range(6):
             self.add(f"frame-{index:03d}", f"group-{index:03d}")
         first = split_by_capture_group(self.dataset, seed=17)
         second = split_by_capture_group(self.dataset, seed=17)
         self.assertEqual(first, second)
+        coverage = capture_group_split_coverage(self.dataset, first)
+        self.assertTrue(all(report["complete"] for report in coverage.values()))
+        self.assertEqual(coverage["test"]["terrain_classes_present"],
+                         ["regolith", "bedrock", "rock_boulder", "crater"])
         group_sets = [set(first["splits"][name]["groups"])
                       for name in ("train", "validation", "test")]
         sample_sets = [set(first["splits"][name]["samples"])
@@ -225,6 +241,37 @@ class EyesOfLunaDatasetTests(unittest.TestCase):
         self.add("frame-001", "group-001")
         with self.assertRaisesRegex(DatasetError, "at least three capture groups"):
             split_by_capture_group(self.dataset)
+
+    def test_training_and_evaluation_fail_closed_on_split_class_gaps(self):
+        group_masks = (
+            ("group-regolith", bytes([0] * 12), bytes([0] * 12)),
+            ("group-bedrock", bytes([1] * 12), bytes([0] * 12)),
+            ("group-rock-crater", bytes([2, 3] * 6), bytes([1] * 12)),
+        )
+        for index, (group_id, terrain, shadow) in enumerate(group_masks):
+            self.add(f"coverage-{index}", group_id, terrain, shadow)
+        split = split_by_capture_group(self.dataset, seed=11)
+        save_capture_group_split(self.dataset, split)
+        coverage = capture_group_split_coverage(self.dataset, split)
+        self.assertTrue(all(not report["complete"] for report in coverage.values()))
+
+        output = self.root / "must-not-train"
+        trained = subprocess.run(
+            [sys.executable, str(ML / "train_eyes_of_luna.py"),
+             "--dataset", str(self.dataset), "--output", str(output), "--device", "cpu"],
+            capture_output=True, text=True, check=False)
+        self.assertEqual(trained.returncode, 1, trained.stdout + trained.stderr)
+        self.assertIn("capture-group split lacks required class coverage", trained.stdout)
+        self.assertFalse(output.exists())
+
+        evaluated = subprocess.run(
+            [sys.executable, str(ML / "evaluate_eyes_of_luna.py"),
+             "--dataset", str(self.dataset), "--checkpoint", str(self.root / "missing.pt"),
+             "--output", str(self.root / "metrics.json"), "--device", "cpu"],
+            capture_output=True, text=True, check=False)
+        self.assertEqual(evaluated.returncode, 1, evaluated.stdout + evaluated.stderr)
+        self.assertIn("held-out test split lacks class coverage", evaluated.stdout)
+        self.assertFalse((self.root / "metrics.json").exists())
 
     def test_split_writer_rejects_capture_group_leakage(self):
         for index in range(3):
@@ -279,6 +326,7 @@ class EyesOfLunaDatasetTests(unittest.TestCase):
             capture_output=True, text=True, check=False)
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         self.assertIn("EYES_OF_LUNA_SPLIT_PASS", completed.stdout)
+        self.assertIn('"class_coverage"', completed.stdout)
         output = self.dataset / "splits" / "capture_group_split.json"
         self.assertTrue(output.is_file())
 
