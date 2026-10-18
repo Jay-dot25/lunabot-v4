@@ -2,7 +2,7 @@
 
 A small, reproducible ROS 2 + Gazebo simulation foundation. Phase 1 provides a physically driven rover in a compact lunar test yard, live camera and 2D LiDAR observations, wheel-based Gazebo odometry, bounded manual control, and a sensor-only forward obstacle status node. The project does **not** implement autonomy.
 
-> **Certification status:** not yet certified. The agent sandbox has no ROS/Gazebo runtime. The developer's machine is Ubuntu 22.04 + ROS 2 Humble + Ignition Fortress; its first launch attempt used the wrong `gz sim` executable and failed. The launch/model have since been switched to Fortress's `ign gazebo` and `ignition-gazebo-*` systems, but that updated launch still needs to be built and retested on the developer machine. See [PHASE1_ACCEPTANCE.md](PHASE1_ACCEPTANCE.md).
+> **Certification status:** not yet certified. The agent sandbox has no ROS/Gazebo runtime. On the developer's Ubuntu 22.04 / ROS 2 Humble / Ignition Fortress machine, the updated `ign gazebo` launch stayed up and the obstacle monitor received a scan (`CLEAR; nearest=2.659 m`). This is initial live range evidence, not full acceptance; camera, motion, odometry, obstacle transitions, and clean relaunch remain unverified. See [PHASE1_ACCEPTANCE.md](PHASE1_ACCEPTANCE.md).
 
 ## Project overview
 
@@ -53,14 +53,13 @@ The developer-reported machine has ROS 2 Humble. In a clean terminal that does n
 source /opt/ros/humble/setup.bash
 cd ~/lunabot-v4-phase1
 rosdep update
-ros2 pkg prefix ament_python
 rosdep install --from-paths src --ignore-src --rosdistro humble --skip-keys=ament_python -y
 colcon build --symlink-install
 source install/setup.bash
 ./scripts/phase1_validate.sh static
 ```
 
-The reported `rosdep install` could not resolve the key `ament_python` even after `rosdep update`, while `colcon` built both packages. The command above skips only that key after `ros2 pkg prefix ament_python` confirms the build tool is installed in the Humble environment. If that lookup fails, do not skip it; install the matching Humble ament Python package first. The earlier build also warned that packages from the old checkout were in an underlay, so use a shell that sources `/opt/ros/humble` but not `~/lunabot-v4/install`. No workspace-wide or developer-specific absolute paths are embedded in model resources.
+The reported `rosdep update` still did not provide a definition for the `ament_python` build-type key. The command skips only that key; the following colcon build verifies that the ament Python build extension is available and builds both packages. The earlier build also warned that packages from the old checkout were in an underlay, so use a shell that sources `/opt/ros/humble` but not `~/lunabot-v4/install`. No workspace-wide or developer-specific absolute paths are embedded in model resources.
 
 ## Launch
 

@@ -47,27 +47,28 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 ## Build and runtime attempts
 
 - On the agent checkout, `./scripts/phase1_validate.sh static` → **PASS**, with all six unit tests passing.
-- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep update` completed, but `rosdep install` still **failed** with `Cannot locate rosdep definition for [ament_python]`. `colcon build --symlink-install` nevertheless completed both packages successfully. Colcon warned that packages from both the old checkout and the new install were in the underlay. The command `ros2 pkg prefix ament_python` has not yet been run; if it confirms the tool exists under `/opt/ros/humble`, the README documents skipping only this unresolved key.
-- On that machine, the first `./scripts/launch-1.sh` attempt used `gz sim`, started bridge/ROS utility processes, then Gazebo exited with code 255 and `Invalid arguments`. **Test A FAIL** for that attempted launch. Diagnostics subsequently identified Ignition Fortress `1.0.3-2~jammy`; the source has now been changed to invoke `ign gazebo` and load Fortress-named system plugins. The corrected launch has not yet been retried, so it has no PASS evidence.
-- No camera, scan, or odometry messages were observed in the failed-launch output. No movement or live sensor acceptance test has passed.
+- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep update` completed, but `rosdep install` still **failed** with `Cannot locate rosdep definition for [ament_python]`. A prior direct `colcon build --symlink-install` completed both packages successfully, with warnings that the old checkout and new install were both in the underlay. The build validator now skips only this unmapped rosdep build-type key and relies on colcon to verify the build plugin and complete the build; this updated validator has not yet been run on the developer machine.
+- The first launch attempt called unsupported `gz sim` and failed. After switching to Fortress, the developer launched the updated branch: `[ign-1]` remained running; the obstacle monitor changed from `STALE` to `CLEAR; nearest=2.659 m`. This demonstrates the world/simulation and a live scan observation. **Test A PASS** for basic startup. Camera, odometry, motion, and sustained runtime have not yet been independently verified.
+- The observed scan range is consistent with the predefined rock in front of the rover. It is initial-position evidence only; no approach/retreat range change or obstacle state transition has been captured yet.
+- The runtime validation command was not run because it was invoked from `~`, where `./scripts/phase1_validate.sh` does not exist. Run it from `~/lunabot-v4-phase1` after sourcing the workspace.
 - A Ctrl+C trace exposed a command-gate shutdown error (`publisher's context is invalid`). A defensive shutdown fix is now in commit `c0fb19f`; it has not yet been verified on the developer machine.
 
 ## Formal acceptance matrix
 
 | Test | Status | Procedure / observed result | Remaining evidence needed |
 |---|---|---|---|
-| **A — Environment startup** | **FAIL** | The first attempted launch called unsupported `gz sim` on Fortress; Gazebo exited 255 and the world did not load. Source has since been switched to `ign gazebo` / Fortress plugins. | Rebuild and launch the updated Fortress configuration; verify world, rover, and interfaces stay operational. |
-| **B — Rover stability** | **BLOCKED** | Fortress is installed, but the world did not load on the attempted run; stability has not been observed. | Launch the updated Fortress configuration and observe stationary contact/drift. |
-| **C — Forward movement** | **BLOCKED** | No `/cmd_vel` publisher/drive system could be run. | Live probe verifies physical and odometric forward motion. |
+| **A — Environment startup** | **PASS** | Updated `ign gazebo` launch remained running; obstacle monitor received `/scan` and reported `CLEAR; nearest=2.659 m`, showing a world sensor observation. | Retest after a clean build and verify camera/odometry topics and sustained operation. |
+| **B — Rover stability** | **BLOCKED** | Updated launch produced a live scan, but no visual/physical stationary-stability observation was reported. | Observe chassis/wheel contact, oscillation, and stationary drift in the running world. |
+| **C — Forward movement** | **BLOCKED** | No bounded movement command or resulting odometry change was captured. | Run the live motion probe and verify forward displacement. |
 | **D — Reverse movement** | **BLOCKED** | Not run. | Live probe verifies reverse displacement. |
 | **E — Rotation** | **BLOCKED** | Not run. | Live probe verifies positive and negative yaw changes. |
 | **F — Stop behavior** | **BLOCKED** | Watchdog code and clamp unit logic were inspected/tested offline; no stale-command behavior was observed on a running drive system. | Live probe verifies command timeout and stationary odometry after stop. |
 | **G — Live camera** | **BLOCKED** | No camera message or rendered image received. | Check actual frame, encoding, dimensions, content, topic frequency, and viewer output. |
-| **H — Live range sensing** | **BLOCKED** | No Gazebo scan received. The pure algorithm unit tests are not a live sensor test. | Check open-yard and obstacle ranges while approaching/reorienting rover. |
-| **I — Motion estimates** | **BLOCKED** | `/odom` and TF were not published in this environment. | Validate frame IDs, motion signs, and stationary stability from actual wheel odometry. |
-| **J — Obstacle detection** | **BLOCKED** | Six algorithm-level tests passed, but actual `/scan`-driven obstacle assertion/clearing was not run. | Run live obstacle approach and retreat in the world; verify status transition and data staleness behavior. |
+| **H — Live range sensing** | **BLOCKED** | Obstacle monitor received a real scan and reported a nearest forward return of 2.659 m. No scan rate or change during approach/turn was recorded. | Record `/scan` rate and verify range changes with approach and orientation. |
+| **I — Motion estimates** | **BLOCKED** | The bridge is configured for `/odom` and `/tf`, but no actual odometry sample or TF tree was inspected. | Validate frames, motion signs, and stationary stability from live wheel odometry. |
+| **J — Obstacle detection** | **BLOCKED** | Monitor consumed `/scan` and reported `CLEAR; nearest=2.659 m`. Six algorithm-level tests pass, but no live `OBSTACLE` assertion or clear-after-retreat transition was recorded. | Run live approach/retreat; verify Bool and String status transitions plus stale-data handling. |
 | **K — Coordinate frames** | **BLOCKED** | SDF/launch text defines intended names and sensor mount offsets; no TF tree/message was available to inspect. | Use `tf2_echo` / `view_frames` and confirm message frame IDs and a single odom/base publisher. |
-| **L — Repeatability** | **BLOCKED** | No first launch/shutdown/relaunch was possible. | Complete two launch cycles and repeat basic drive/sensor checks. |
+| **L — Repeatability** | **BLOCKED** | One updated launch was started and produced a scan, but no clean shutdown/relaunch cycle was reported. | Complete a clean stop/start cycle and repeat the basic sensor/motion checks. |
 
 ### Unit-level evidence (not a substitute for Test J)
 
@@ -86,12 +87,12 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 - [x] Target stack and host incompatibility are explicitly documented; no destructive environment change made.
 - [x] `colcon build --symlink-install` completed both packages on Ubuntu 22.04 / ROS Humble, with an old-workspace overlay warning.
 - [ ] `rosdep install` resolves cleanly (`ament_python` definition failed in the reported run).
-- [ ] Gazebo loads and remains operational (startup attempt failed).
+- [x] Updated Fortress launch started and produced a live scan observation (full runtime validation still pending).
 - [ ] Rover stability, forward/reverse/turn/stop, and repeat startup are demonstrated.
 - [ ] Actual camera, LiDAR, odometry, clock, and TF streams are verified at runtime.
 - [ ] Live sensor-based obstacle status transitions are demonstrated.
 
-**Phase 1 certification: NOT PASSED.** Colcon built both packages and offline tests pass, but rosdep resolution failed and the first runtime launch failed before the world loaded. The Fortress-specific correction has not yet been retested, and all motion/sensor acceptance evidence is still outstanding.
+**Phase 1 certification: NOT PASSED.** The first launch failed, but the corrected Fortress launch subsequently started and produced a real scan observation. The original colcon build completed; the updated build validator has not yet completed because rosdep failed. Camera/odometry inspection, movement, obstacle state transitions, clean shutdown/relaunch, and other live acceptance evidence remain outstanding.
 
 ## Handover boundary
 

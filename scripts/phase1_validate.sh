@@ -53,11 +53,10 @@ run_build() {
   for tool in ros2 colcon rosdep; do
     if ! command -v "$tool" >/dev/null 2>&1; then blocked "$tool is not installed/available"; return; fi
   done
-  local -a rosdep_skip_args=()
-  if ros2 pkg prefix ament_python >/dev/null 2>&1; then
-    echo 'ament_python is present in the sourced ROS underlay; skip its unresolved rosdep key.'
-    rosdep_skip_args+=(--skip-keys=ament_python)
-  fi
+  # Humble's rosdep database on the reported machine has no mapping for the
+  # ament_python build-type key. colcon immediately verifies the build plugin.
+  local -a rosdep_skip_args=(--skip-keys=ament_python)
+  echo 'Skipping only rosdep key ament_python; colcon build below validates the ament_python build type.'
   if rosdep install --from-paths src --ignore-src --rosdistro "$ROS_DISTRO" -y "${rosdep_skip_args[@]}" && colcon build --symlink-install; then
     # shellcheck disable=SC1091
     source install/setup.bash
