@@ -47,10 +47,10 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 ## Build and runtime attempts
 
 - On the agent checkout, `./scripts/phase1_validate.sh static` → **PASS**, with all six unit tests passing.
-- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep update` completed, but `rosdep install` still **failed** with `Cannot locate rosdep definition for [ament_python]`. A prior direct `colcon build --symlink-install` completed both packages successfully, with warnings that the old checkout and new install were both in the underlay. The build validator now skips only this unmapped rosdep build-type key and relies on colcon to verify the build plugin and complete the build; this updated validator has not yet been run on the developer machine.
+- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep install` with only `ament_python` skipped reported that all required rosdeps were installed, and `colcon build --symlink-install` completed both packages successfully. Colcon warned that the old checkout and new install were both in the underlay. The validator then hit `COLCON_TRACE: unbound variable` while sourcing `install/setup.bash` under nounset; the build itself had completed. That unnecessary source step has been removed from the validator; callers source the overlay in their own terminal.
 - The first launch attempt called unsupported `gz sim` and failed. After switching to Fortress, the developer launched the updated branch: `[ign-1]` remained running; the obstacle monitor changed from `STALE` to `CLEAR; nearest=2.659 m`. This demonstrates the world/simulation and a live scan observation. **Test A PASS** for basic startup. Camera, odometry, motion, and sustained runtime have not yet been independently verified.
 - The observed scan range is consistent with the predefined rock in front of the rover. It is initial-position evidence only; no approach/retreat range change or obstacle state transition has been captured yet.
-- The runtime validation command was not run because it was invoked from `~`, where `./scripts/phase1_validate.sh` does not exist. Run it from `~/lunabot-v4-phase1` after sourcing the workspace.
+- The live probe was subsequently invoked from the correct repository directory, but returned **BLOCKED** because no `lunabot_gz_bridge` node was running at that time. The earlier simulation must be launched and left running in another terminal while the probe runs.
 - A Ctrl+C trace exposed a command-gate shutdown error (`publisher's context is invalid`). A defensive shutdown fix is now in commit `c0fb19f`; it has not yet been verified on the developer machine.
 
 ## Formal acceptance matrix
@@ -85,14 +85,14 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 - [x] Repository contains world/model, packages, launch, tools, tests, and developer instructions.
 - [x] Offline Python/XML checks and six pure-logic tests pass.
 - [x] Target stack and host incompatibility are explicitly documented; no destructive environment change made.
-- [x] `colcon build --symlink-install` completed both packages on Ubuntu 22.04 / ROS Humble, with an old-workspace overlay warning.
-- [ ] `rosdep install` resolves cleanly (`ament_python` definition failed in the reported run).
+- [x] `rosdep install` completed after skipping the unmapped `ament_python` key; colcon built both packages on Ubuntu 22.04 / ROS Humble.
+- [ ] Remove the old-workspace underlay warning by rebuilding in a Humble-only shell.
 - [x] Updated Fortress launch started and produced a live scan observation (full runtime validation still pending).
 - [ ] Rover stability, forward/reverse/turn/stop, and repeat startup are demonstrated.
 - [ ] Actual camera, LiDAR, odometry, clock, and TF streams are verified at runtime.
 - [ ] Live sensor-based obstacle status transitions are demonstrated.
 
-**Phase 1 certification: NOT PASSED.** The first launch failed, but the corrected Fortress launch subsequently started and produced a real scan observation. The original colcon build completed; the updated build validator has not yet completed because rosdep failed. Camera/odometry inspection, movement, obstacle state transitions, clean shutdown/relaunch, and other live acceptance evidence remain outstanding.
+**Phase 1 certification: NOT PASSED.** The Fortress launch started and produced a real scan observation, and both packages built successfully after skipping the unmapped rosdep key. The latest runtime probe could not run because the simulator was not active in another terminal. Camera/odometry inspection, movement, obstacle state transitions, clean shutdown/relaunch, and other live acceptance evidence remain outstanding.
 
 ## Handover boundary
 

@@ -58,8 +58,9 @@ run_build() {
   local -a rosdep_skip_args=(--skip-keys=ament_python)
   echo 'Skipping only rosdep key ament_python; colcon build below validates the ament_python build type.'
   if rosdep install --from-paths src --ignore-src --rosdistro "$ROS_DISTRO" -y "${rosdep_skip_args[@]}" && colcon build --symlink-install; then
-    # shellcheck disable=SC1091
-    source install/setup.bash
+    # Do not source install/setup.bash in this validator subprocess: callers
+    # must source it themselves, and some setup scripts read unset COLCON_TRACE
+    # under this script's nounset mode.
     pass "rosdep + colcon build for $ROS_DISTRO"
   else fail 'dependency resolution or colcon build'; fi
 }
