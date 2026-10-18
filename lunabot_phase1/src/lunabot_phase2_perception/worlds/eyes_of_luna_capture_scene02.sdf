@@ -32,7 +32,7 @@
       </link>
     </model>
 
-    <!-- Broad low-relief outcrop; its top is intended for manual bedrock annotation. -->
+    <!-- Faceted bedrock outcrop; height/width vary by capture scene for visibility. -->
     <model name="bedrock_outcrop"><static>true</static>
       <pose>-11.000 5.000 0 0 0 -0.220</pose>
       <link name="bedrock_link">

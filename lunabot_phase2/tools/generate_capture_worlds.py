@@ -21,19 +21,25 @@ SCENES = {
     "scene01": {
         "sun": "-0.48 0.17 -0.86",
         "craters": [
-            (-6.0, 0.0, 2.2, 0.55, 0.13, 0.75),
+            # Put a pronounced bowl in the central, mid-range view. The previous
+            # crater was technically inside horizontal FOV but tiny at the horizon.
+            (-14.55, 1.72, 1.9, 0.75, 0.30, 0.50),
             (2.0, 6.0, 3.0, 0.82, 0.18, 0.90),
             (13.0, -5.0, 2.4, 0.62, 0.14, 0.72),
         ],
-        "bedrock_pose": (-12.0, 5.0, 0.0, 0.08),
+        # Spread bedrock to the opposite side of the crater and increase only
+        # scene01 outcrop relief so it is not hidden behind the foreground boulder.
+        "bedrock_pose": (-8.62, 0.72, 0.0, -0.22),
+        "bedrock_height_scale": 2.0,
+        "bedrock_width_scale": 0.80,
         "boulders": [
-            (-16.5, 2.5, 0.78, 0.66, 0.65, 0.0),
+            (-14.05, 5.48, 0.78, 0.66, 0.65, 0.0),
             (-3.5, -8.0, 0.52, 0.46, 0.50, 0.55),
             (7.5, 10.0, 0.92, 0.72, 0.80, 1.10),
             (17.0, 1.5, 0.60, 0.82, 0.56, 0.25),
         ],
-        # Aim the camera between the near boulder/outcrop and the first crater;
-        # with the Phase 1 60-degree horizontal FOV they all enter the initial view.
+        # The camera remains level/unchanged. Place the crater in the central
+        # foreground view, with boulder left and bedrock right, all clear of spawn.
         "spawn": (-21.0, -1.0, 0.40),
         "bedrock_seed": 117,
     },
@@ -164,20 +170,32 @@ def _generate_regolith_mesh(scene: str, craters: list[tuple[float, float, float,
                f"Phase 2 {scene} regolith terrain with explicit bowl-and-rim craters")
 
 
-def _generate_bedrock_mesh(scene: str, seed: int) -> None:
+def _generate_bedrock_mesh(scene: str, seed: int, height_scale: float = 1.0,
+                           width_scale: float = 1.0) -> None:
+    if not math.isfinite(height_scale) or height_scale <= 0.0:
+        raise ValueError("bedrock height scale must be finite and positive")
+    if not math.isfinite(width_scale) or width_scale <= 0.0:
+        raise ValueError("bedrock width scale must be finite and positive")
     rng = random.Random(seed)
     count = 12
+    base_z = 0.025
     base: list[tuple[float, float, float]] = []
     top: list[tuple[float, float, float]] = []
     for i in range(count):
         angle = 2.0 * math.pi * i / count
         factor = 0.87 + rng.random() * 0.25
-        x = 3.1 * factor * math.cos(angle)
-        y = 2.15 * factor * math.sin(angle)
-        base.append((x, y, 0.025))
-        top.append((x, y, 0.18 + rng.random() * 0.11))
+        x = width_scale * 3.1 * factor * math.cos(angle)
+        y = width_scale * 2.15 * factor * math.sin(angle)
+        base.append((x, y, base_z))
+        top_height = 0.18 + rng.random() * 0.11
+        top.append((x, y, base_z + height_scale * (top_height - base_z)))
 
-    vertices = base + top + [(0.15, -0.10, 0.43 + rng.random() * 0.06), (0.0, 0.0, 0.025)]
+    peak_height = 0.43 + rng.random() * 0.06
+    vertices = base + top + [
+        (0.15 * width_scale, -0.10 * width_scale,
+         base_z + height_scale * (peak_height - base_z)),
+        (0.0, 0.0, base_z),
+    ]
     top_center = 2 * count + 1
     bottom_center = 2 * count + 2
     faces: list[tuple[int, ...]] = []
@@ -189,7 +207,7 @@ def _generate_bedrock_mesh(scene: str, seed: int) -> None:
         faces.append((i + 1, count + nxt + 1, count + i + 1))
         faces.append((bottom_center, nxt + 1, i + 1))
     _write_obj(MESH_DIR / f"bedrock_{scene}.obj", vertices, faces,
-               f"Phase 2 {scene} broad low-relief bedrock outcrop; hand labels still required")
+               f"Phase 2 {scene} faceted bedrock outcrop; hand labels still required")
 
 
 def _normalize(vector: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -292,7 +310,7 @@ def _world_sdf(scene: str, spec: dict) -> str:
       </link>
     </model>
 
-    <!-- Broad low-relief outcrop; its top is intended for manual bedrock annotation. -->
+    <!-- Faceted bedrock outcrop; height/width vary by capture scene for visibility. -->
     <model name=\"bedrock_outcrop\"><static>true</static>
       <pose>{bedrock_x:.3f} {bedrock_y:.3f} 0 0 0 {bedrock_yaw:.3f}</pose>
       <link name=\"bedrock_link\">
@@ -332,7 +350,11 @@ def generate() -> list[Path]:
                  MESH_DIR / "boulder_irregular.obj"]
     for scene, spec in SCENES.items():
         _generate_regolith_mesh(scene, spec["craters"])
-        _generate_bedrock_mesh(scene, spec["bedrock_seed"])
+        _generate_bedrock_mesh(
+            scene, spec["bedrock_seed"],
+            height_scale=spec.get("bedrock_height_scale", 1.0),
+            width_scale=spec.get("bedrock_width_scale", 1.0),
+        )
         world_path = WORLD_DIR / f"eyes_of_luna_capture_{scene}.sdf"
         world_path.write_text(_world_sdf(scene, spec), encoding="utf-8")
         generated.extend((MESH_DIR / f"regolith_{scene}.obj",

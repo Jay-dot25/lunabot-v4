@@ -9,13 +9,15 @@ workspace or simulator. The Phase 1 camera interface is `/camera/image_raw`,
 
 The repository has **no human-reviewed camera dataset, trained checkpoint,
 held-out evaluation, or live Phase 2 inference result**. The two tracked terrain
-preview PNGs are not camera frames or annotations. Jay reports that an earlier
-scene01 capture-world revision opened on the target and streamed
-`/camera/image_raw` at about 15.3 Hz, with a brief stable teleop smoke test. Two
-attached frames were visually reviewed; neither establishes clear crater or
-bedrock visibility. The updated spawn framing and one-frame metadata capture tool
-in this revision still require a target rebuild and runtime check. The prior
-nine-class, single-output pipeline was not reused as a Phase 2 model.
+preview PNGs are not camera frames or annotations. Jay reports commit `6d48e43`
+built on the Humble/Fortress target; scene01 opened, `/camera/image_raw` streamed
+at about 14 Hz, and the one-frame capture command saved a 640×480 `rgb8` PNG
+with a checksum-matching JSON sidecar. Visual review shows a clear boulder and
+shadows, but bedrock is weak/partly occluded and no crater is identifiable. The
+scene01 layout has since been revised to bring a crater into the central
+mid-range view and separate/raise the outcrop; that follow-up still requires a
+target rebuild and rendered check. The prior nine-class, single-output pipeline
+was not reused as a Phase 2 model.
 
 Implemented incrementally: a compact four-class terrain head plus an independent
 binary shadow head; reviewed-mask dataset validation and capture-group split
@@ -215,13 +217,16 @@ casts shadows. Each world includes the same rover/camera model and publishes
 These worlds are **synthetic simulator scenes**, not verified semantic cameras
 and not ground-truth masks. They provide candidate RGB examples only; make both
 terrain and shadow masks manually and have a person review them. The SDF terrain
-geometry and model names must not be used as pixel labels. The initial spawn
-headings are now aimed so the nearest boulder, bedrock outcrop, and crater centers
-fall inside the camera's horizontal field of view; a static geometry test checks
-that layout. This does not prove they render clearly or are safe to traverse.
-Jay reported the earlier scene01 revision opened and streamed a camera image, but
-the attached views did not clearly show the classes. The latest framing changes
-must be rebuilt and rendered on Fortress before capture or movement.
+geometry and model names must not be used as pixel labels. The scene01 layout has
+been revised after a target preview showed the crater near the horizon and the
+outcrop partly hidden. The nearest crater is now larger and centered at mid-range;
+the first boulder is offset to one side, and the bedrock outcrop is raised and
+moved to the other. Static tests check projected feature extents, vertical FOV,
+separation and spawn clearance. They cannot prove Gazebo rendering or safe
+traversal. Jay reports the previous revision launched and streamed camera data,
+but its attached frame did not clearly show the crater or bedrock. Rebuild this
+follow-up layout and inspect a stationary camera frame before movement or data
+capture.
 
 Build the optional package and its workspace dependencies from the Phase 1
 workspace root:
@@ -365,10 +370,11 @@ standalone/evaluation tools. The node publishes perception outputs only and
 does not command or control the rover.
 
 Without a loadable deployment bundle, the node reports `ERROR` and does not
-publish masks. The prior target camera stream was user-reported, but no trained
-bundle has been loaded and no masks/status/performance behavior has been exercised.
-The latest framing and capture-tool revision still requires a target build and
-runtime check; static/unit tests are not a ROS runtime test.
+publish masks. Jay reports the `6d48e43` package build and camera capture passed,
+but no trained bundle has been loaded and no masks/status/inference performance
+has been exercised. A human visual review found the scene01 preview insufficient
+for crater/bedrock visibility; the follow-up scene layout now needs its own target
+build and render check. Static/unit tests are not a ROS runtime test.
 
 ## Work deliberately not claimed yet
 

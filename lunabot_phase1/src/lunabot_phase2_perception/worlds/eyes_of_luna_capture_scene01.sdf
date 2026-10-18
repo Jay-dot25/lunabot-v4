@@ -32,9 +32,9 @@
       </link>
     </model>
 
-    <!-- Broad low-relief outcrop; its top is intended for manual bedrock annotation. -->
+    <!-- Faceted bedrock outcrop; height/width vary by capture scene for visibility. -->
     <model name="bedrock_outcrop"><static>true</static>
-      <pose>-12.000 5.000 0 0 0 0.080</pose>
+      <pose>-8.620 0.720 0 0 0 -0.220</pose>
       <link name="bedrock_link">
         <collision name="bedrock_collision"><geometry><mesh>
           <uri>model://eyes_of_luna_terrain/meshes/bedrock_scene01.obj</uri>
@@ -49,7 +49,7 @@
     </model>
 
     <model name="boulder_01">
-      <static>true</static><pose>-16.500 2.500 0.670 0 0 0.000</pose>
+      <static>true</static><pose>-14.050 5.480 0.670 0 0 0.000</pose>
       <link name="boulder_link">
         <collision name="boulder_collision"><geometry><mesh>
           <uri>model://eyes_of_luna_terrain/meshes/boulder_irregular.obj</uri><scale>0.780 0.660 0.650</scale>
