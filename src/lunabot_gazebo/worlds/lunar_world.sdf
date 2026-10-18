@@ -3,10 +3,10 @@
   <world name="lunar_base_camp">
     <gravity>0 0 -1.62</gravity>
     <physics name="fast_physics" type="ignored"><max_step_size>0.001</max_step_size><real_time_factor>1.0</real_time_factor></physics>
-    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
-    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
-    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
-    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"><render_engine>ogre2</render_engine></plugin>
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors"><render_engine>ogre2</render_engine></plugin>
 
     <scene><ambient>0.28 0.28 0.30 1</ambient><background>0.025 0.03 0.045 1</background><shadows>true</shadows></scene>
     <light name="sun" type="directional"><cast_shadows>true</cast_shadows><pose>0 0 15 0 0 0</pose><diffuse>0.85 0.82 0.75 1</diffuse><specular>0.18 0.18 0.18 1</specular><direction>-0.45 0.35 -0.82</direction></light>

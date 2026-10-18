@@ -15,12 +15,12 @@ Two environments have now been observed and must not be conflated:
 |---|---|---|
 | OS | Debian 12, x86_64, kernel `6.1.158` | Ubuntu 22.04.5 LTS (Jammy) |
 | ROS 2 | Absent | ROS 2 Humble (`/opt/ros/humble`) |
-| Gazebo | Absent | `/usr/bin/gz` exists, but `gz sim --versions` and the launched `gz sim -r ...` both returned `Invalid arguments`; simulator/version not identified |
+| Gazebo | Absent | Ignition Fortress `1.0.3-2~jammy`; `ign gazebo --help` works. The separate `gz` dispatcher rejects `gz sim` with `Invalid arguments`. |
 | Build tools | `colcon`, `rosdep` absent | Build ran; `rosdep install` reported no definition for `ament_python` |
 | GUI | No display variables in the agent sandbox | Not yet reported |
-| Compatibility | Initial implementation targeted Jazzy/Harmonic | Actual developer host is Humble/Jammy; a compatible installed Gazebo target is still unidentified |
+| Compatibility | Agent sandbox has no ROS/Gazebo runtime | Developer host is Humble/Jammy + Ignition Fortress 1.0.3; launch/SDF switched to `ign gazebo` and Fortress system plugins, but updated configuration still needs a runtime test |
 
-No system-wide install or upgrade was attempted in the agent environment. The implementation must now be aligned to the simulator actually installed on the developer machine; the `gz` command name alone does not establish that `gz sim` is supported.
+No system-wide install or upgrade was attempted in the agent environment. The project is now aligned to the reported Fortress installation (`ign gazebo` and `ignition-gazebo-*` systems); the corrected runtime has not yet been launched.
 
 ## Implementation delivered
 
@@ -47,17 +47,17 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 ## Build and runtime attempts
 
 - On the agent checkout, `./scripts/phase1_validate.sh static` → **PASS**, with all six unit tests passing.
-- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep install` **failed** with `Cannot locate rosdep definition for [ament_python]`. The shell continued, and `colcon build --symlink-install` completed both packages successfully, but emitted warnings that the same packages were present in the old `~/lunabot-v4/install` underlay. A clean Humble-only shell and `rosdep update` are still needed to verify dependency resolution without the old overlay.
-- On that machine, `./scripts/launch-1.sh` started bridge and ROS utility processes, but Gazebo exited immediately with code 255 and `Invalid arguments` from `gz sim -r ...`. Therefore **Test A is FAIL** for the attempted run. The exact Gazebo implementation/version is not identified yet.
-- No camera, scan, or odometry messages were observed in the supplied output. We do not know whether they were ever published before Gazebo exited. No movement or live sensor acceptance test has passed.
-- A Ctrl+C trace also exposed a command-gate shutdown error (`publisher's context is invalid`). A defensive shutdown fix has been made in the working branch, but has not yet been verified on the developer machine.
+- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep update` completed, but `rosdep install` still **failed** with `Cannot locate rosdep definition for [ament_python]`. `colcon build --symlink-install` nevertheless completed both packages successfully. Colcon warned that packages from both the old checkout and the new install were in the underlay. The command `ros2 pkg prefix ament_python` has not yet been run; if it confirms the tool exists under `/opt/ros/humble`, the README documents skipping only this unresolved key.
+- On that machine, the first `./scripts/launch-1.sh` attempt used `gz sim`, started bridge/ROS utility processes, then Gazebo exited with code 255 and `Invalid arguments`. **Test A FAIL** for that attempted launch. Diagnostics subsequently identified Ignition Fortress `1.0.3-2~jammy`; the source has now been changed to invoke `ign gazebo` and load Fortress-named system plugins. The corrected launch has not yet been retried, so it has no PASS evidence.
+- No camera, scan, or odometry messages were observed in the failed-launch output. No movement or live sensor acceptance test has passed.
+- A Ctrl+C trace exposed a command-gate shutdown error (`publisher's context is invalid`). A defensive shutdown fix is now in commit `c0fb19f`; it has not yet been verified on the developer machine.
 
 ## Formal acceptance matrix
 
 | Test | Status | Procedure / observed result | Remaining evidence needed |
 |---|---|---|---|
-| **A — Environment startup** | **FAIL** | On the developer's Ubuntu 22.04/Humble system, launch started ROS nodes but `gz sim -r ...` exited 255 with `Invalid arguments`; world did not load. | Identify installed Gazebo release/CLI and align launch/model plugins, then relaunch. |
-| **B — Rover stability** | **BLOCKED** | No simulator available; stability has not been observed. | Observe stationary rover/contact and check oscillation/drift in Gazebo. |
+| **A — Environment startup** | **FAIL** | The first attempted launch called unsupported `gz sim` on Fortress; Gazebo exited 255 and the world did not load. Source has since been switched to `ign gazebo` / Fortress plugins. | Rebuild and launch the updated Fortress configuration; verify world, rover, and interfaces stay operational. |
+| **B — Rover stability** | **BLOCKED** | Fortress is installed, but the world did not load on the attempted run; stability has not been observed. | Launch the updated Fortress configuration and observe stationary contact/drift. |
 | **C — Forward movement** | **BLOCKED** | No `/cmd_vel` publisher/drive system could be run. | Live probe verifies physical and odometric forward motion. |
 | **D — Reverse movement** | **BLOCKED** | Not run. | Live probe verifies reverse displacement. |
 | **E — Rotation** | **BLOCKED** | Not run. | Live probe verifies positive and negative yaw changes. |
@@ -91,8 +91,8 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 - [ ] Actual camera, LiDAR, odometry, clock, and TF streams are verified at runtime.
 - [ ] Live sensor-based obstacle status transitions are demonstrated.
 
-**Phase 1 certification: NOT PASSED.** The implementation is a handover-ready repository baseline, but it has not earned Lunar Base Camp certification because mandatory runtime evidence is blocked by the absent ROS 2/Gazebo environment. Do not describe the simulation as operational until the blocked tests pass on the target stack.
+**Phase 1 certification: NOT PASSED.** Colcon built both packages and offline tests pass, but rosdep resolution failed and the first runtime launch failed before the world loaded. The Fortress-specific correction has not yet been retested, and all motion/sensor acceptance evidence is still outstanding.
 
 ## Handover boundary
 
-Once built and runtime-validated on ROS 2 Jazzy/Gazebo Harmonic, the planned Phase 2 input contracts are `/camera/image_raw`, `/scan`, `odom`/`base_link`/sensor frames, `/odom`, and the same deterministic simulated environment. This report does not implement or claim any Phase 2 perception, mapping, localization, planning, or avoidance behavior.
+Once built and runtime-validated on ROS 2 Humble/Ignition Fortress, the planned Phase 2 input contracts are `/camera/image_raw`, `/scan`, `odom`/`base_link`/sensor frames, `/odom`, and the same deterministic simulated environment. This report does not implement or claim any Phase 2 perception, mapping, localization, planning, or avoidance behavior.

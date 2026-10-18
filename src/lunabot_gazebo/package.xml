@@ -2,7 +2,7 @@
 <package format="3">
   <name>lunabot_gazebo</name>
   <version>1.0.0</version>
-  <description>LunaBot Phase 1 Gazebo Harmonic world, rover model, and launch configuration.</description>
+  <description>LunaBot Phase 1 Ignition Fortress world, rover model, and launch configuration.</description>
   <maintainer email="maintainers@example.invalid">LunaBot maintainers</maintainer>
   <license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>

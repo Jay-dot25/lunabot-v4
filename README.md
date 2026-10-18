@@ -2,7 +2,7 @@
 
 A small, reproducible ROS 2 + Gazebo simulation foundation. Phase 1 provides a physically driven rover in a compact lunar test yard, live camera and 2D LiDAR observations, wheel-based Gazebo odometry, bounded manual control, and a sensor-only forward obstacle status node. The project does **not** implement autonomy.
 
-> **Certification status for this checkout:** implementation and offline/unit validation are present, but live acceptance is **BLOCKED** in the supplied environment. The host is Debian 12 with no ROS 2, Gazebo, `colcon`, or ROS integration packages installed. See [PHASE1_ACCEPTANCE.md](PHASE1_ACCEPTANCE.md) for per-test outcomes. No live simulation behavior is claimed as tested.
+> **Certification status:** not yet certified. The agent sandbox has no ROS/Gazebo runtime. The developer's machine is Ubuntu 22.04 + ROS 2 Humble + Ignition Fortress; its first launch attempt used the wrong `gz sim` executable and failed. The launch/model have since been switched to Fortress's `ign gazebo` and `ignition-gazebo-*` systems, but that updated launch still needs to be built and retested on the developer machine. See [PHASE1_ACCEPTANCE.md](PHASE1_ACCEPTANCE.md).
 
 ## Project overview
 
@@ -17,7 +17,7 @@ Keyboard / ROS publisher
 command_gate (limit + 0.30 s watchdog)
        │ ROS→Gazebo Twist /lunabot/gz_cmd_vel
        ▼
-Gazebo Harmonic DiffDrive ── wheel joints ── rover motion
+Ignition Fortress DiffDrive ── wheel joints ── rover motion
        ├── wheel odometry ── /odom + odom→base_link TF
        ├── camera sensor ── /camera/image_raw
        └── GPU 2D LiDAR ─── /scan
@@ -31,30 +31,19 @@ Gazebo world (/clock) ── ros_gz_bridge ── ROS 2
 base_link ── static TF ── camera_link, lidar_link
 ```
 
-The sole drive mechanism is Gazebo's `gz::sim::systems::DiffDrive`. ROS commands do not set model poses. Odometry is the DiffDrive system's wheel-derived estimate, bridged from Gazebo, not Gazebo world ground truth. Gazebo Harmonic sensors provide the camera and scan. `ros_gz_bridge` carries their real messages to ROS 2. A small Python command gate bounds planar speeds and publishes a stop after stale input. A second Python node examines only the incoming LaserScan; it does not steer or avoid obstacles.
+The sole drive mechanism is Ignition Fortress's `ignition::gazebo::systems::DiffDrive`. ROS commands do not set model poses. Odometry is the DiffDrive system's wheel-derived estimate, bridged from Gazebo, not Gazebo world ground truth. Fortress sensors provide the camera and scan. `ros_gz_bridge` carries their real messages to ROS 2. A small Python command gate bounds planar speeds and publishes a stop after stale input. A second Python node examines only the incoming LaserScan; it does not steer or avoid obstacles.
 
-The initially selected target was **ROS 2 Jazzy + Gazebo Harmonic + `ros_gz_bridge`**. The developer's actual machine is now reported as **Ubuntu 22.04 + ROS 2 Humble**. There, `/usr/bin/gz` exists but `gz sim --versions` and the launch command `gz sim -r ...` returned `Invalid arguments`; the installed Gazebo implementation/version is not yet identified. Therefore the current Gazebo launch profile is **not runtime-compatible as observed**, and needs to be aligned with the installed simulator before acceptance. Do not install Jazzy setup commands on this Humble machine. The SDF uses Gazebo Sim `gz-sim-*` system filenames; it is not Gazebo Classic configuration.
+The developer's machine is **Ubuntu 22.04 + ROS 2 Humble + Ignition Fortress 1.0.3** (`ign gazebo`, with `ros-humble-ros-gz-bridge`). Its `gz` executable is the dispatcher and does not provide the `gz sim` command used by the first launch attempt. The project is now configured for Fortress: launch uses `ign gazebo` and the SDF systems use `ignition-gazebo-*` filenames. This matches the detected stack, but the corrected launch has not yet been exercised there. The agent sandbox itself is Debian 12 without ROS/Gazebo.
 
 ## Requirements
 
-### Environment evidence and current compatibility issue
+### Environment evidence
 
 - Agent checkout: Debian GNU/Linux 12, x86_64, kernel `6.1.158`, Python 3.11.2; no ROS/Gazebo tools or display.
-- Developer-reported host: Ubuntu 22.04.5 with ROS 2 Humble and `/usr/bin/gz`. `gz sim --versions` and the attempted `gz sim -r ...` both returned `Invalid arguments`, so the installed Gazebo implementation/version is not yet identified.
-- This repository currently uses Gazebo Sim `gz-sim-*` system filenames and a `gz sim` launch command. Runtime compatibility with the reported Humble host is therefore **not established**. Do not source Jazzy on that host or assume that having a `gz` executable means it supports `gz sim`.
+- Developer-reported host: Ubuntu 22.04.5, ROS 2 Humble, Ignition Fortress package `1.0.3-2~jammy`, and `ros-humble-ros-gz-bridge` `0.244.25`. The `ign gazebo --help` output identifies Fortress's `ign gazebo` interface. The separate `gz` dispatcher does not implement `gz sim` on this machine.
+- The launch and SDF system filenames have been switched to Fortress (`ign gazebo`, `IGN_GAZEBO_RESOURCE_PATH`, and `ignition-gazebo-*`). The updated launch still requires a runtime retest.
 
-Please identify the installed simulator before installing or replacing packages:
-
-```bash
-type -a gz ign
-gz --help
-gz sim --help
-ign gazebo --help
-dpkg-query -W -f='${Package} ${Version}\\n' 'gz-*' 'ignition-*' 'ros-humble-ros-gz*' 'ros-humble-ros-ign*' 2>/dev/null
-ros2 pkg list | grep -E '^(ros_gz|ros_ign)'
-```
-
-Use installation instructions matching the detected ROS/Gazebo pairing. Do not upgrade the OS or install Jazzy just to match the initial target assumption.
+Do not install Jazzy or replace the existing Gazebo packages just to match the agent's original target assumption.
 
 ## Installation and build
 
@@ -64,13 +53,14 @@ The developer-reported machine has ROS 2 Humble. In a clean terminal that does n
 source /opt/ros/humble/setup.bash
 cd ~/lunabot-v4-phase1
 rosdep update
-rosdep install --from-paths src --ignore-src --rosdistro "$ROS_DISTRO" -y
+ros2 pkg prefix ament_python
+rosdep install --from-paths src --ignore-src --rosdistro humble --skip-keys=ament_python -y
 colcon build --symlink-install
 source install/setup.bash
 ./scripts/phase1_validate.sh static
 ```
 
-The reported colcon build completed both packages, but `rosdep install` previously failed to resolve `ament_python`, and colcon warned that packages from the old checkout were already in an underlay. Run `rosdep update` and build in a clean Humble-only shell to verify these issues. No workspace-wide or developer-specific absolute paths are embedded in model resources.
+The reported `rosdep install` could not resolve the key `ament_python` even after `rosdep update`, while `colcon` built both packages. The command above skips only that key after `ros2 pkg prefix ament_python` confirms the build tool is installed in the Humble environment. If that lookup fails, do not skip it; install the matching Humble ament Python package first. The earlier build also warned that packages from the old checkout were in an underlay, so use a shell that sources `/opt/ros/humble` but not `~/lunabot-v4/install`. No workspace-wide or developer-specific absolute paths are embedded in model resources.
 
 ## Launch
 
@@ -101,8 +91,8 @@ Defaults: obstacle threshold 1.5 m, forward half-sector 15 degrees, stale scan t
 Open another terminal and source the ROS and workspace setups:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-source /path/to/lunabot-v4/install/setup.bash
+source /opt/ros/humble/setup.bash
+source ~/lunabot-v4-phase1/install/setup.bash
 ros2 run lunabot_tools keyboard_teleop
 ```
 
@@ -176,8 +166,8 @@ The live probe listens to actual camera, scan, odometry, obstacle and status mes
 
 ## Troubleshooting
 
-- **`ros2`/`gz` not found:** source the supported ROS setup and install the Jazzy + Harmonic integration packages; do not substitute Gazebo Classic commands.
-- **Wrong/unsourced workspace:** source `/opt/ros/jazzy/setup.bash`, build, then source `install/setup.bash` in every terminal.
+- **`ros2`/`ign` not found:** source `/opt/ros/humble/setup.bash` and confirm the Humble + Fortress integration packages are installed. This launch invokes `ign gazebo`; `gz sim` is not the Fortress command on the reported host.
+- **Wrong/unsourced workspace:** source `/opt/ros/humble/setup.bash`, build, then source `~/lunabot-v4-phase1/install/setup.bash` in every terminal. Avoid sourcing the old `~/lunabot-v4/install` overlay into this build shell.
 - **Bridge fails to load:** confirm `ros_gz_bridge` matches the installed ROS/Gazebo release and check `ros2 launch` output. Do not silently change the bridge message mapping.
 - **Model/world not found:** use the package launch, not a hand-built path; confirm package was installed by `colcon build` and the model path is under `share/lunabot_gazebo/models`.
 - **Topics exist but no data:** inspect Gazebo startup errors, bridge process health, simulation pause state, and `ros2 topic hz`; a topic name alone is not evidence of sensor output.
@@ -185,7 +175,7 @@ The live probe listens to actual camera, scan, odometry, obstacle and status mes
 - **Wheels spin but rover barely moves:** inspect wheel-ground collision contact, gravity, friction and simulation warnings. Physics was not executable in this environment, so these settings need runtime tuning if this occurs.
 - **TF conflict or missing sensor transforms:** there should be exactly one odom/base publisher from DiffDrive and one static publisher per sensor transform. Inspect `ros2 topic info -v /tf` and `tf2_echo`.
 - **GUI unavailable in WSL/headless systems:** start `headless:=true` and inspect ROS messages; use a configured display server for Gazebo GUI or an image viewer. This host has no display variables, so GUI behavior is unverified.
-- **Build `rosdep` failure:** verify ROS distribution setup and package repositories, read the named dependency failure, and install only the matching release package. No dependency errors have been observed here because `rosdep` is absent.
+- **Build `rosdep` failure:** `ament_python` was not resolved by rosdep on the reported host even after update. Confirm `ros2 pkg prefix ament_python`; if it resolves within `/opt/ros/humble`, use the documented `--skip-keys=ament_python` workaround. Do not skip it if the package is missing.
 
 ## Current limitations
 

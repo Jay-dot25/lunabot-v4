@@ -16,7 +16,7 @@ def _gazebo(context):
         FindPackageShare('lunabot_gazebo'), 'worlds', 'lunar_world.sdf'
     ]).perform(context)
     headless = LaunchConfiguration('headless').perform(context).lower() in ('true', '1', 'yes')
-    command = ['gz', 'sim', '-r']
+    command = ['ign', 'gazebo', '-r']
     if headless:
         command.append('-s')
     command.append(world)
@@ -51,6 +51,7 @@ def generate_launch_description():
                               description='Half-width of the front scan sector in degrees.'),
         DeclareLaunchArgument('obstacle_stale_timeout_sec', default_value='0.75',
                               description='Sensor stale timeout in seconds.'),
+        AppendEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', models_dir),
         AppendEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models_dir),
         OpaqueFunction(function=_gazebo),
         Node(package='ros_gz_bridge', executable='parameter_bridge',
