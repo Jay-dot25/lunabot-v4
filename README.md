@@ -33,39 +33,44 @@ base_link ── static TF ── camera_link, lidar_link
 
 The sole drive mechanism is Gazebo's `gz::sim::systems::DiffDrive`. ROS commands do not set model poses. Odometry is the DiffDrive system's wheel-derived estimate, bridged from Gazebo, not Gazebo world ground truth. Gazebo Harmonic sensors provide the camera and scan. `ros_gz_bridge` carries their real messages to ROS 2. A small Python command gate bounds planar speeds and publishes a stop after stale input. A second Python node examines only the incoming LaserScan; it does not steer or avoid obstacles.
 
-The selected target is **ROS 2 Jazzy + Gazebo Harmonic + `ros_gz_bridge`**. This is the intended modern Gazebo pairing for Ubuntu 24.04. It is **not verified by execution on this host**. The SDF declares format 1.9 and uses the Gazebo Sim `gz-sim-*` systems (not Gazebo Classic or the old Ignition launch commands).
+The initially selected target was **ROS 2 Jazzy + Gazebo Harmonic + `ros_gz_bridge`**. The developer's actual machine is now reported as **Ubuntu 22.04 + ROS 2 Humble**. There, `/usr/bin/gz` exists but `gz sim --versions` and the launch command `gz sim -r ...` returned `Invalid arguments`; the installed Gazebo implementation/version is not yet identified. Therefore the current Gazebo launch profile is **not runtime-compatible as observed**, and needs to be aligned with the installed simulator before acceptance. Do not install Jazzy setup commands on this Humble machine. The SDF uses Gazebo Sim `gz-sim-*` system filenames; it is not Gazebo Classic configuration.
 
 ## Requirements
 
-### Target system
+### Environment evidence and current compatibility issue
 
-- Ubuntu 24.04 (recommended for packaged ROS 2 Jazzy)
-- ROS 2 Jazzy, sourced in the current shell
-- Gazebo Harmonic (`gz sim`) and its rendering/sensors systems
-- `ros_gz_bridge`, `tf2_ros`, `rclpy`, `geometry_msgs`, `sensor_msgs`, `nav_msgs`, `std_msgs`, `tf2_msgs`, `rosgraph_msgs`
-- `colcon`, `rosdep`, Python 3, and `python3-pytest` or Python `unittest`
-- Optional GUI: a working desktop/display; optional image view: `rqt_image_view`
+- Agent checkout: Debian GNU/Linux 12, x86_64, kernel `6.1.158`, Python 3.11.2; no ROS/Gazebo tools or display.
+- Developer-reported host: Ubuntu 22.04.5 with ROS 2 Humble and `/usr/bin/gz`. `gz sim --versions` and the attempted `gz sim -r ...` both returned `Invalid arguments`, so the installed Gazebo implementation/version is not yet identified.
+- This repository currently uses Gazebo Sim `gz-sim-*` system filenames and a `gz sim` launch command. Runtime compatibility with the reported Humble host is therefore **not established**. Do not source Jazzy on that host or assume that having a `gz` executable means it supports `gz sim`.
 
-**Verified here:** Debian GNU/Linux 12 (Bookworm), x86_64; kernel `6.1.158`; Python 3.11.2. This is a hosted Linux execution environment (not detected as WSL; the underlying container/VM boundary cannot be confirmed from the available evidence). `DISPLAY` and `WAYLAND_DISPLAY` are unset. `ros2`, `gz`, `gazebo`, `colcon`, `rosdep`, and `xacro` are absent. ROS/Gazebo version compatibility and GUI operation therefore remain unverified locally.
+Please identify the installed simulator before installing or replacing packages:
 
-### Safe installation guidance
+```bash
+type -a gz ign
+gz --help
+gz sim --help
+ign gazebo --help
+dpkg-query -W -f='${Package} ${Version}\\n' 'gz-*' 'ignition-*' 'ros-humble-ros-gz*' 'ros-humble-ros-ign*' 2>/dev/null
+ros2 pkg list | grep -E '^(ros_gz|ros_ign)'
+```
 
-Do not upgrade this Debian environment or replace its system packages to make the simulation run. For an operational setup, use a supported Ubuntu 24.04 ROS 2 Jazzy environment and follow the official ROS 2 Jazzy installation instructions and Gazebo Harmonic/ROS integration package instructions for that release. Install the matching packages (`ros-jazzy-ros-gz-bridge`, `ros-jazzy-tf2-ros`, `python3-colcon-common-extensions`, `python3-rosdep`; plus the Jazzy desktop or base packages appropriate to your machine). Resolve remaining declared dependencies with `rosdep` below. Exact package availability can vary by the configured ROS/Gazebo repositories; the target stack was not installed here to verify package resolution.
+Use installation instructions matching the detected ROS/Gazebo pairing. Do not upgrade the OS or install Jazzy just to match the initial target assumption.
 
 ## Installation and build
 
-From the repository root, after installing and sourcing the selected ROS 2 environment:
+The developer-reported machine has ROS 2 Humble. In a clean terminal that does not source the old `~/lunabot-v4/install` overlay, build this checkout with:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-cd /path/to/lunabot-v4
+source /opt/ros/humble/setup.bash
+cd ~/lunabot-v4-phase1
 rosdep update
 rosdep install --from-paths src --ignore-src --rosdistro "$ROS_DISTRO" -y
 colcon build --symlink-install
 source install/setup.bash
+./scripts/phase1_validate.sh static
 ```
 
-No workspace-wide or developer-specific absolute paths are embedded in model resources. The launch file sets `GZ_SIM_RESOURCE_PATH` from the installed package share directory.
+The reported colcon build completed both packages, but `rosdep install` previously failed to resolve `ament_python`, and colcon warned that packages from the old checkout were already in an underlay. Run `rosdep update` and build in a clean Humble-only shell to verify these issues. No workspace-wide or developer-specific absolute paths are embedded in model resources.
 
 ## Launch
 

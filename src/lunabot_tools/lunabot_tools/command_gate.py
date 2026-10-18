@@ -64,9 +64,15 @@ def main(args=None) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        stop = Twist()
-        for _ in range(3):
-            node.publisher.publish(stop)
+        # A launch-managed SIGINT may shut the rclpy context down before this
+        # finally block runs. Do not publish through an invalid context then.
+        if rclpy.ok():
+            stop = Twist()
+            for _ in range(3):
+                try:
+                    node.publisher.publish(stop)
+                except Exception:
+                    break
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()

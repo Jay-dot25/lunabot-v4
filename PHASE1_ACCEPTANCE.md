@@ -9,16 +9,18 @@ This report distinguishes repository/offline checks from live simulation accepta
 
 | Item | Observation |
 |---|---|
-| OS | Debian GNU/Linux 12 (Bookworm), x86_64 |
-| Kernel | Linux `6.1.158` (`e2b.local`) |
-| Execution context | Hosted Linux sandbox; `WSL_DISTRO_NAME` is unset. No container marker was present, so container-versus-VM hosting cannot be determined confidently. |
-| ROS 2 | `ROS_DISTRO` unset; `ros2` absent; `/opt/ros` absent |
-| Gazebo | `gz`, `gazebo` absent; no version can be queried |
-| Build/dependency tools | `colcon`, `rosdep` absent |
-| GUI | `DISPLAY` and `WAYLAND_DISPLAY` unset; no rendering device/tool detected |
-| Selected target | ROS 2 Jazzy + Gazebo Harmonic + `ros_gz_bridge`; appropriate installation/compatibility is documented as a target, not verified in this checkout |
+Two environments have now been observed and must not be conflated:
 
-No system-wide install or upgrade was attempted. This Debian sandbox is not a suitable place to substitute unverified packages for the declared ROS/Gazebo pairing.
+| Item | Agent checkout | Developer-reported machine (from terminal transcript) |
+|---|---|---|
+| OS | Debian 12, x86_64, kernel `6.1.158` | Ubuntu 22.04.5 LTS (Jammy) |
+| ROS 2 | Absent | ROS 2 Humble (`/opt/ros/humble`) |
+| Gazebo | Absent | `/usr/bin/gz` exists, but `gz sim --versions` and the launched `gz sim -r ...` both returned `Invalid arguments`; simulator/version not identified |
+| Build tools | `colcon`, `rosdep` absent | Build ran; `rosdep install` reported no definition for `ament_python` |
+| GUI | No display variables in the agent sandbox | Not yet reported |
+| Compatibility | Initial implementation targeted Jazzy/Harmonic | Actual developer host is Humble/Jammy; a compatible installed Gazebo target is still unidentified |
+
+No system-wide install or upgrade was attempted in the agent environment. The implementation must now be aligned to the simulator actually installed on the developer machine; the `gz` command name alone does not establish that `gz sim` is supported.
 
 ## Implementation delivered
 
@@ -44,16 +46,17 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 
 ## Build and runtime attempts
 
-- `./scripts/phase1_validate.sh build` → **BLOCKED** before dependency installation: `ROS_DISTRO` is unset; `ros2`, `colcon`, and `rosdep` are unavailable.
-- `./scripts/phase1_validate.sh runtime` → **BLOCKED**: ROS 2 is unavailable.
-- `./scripts/launch-1.sh` → **BLOCKED**: `/opt/ros/jazzy/setup.bash` and ROS 2 are absent. Gazebo is absent too.
-- No package build, Gazebo start, topic message, GUI, or runtime motion/sensor test was performed.
+- On the agent checkout, `./scripts/phase1_validate.sh static` → **PASS**, with all six unit tests passing.
+- On the developer-reported Ubuntu 22.04/Humble checkout, `rosdep install` **failed** with `Cannot locate rosdep definition for [ament_python]`. The shell continued, and `colcon build --symlink-install` completed both packages successfully, but emitted warnings that the same packages were present in the old `~/lunabot-v4/install` underlay. A clean Humble-only shell and `rosdep update` are still needed to verify dependency resolution without the old overlay.
+- On that machine, `./scripts/launch-1.sh` started bridge and ROS utility processes, but Gazebo exited immediately with code 255 and `Invalid arguments` from `gz sim -r ...`. Therefore **Test A is FAIL** for the attempted run. The exact Gazebo implementation/version is not identified yet.
+- No camera, scan, or odometry messages were observed in the supplied output. We do not know whether they were ever published before Gazebo exited. No movement or live sensor acceptance test has passed.
+- A Ctrl+C trace also exposed a command-gate shutdown error (`publisher's context is invalid`). A defensive shutdown fix has been made in the working branch, but has not yet been verified on the developer machine.
 
 ## Formal acceptance matrix
 
 | Test | Status | Procedure / observed result | Remaining evidence needed |
 |---|---|---|---|
-| **A — Environment startup** | **BLOCKED** | Launch attempt exited with the documented ROS 2-not-installed blocker. No Gazebo world loaded. | Install supported ROS 2 Jazzy/Gazebo Harmonic environment; launch and observe stable operation. |
+| **A — Environment startup** | **FAIL** | On the developer's Ubuntu 22.04/Humble system, launch started ROS nodes but `gz sim -r ...` exited 255 with `Invalid arguments`; world did not load. | Identify installed Gazebo release/CLI and align launch/model plugins, then relaunch. |
 | **B — Rover stability** | **BLOCKED** | No simulator available; stability has not been observed. | Observe stationary rover/contact and check oscillation/drift in Gazebo. |
 | **C — Forward movement** | **BLOCKED** | No `/cmd_vel` publisher/drive system could be run. | Live probe verifies physical and odometric forward motion. |
 | **D — Reverse movement** | **BLOCKED** | Not run. | Live probe verifies reverse displacement. |
@@ -81,8 +84,9 @@ This is syntax/logic validation only. XML well-formedness is not equivalent to v
 - [x] Repository contains world/model, packages, launch, tools, tests, and developer instructions.
 - [x] Offline Python/XML checks and six pure-logic tests pass.
 - [x] Target stack and host incompatibility are explicitly documented; no destructive environment change made.
-- [ ] ROS packages resolve and workspace builds on target.
-- [ ] Gazebo loads and remains operational.
+- [x] `colcon build --symlink-install` completed both packages on Ubuntu 22.04 / ROS Humble, with an old-workspace overlay warning.
+- [ ] `rosdep install` resolves cleanly (`ament_python` definition failed in the reported run).
+- [ ] Gazebo loads and remains operational (startup attempt failed).
 - [ ] Rover stability, forward/reverse/turn/stop, and repeat startup are demonstrated.
 - [ ] Actual camera, LiDAR, odometry, clock, and TF streams are verified at runtime.
 - [ ] Live sensor-based obstacle status transitions are demonstrated.

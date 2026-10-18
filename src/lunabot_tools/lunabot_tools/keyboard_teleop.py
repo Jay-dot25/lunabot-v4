@@ -18,6 +18,8 @@ class KeyboardTeleop(Node):
         self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
 
     def send(self, linear=0.0, angular=0.0):
+        if not rclpy.ok():
+            return
         msg = Twist()
         msg.linear.x = float(linear)
         msg.angular.z = float(angular)

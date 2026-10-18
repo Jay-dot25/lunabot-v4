@@ -1,6 +1,10 @@
 """Single entry point for the LunaBot Phase 1 simulation."""
 from launch import LaunchDescription
-from launch.actions import AppendEnvironmentVariable, DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
+from launch.actions import (AppendEnvironmentVariable, DeclareLaunchArgument,
+                            EmitEvent, ExecuteProcess, OpaqueFunction,
+                            RegisterEventHandler)
+from launch.event_handlers import OnProcessExit
+from launch.events import Shutdown
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -16,7 +20,14 @@ def _gazebo(context):
     if headless:
         command.append('-s')
     command.append(world)
-    return [ExecuteProcess(cmd=command, output='screen', sigterm_timeout='10')]
+    gazebo = ExecuteProcess(cmd=command, output='screen', sigterm_timeout='10')
+    stop_launch_if_gazebo_exits = RegisterEventHandler(
+        OnProcessExit(
+            target_action=gazebo,
+            on_exit=[EmitEvent(event=Shutdown(reason='Gazebo exited'))],
+        )
+    )
+    return [gazebo, stop_launch_if_gazebo_exits]
 
 
 def generate_launch_description():
