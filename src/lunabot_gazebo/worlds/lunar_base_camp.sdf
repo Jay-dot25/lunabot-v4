@@ -1,0 +1,329 @@
+<?xml version="1.0"?>
+<!--
+  LunaBot Phase 1 world: "Lunar Base Camp" compact test environment.
+
+  Contents:
+    * Lunar-like regolith ground surface (gravity 1.62 m/s^2).
+    * Scattered rocks / boulders as static obstacles.
+    * A demo triad of obstacles directly in front of the rover spawn pose
+      (rover spawns at the origin facing +X) for the Phase 1 creative
+      demonstration and the range-sensor obstacle check.
+
+  The rover model (model://lunabot_v4) is included from the
+  lunabot_description package. Set IGN_GAZEBO_RESOURCE_PATH or
+  GZ_SIM_RESOURCE_PATH to its models directory before launching.
+-->
+<sdf version="1.9">
+  <world name="lunar_base_camp">
+
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>0 -9 6 0 0.55 1.57</pose>
+        <clip>
+          <near>0.1</near>
+          <far>2000.0</far>
+        </clip>
+      </camera>
+    </gui>
+
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <gravity>0 0 -1.62</gravity>
+
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-contact-system" name="ignition::gazebo::systems::Contact"/>
+
+    <!-- Deep-space backdrop with hard lunar lighting and real shadows -->
+    <scene>
+      <ambient>0.30 0.30 0.32 1</ambient>
+      <background>0.02 0.02 0.04 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 100 0 0 0</pose>
+      <diffuse>0.95 0.95 0.92 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>-0.45 0.30 -0.84</direction>
+    </light>
+
+    <!-- ======================= LUNAR GROUND ======================= -->
+    <model name="lunar_regolith">
+      <static>true</static>
+      <link name="regolith_link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>120 120 1</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>0.8</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>120 120 1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.22 0.21 0.20 1</ambient>
+            <diffuse>0.48 0.46 0.43 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+      <pose>0 0 -0.5 0 0 0</pose>
+    </model>
+
+    <!-- ============ DEMO TRIAD: directly in front of spawn ============
+      Spawn: origin, facing +X. These three rocks are the creative
+      demonstration obstacles and back the automated obstacle check.
+    -->
+    <model name="demo_rock_left">
+      <static>true</static>
+      <pose>3.2 -1.1 0.28 0 0 0.4</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.45</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.45</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.19 0.18 1</ambient>
+            <diffuse>0.42 0.40 0.37 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="demo_rock_center">
+      <static>true</static>
+      <pose>4.2 0.15 0.32 0 0 -0.7</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.55</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.55</radius></sphere></geometry>
+          <material>
+            <ambient>0.22 0.21 0.19 1</ambient>
+            <diffuse>0.45 0.43 0.39 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="demo_rock_right">
+      <static>true</static>
+      <pose>3.5 1.35 0.22 0 0 1.1</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.40</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.40</radius></sphere></geometry>
+          <material>
+            <ambient>0.19 0.18 0.17 1</ambient>
+            <diffuse>0.40 0.38 0.35 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================== SCATTERED ROCK FIELD ==================== -->
+    <model name="rock_01">
+      <static>true</static>
+      <pose>6.5 -3.2 0.18 0 0 0.2</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.35</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.35</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.19 0.18 1</ambient>
+            <diffuse>0.42 0.40 0.37 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_02">
+      <static>true</static>
+      <pose>7.8 2.6 0.25 0 0 -0.5</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.42</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.42</radius></sphere></geometry>
+          <material>
+            <ambient>0.21 0.20 0.18 1</ambient>
+            <diffuse>0.43 0.41 0.38 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_03">
+      <static>true</static>
+      <pose>-4.5 5.0 0.30 0 0 0.9</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.50</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.50</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.19 0.18 1</ambient>
+            <diffuse>0.41 0.39 0.36 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_04">
+      <static>true</static>
+      <pose>-6.0 -4.8 0.22 0 0 -1.2</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.38</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.38</radius></sphere></geometry>
+          <material>
+            <ambient>0.19 0.18 0.17 1</ambient>
+            <diffuse>0.40 0.38 0.35 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_05">
+      <static>true</static>
+      <pose>2.0 -6.5 0.20 0 0 0.6</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.32</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.32</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.19 0.18 1</ambient>
+            <diffuse>0.42 0.40 0.37 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_06">
+      <static>true</static>
+      <pose>-2.5 7.5 0.45 0 0 0.1</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.21 0.20 0.19 1</ambient>
+            <diffuse>0.44 0.42 0.39 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_07">
+      <static>true</static>
+      <pose>10.5 -7.0 0.40 0 0 -0.3</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.65</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.65</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.19 0.18 1</ambient>
+            <diffuse>0.41 0.39 0.36 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_08">
+      <static>true</static>
+      <pose>-9.0 1.5 0.28 0 0 1.4</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>0.48</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.48</radius></sphere></geometry>
+          <material>
+            <ambient>0.19 0.18 0.17 1</ambient>
+            <diffuse>0.40 0.38 0.35 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Distant boulders for scale and visual reference -->
+    <model name="boulder_01">
+      <static>true</static>
+      <pose>18 12 0.8 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>1.4</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>1.4</radius></sphere></geometry>
+          <material>
+            <ambient>0.21 0.20 0.19 1</ambient>
+            <diffuse>0.43 0.41 0.38 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="boulder_02">
+      <static>true</static>
+      <pose>-20 -10 1.0 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><sphere><radius>1.8</radius></sphere></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>1.8</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.19 0.18 1</ambient>
+            <diffuse>0.41 0.39 0.36 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============================ ROVER ============================ -->
+    <include>
+      <uri>model://lunabot_v4</uri>
+      <name>lunabot_v4</name>
+      <pose>0 0 0.30 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>

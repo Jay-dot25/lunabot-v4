@@ -1,0 +1,29 @@
+# ---- colcon / ROS 2 workspace ----
+build/
+install/
+log/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# ---- Simulation & test artifacts (reports are kept, heavy media is not) ----
+*.bag
+*.db3
+*.mp4
+*.ogv
+evidence/**/*.mp4
+evidence/**/*.db3
+evidence/**/*.bag
+
+# ---- Generated meshes (regenerate with scripts/generate_terrain_mesh.py) ----
+src/lunabot_gazebo/meshes/generated/
